@@ -23,6 +23,9 @@ import { createWebSocketHub } from "./websocket_handler.js";
 import { FirewallGuard } from "./FirewallGuard.js";
 import { ROLES, roleName, isSuperadminPub, parsePromoteRole } from "./roles.js";
 import { GDBxMirrorObject } from "./GDBxMirrorDO.js";
+// wrangler discovers Durable Object classes via NAMED exports from the
+// entrypoint module — mirror must be exported alongside the primary.
+export { GDBxMirrorObject };
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -201,6 +204,11 @@ export class GDBxStorageObject {
           ],
           health: "ok",
         });
+      }
+
+      /* Health check */
+      if (url.pathname === "/health" && request.method === "GET") {
+        return json({ ok: true, role: "primary" });
       }
 
       /* Hybrid mesh relay: Nostr kind-23124 event ingest */
