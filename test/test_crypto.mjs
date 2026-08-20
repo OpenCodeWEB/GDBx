@@ -158,3 +158,29 @@ test("signBody() builds canonical body for worker-compatible signing", async () 
   const sig = await sign(body, p);
   assert.equal(await verify(body, sig, p.pub), true);
 });
+
+test("worker verifySig accepts GDBX1 AND legacy SEA v1", async () => {
+  const { verifySig } = await import("../worker/src/verify.js");
+  const p = await pair();
+  const body = { addr: "f".repeat(58), action: "sync.put", ts: 777, payload: "[]" };
+
+  // GDBX1 path
+  const gdbx1 = await sign(body, p);
+  assert.equal(await verifySig(body, gdbx1, p.pub), true);
+  assert.equal(await verifySig({ ...body, ts: 778 }, gdbx1, p.pub), false);
+
+  // Legacy SEA v1 path (build envelope without gun)
+  const mStr = canonicalJson(body);
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(mStr));
+  const [x, y] = p.pub.split(".");
+  const key = await crypto.subtle.importKey(
+    "jwk",
+    { kty: "EC", crv: "P-256", x, y, d: p.priv, ext: false },
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"],
+  );
+  const rawSig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, hash);
+  const seaEnvelope = "SEA" + JSON.stringify({ m: mStr, s: Buffer.from(rawSig).toString("base64url") });
+  assert.equal(await verifySig(body, seaEnvelope, p.pub), true);
+});

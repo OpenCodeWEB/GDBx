@@ -116,8 +116,8 @@ export async function verifySeaSig(body, sig, pub) {
     const raw = typeof sig === "string" && sig.slice(0, 4) === "SEA{" ? sig.slice(3) : sig;
     const env = JSON.parse(raw);
     if (!env || typeof env !== "object" || typeof env.s !== "string") return false;
-    const mStr = typeof env.m === "string" ? env.m : JSON.stringify(env.m);
-    if (canonicalJson(env.m) !== canonicalJson(body)) return false;
+    const mStr = typeof env.m === "string" ? env.m : canonicalJson(env.m);
+    if (mStr !== canonicalJson(body)) return false;
 
     const [x, y] = String(pub).split(".");
     if (!x || !y) return false;
@@ -141,4 +141,55 @@ export async function verifySeaSig(body, sig, pub) {
   }
 }
 
-export default { getDifficulty, hashInput, sha256Hex, verifyPoW, canonicalJson, b64ToBytes, verifySeaSig };
+/**
+ * Verify a GDBX1 signature envelope — self-sovereign format:
+ *   "GDBX1" + JSON.stringify({m, s})
+ *   m = canonical key-sorted JSON of the signed body
+ *   s = base64url raw ECDSA P-256 / SHA-256 signature
+ *
+ * @param {object} body   canonical message object (sig excluded)
+ * @param {string} sig    GDBX1 envelope
+ * @param {string} pub    public key: base64url x . base64url y
+ * @returns {Promise<boolean>}
+ */
+export async function verifyGdbx1Sig(body, sig, pub) {
+  try {
+    if (typeof sig !== "string" || !sig.startsWith("GDBX1")) return false;
+    const env = JSON.parse(sig.slice(5));
+    if (!env || typeof env !== "object" || typeof env.s !== "string") return false;
+    const mStr = typeof env.m === "string" ? env.m : canonicalJson(env.m);
+    if (mStr !== canonicalJson(body)) return false;
+
+    const [x, y] = String(pub).split(".");
+    if (!x || !y) return false;
+    const key = await crypto.subtle.importKey(
+      "jwk",
+      { kty: "EC", crv: "P-256", x, y, ext: true },
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["verify"],
+    );
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(mStr));
+    return await crypto.subtle.verify(
+      { name: "ECDSA", hash: "SHA-256" },
+      key,
+      b64ToBytes(env.s),
+      hash,
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Verify either envelope — GDBX1 (self-sovereign) or legacy SEA v1.
+ * New clients sign GDBX1; old clients keep working via SEA v1.
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function verifySig(body, sig, pub) {
+  if (typeof sig === "string" && sig.startsWith("GDBX1")) return verifyGdbx1Sig(body, sig, pub);
+  return verifySeaSig(body, sig, pub);
+}
+
+export default { getDifficulty, hashInput, sha256Hex, verifyPoW, canonicalJson, b64ToBytes, verifySeaSig, verifyGdbx1Sig, verifySig };

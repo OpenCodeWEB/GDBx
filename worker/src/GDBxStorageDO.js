@@ -17,7 +17,7 @@
  * the same clock are ordered deterministically by pubkey hash — no forks.
  */
 
-import { verifyPoW, verifySeaSig, checkReplay } from "./verify.js";
+import { verifyPoW, verifySig, checkReplay } from "./verify.js";
 import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
 import { createWebSocketHub } from "./websocket_handler.js";
 
@@ -235,7 +235,7 @@ export class GDBxStorageObject {
       ts: body.ts,
       payload: body.didDoc || null,
     });
-    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    const sigOk = await verifySig(JSON.parse(canonical), body.sig, body.pubkey);
     if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
 
     const existing = await this.state.storage.get(`did:${addr}`);
@@ -354,7 +354,7 @@ export class GDBxStorageObject {
       ts: body.ts,
       payload: JSON.stringify(body.deltas),
     });
-    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    const sigOk = await verifySig(JSON.parse(canonical), body.sig, body.pubkey);
     if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
 
     // Apply LWW
@@ -463,7 +463,7 @@ export class GDBxStorageObject {
       ts: body.ts,
       payload: null,
     });
-    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    const sigOk = await verifySig(JSON.parse(canonical), body.sig, body.pubkey);
     if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
 
     // Erase everything: did doc, kv deltas, presence
@@ -519,7 +519,7 @@ export class GDBxStorageObject {
       ts: body.ts,
       payload: null,
     });
-    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    const sigOk = await verifySig(JSON.parse(canonical), body.sig, body.pubkey);
     if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
 
     // snapshot: did doc + all kv entries
