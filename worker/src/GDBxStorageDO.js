@@ -20,6 +20,8 @@
 import { verifyPoW, verifySig, checkReplay } from "./verify.js";
 import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
 import { createWebSocketHub } from "./websocket_handler.js";
+import { FirewallGuard } from "./FirewallGuard.js";
+import { ROLES, roleName, isSuperadminPub, parsePromoteRole } from "./roles.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -74,25 +76,48 @@ export class GDBxStorageObject {
   }
 
   /**
-   * Replay guard: checks the ts window and consumes the nonce into the
-   * seen-nonces cache. Returns an error response (or null on pass).
+   * Current role level for an addr (default: user — write-capable).
+   * ROOT_PUBKEYS members are always superadmin.
    */
-  guardReplay(ts, nonce) {
-    const res = checkReplay({ ts, nonce, seenNonces: this.seenNonces });
-    if (!res.ok) return json({ error: res.error }, res.status);
-    // prune stale entries (older than the ts window)
+  async getRole(addr, pubkey) {
+    const stored = await this.state.storage.get(`role:${addr}`);
+    if (stored !== undefined && stored !== null) return stored;
+    if (pubkey && isSuperadminPub(pubkey, this.env?.ROOT_PUBKEYS)) return ROLES.superadmin;
+    return ROLES.user;
+  }
+
+  /** ACL allowlist for an addr (owner + collaborators). */
+  async getCollaborators(addr) {
+    const list = await this.state.storage.get(`acl:${addr}`);
+    return Array.isArray(list) ? list : [];
+  }
+
+  /**
+   * Record a consumed nonce into the replay cache (called by FirewallGuard
+   * after the replay check passes). Prunes stale entries.
+   */
+  recordNonce(nonce, ts) {
     const now = Date.now();
     for (const [n, t] of this.seenNonces) {
       if (now - t > 2 * 60_000) this.seenNonces.delete(n);
     }
     this.seenNonces.set(nonce, ts);
     if (this.seenNonces.size > MAX_SEEN_NONCES) {
-      // drop oldest entries
       const oldest = [...this.seenNonces.entries()].sort((a, b) => a[1] - b[1]);
       for (let i = 0; i < oldest.length - MAX_SEEN_NONCES; i++) {
         this.seenNonces.delete(oldest[i][0]);
       }
     }
+  }
+
+  /**
+   * Replay guard: checks the ts window and consumes the nonce into the
+   * seen-nonces cache. Returns an error response (or null on pass).
+   */
+  guardReplay(ts, nonce) {
+    const res = checkReplay({ ts, nonce, seenNonces: this.seenNonces });
+    if (!res.ok) return json({ error: res.error }, res.status);
+    this.recordNonce(nonce, ts);
     return null;
   }
 
@@ -112,6 +137,11 @@ export class GDBxStorageObject {
       if (url.pathname === "/did" && request.method === "POST") {
         if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
         return await this.registerDID(await request.json());
+      }
+      /* RBAC: superadmin-signed promotion / demotion */
+      if (url.pathname === "/identity/role" && request.method === "POST") {
+        if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
+        return await this.setRole(await request.json());
       }
       if (url.pathname.startsWith("/did/") && request.method === "GET") {
         const addr = url.pathname.slice("/did/".length);
@@ -260,9 +290,71 @@ export class GDBxStorageObject {
       this.state.storage.put(`did:${addr}`, didDoc),
       this.state.storage.put("meta:stats", this.stats),
     ]);
+    // Zero-trust RBAC: new identity gets a default role.
+    // ROOT_PUBKEYS members become superadmin automatically; everyone else
+    // starts as user (write-capable). A superadmin can demote to guest
+    // (write-blocked) or promote to manager/admin later.
+    if (existing === undefined) {
+      const role = isSuperadminPub(body.pubkey, this.env?.ROOT_PUBKEYS) ? ROLES.superadmin : ROLES.user;
+      await this.state.storage.put(`role:${addr}`, role);
+    }
     if (!existing) this.stats.dids += 1;
     this.stats.lastTs = Date.now();
-    return json({ ok: true, did: didDoc, created: !existing }, existing ? 200 : 201);
+    return json({ ok: true, did: didDoc, created: !existing, role: roleName(await this.getRole(addr)) }, existing ? 200 : 201);
+  }
+
+  /**
+   * Superadmin-signed role change (promote / demote).
+   * Body: { addr, target, targetAddr, role, ts, nonce, diff, hash, sig }
+   *   target     = pubkey (x.y) of the identity whose role changes
+   *   targetAddr = .gdbx address of that identity (must be registered)
+   *   role       = "user" | "manager" | "admin" | "guest" (demote)
+   *   sig        = GDBX1/SEA over canonical({addr, action:"identity.promote", ts, payload})
+   */
+  async setRole(body) {
+    if (!body || typeof body !== "object") return json({ error: "body required" }, 400);
+    const addr = normalizeAddress(String(body.addr || ""));
+    if (!addr) return json({ error: "invalid .gdbx address" }, 400);
+    if (!body.target || typeof body.target !== "string") return json({ error: "target pubkey required" }, 400);
+    const targetAddr = normalizeAddress(String(body.targetAddr || ""));
+    if (!targetAddr) return json({ error: "targetAddr required" }, 400);
+
+    const ts = Number(body.ts);
+    const nonce = Number(body.nonce);
+    const replayErr = this.guardReplay(ts, nonce);
+    if (replayErr) return replayErr;
+
+    // Only a superadmin may change roles — FirewallGuard enforces this via
+    // the signer's pubkey against ROOT_PUBKEYS.
+    const canonical = JSON.stringify({
+      addr,
+      action: "identity.promote",
+      ts,
+      payload: JSON.stringify({ role: body.role, target: body.target }),
+    });
+    const gate = await FirewallGuard.check({
+      body: JSON.parse(canonical),
+      sig: body.sig,
+      pubkey: body.pubkey,
+      pubkeyHex: body.pubkeyHex,
+      ts,
+      nonce,
+      diff: body.diff,
+      hash: body.hash,
+      env: this.env,
+      seenNonces: this.seenNonces,
+      action: "identity.promote",
+      payload: JSON.stringify({ role: body.role, target: body.target }),
+    });
+    if (!gate.ok) return json({ error: gate.error }, gate.status || 403);
+    const targetRole = gate.role; // validated level
+
+    // Target identity must be registered before its role can change
+    const targetDid = await this.state.storage.get(`did:${targetAddr}`);
+    if (!targetDid) return json({ error: "target identity not registered" }, 404);
+
+    await this.state.storage.put(`role:${targetAddr}`, targetRole);
+    return json({ ok: true, addr, target: body.target, targetAddr, role: roleName(targetRole) });
   }
 
   async resolveDID(addr) {
@@ -296,10 +388,6 @@ export class GDBxStorageObject {
     }
     if (body.deltas.length > MAX_DELTAS) return json({ error: `max ${MAX_DELTAS} deltas per batch` }, 400);
 
-    // Replay guard: ts window + fresh nonce
-    const replayErr = this.guardReplay(Number(body.ts), Number(body.nonce));
-    if (replayErr) return replayErr;
-
     for (const d of body.deltas) {
       if (!d || typeof d !== "object") return json({ error: "invalid delta" }, 400);
       if (typeof d.key !== "string" || !KEY_RE.test(d.key)) {
@@ -321,18 +409,6 @@ export class GDBxStorageObject {
       }
     }
 
-    // PoW gate
-    const pow = await verifyPoW({
-      addr,
-      ownerPub: body.pubkey,
-      payload: "sync.put",
-      ts: body.ts,
-      nonce: body.nonce,
-      diff: body.diff,
-      hash: body.hash,
-    });
-    if (!pow.ok) return json({ error: pow.error }, 400);
-
     // Owner binding — pubkeyHex must hash to the address AND the DID must exist.
     const did = await this.state.storage.get(`did:${addr}`);
     if (!did) return json({ error: "address not registered — register DID first" }, 403);
@@ -347,15 +423,32 @@ export class GDBxStorageObject {
     }
     if (!isOwner) return json({ error: "pubkeyHex does not own address" }, 403);
 
-    // SEA signature over canonical batch
+    // Unified firewall gate: PoW → replay → signature → RBAC → ACL
     const canonical = JSON.stringify({
       addr,
       action: "sync.put",
       ts: body.ts,
       payload: JSON.stringify(body.deltas),
     });
-    const sigOk = await verifySig(JSON.parse(canonical), body.sig, body.pubkey);
-    if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
+    const gate = await FirewallGuard.check({
+      body: JSON.parse(canonical),
+      sig: body.sig,
+      pubkey: body.pubkey,
+      pubkeyHex: body.pubkeyHex,
+      ts: body.ts,
+      nonce: body.nonce,
+      diff: body.diff,
+      hash: body.hash,
+      env: this.env,
+      seenNonces: this.seenNonces,
+      consumeNonce: (n, t) => this.recordNonce(n, t),
+      action: "sync.put",
+      payload: JSON.stringify(body.deltas),
+      role: await this.getRole(addr, body.pubkey),
+      ownerPub: did.ownerPub || body.pubkey,
+      collaborators: await this.getCollaborators(addr),
+    });
+    if (!gate.ok) return json({ error: gate.error }, gate.status || 403);
 
     // Apply LWW
     const writes = [];

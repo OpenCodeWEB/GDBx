@@ -153,7 +153,7 @@ test("did: forged signature rejected (403)", async () => {
     sig,
   });
   assert.equal(status, 403);
-  assert.match(data.error, /SEA/);
+  assert.match(data.error, /signature/i);
 });
 
 test("did: pubkey not matching address rejected (403)", async () => {
@@ -336,7 +336,7 @@ test("sync: forged sig rejected (403)", async () => {
     sig,
   });
   assert.equal(status, 403);
-  assert.match(data.error, /SEA/);
+  assert.match(data.error, /signature/i);
 });
 
 test("sync: batch > 64 rejected (400)", async () => {
