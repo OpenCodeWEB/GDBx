@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GDBx ~ Global Decentralized DataBase Sync</title>
+<meta name="description" content="GDBx — one address, every technology. .GDBx TLD: Tor v3, I2P, Nostr, WebRTC, IPFS, GunDB mesh — all routable through one checksummed address.">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0b1020; color: #e2e8f0; min-height: 100vh; }
+  header { padding: 24px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 12px; }
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: 0.5px; }
+  .logo span { color: #22d3ee; }
+  .tag { color: #64748b; font-size: 13px; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 26px; line-height: 1.4; margin-bottom: 8px; }
+  h1 em { color: #22d3ee; font-style: normal; }
+  .sub { color: #94a3b8; margin-bottom: 28px; line-height: 1.6; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .card { background: #111a30; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+  .card h3 { font-size: 14px; color: #22d3ee; margin-bottom: 8px; }
+  .card p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+  .demo { background: #111a30; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .demo h2 { font-size: 16px; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  textarea, input, select { width: 100%; background: #0b1020; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 10px; font-family: ui-monospace, monospace; font-size: 13px; }
+  textarea { min-height: 90px; }
+  button { background: #0891b2; color: #04121a; border: 0; border-radius: 8px; padding: 10px 18px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  button:hover { background: #22d3ee; }
+  .out { margin-top: 12px; background: #0b1020; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: ui-monospace, monospace; font-size: 13px; word-break: break-all; color: #34d399; }
+  .err { color: #f87171; }
+  footer { text-align: center; color: #475569; font-size: 12px; padding: 20px; border-top: 1px solid #1e293b; }
+  a { color: #22d3ee; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">GDB<span>x</span></div>
+  <div class="tag">Global Decentralized DataBase Sync — one address, every technology</div>
+</header>
+<main>
+  <h1>যেমন <em>.onion</em> Tor-কে বোঝায়, <em>.GDBx</em> বোঝায় Global Decentralized Database</h1>
+  <p class="sub">GDBx একটি ওপেনসোর্স, সার্ভারলেস, ডিসেন্ট্রালাইজড ডেটাবেস সিঙ্ক প্রোটোকল। একটি checksummed address দিয়ে Tor v3, I2P, Nostr, WebRTC, IPFS ও GunDB mesh — সব প্রযুক্তি একসাথে রাউটেবল।</p>
+
+  <div class="grid">
+    <div class="card"><h3>🔐 Checksummed Address</h3><p>BLAKE3 checksum + Base32 (RFC 4648) — 58-char, typo/forgery-proof, collision-resistant। Version ও Network byte সহ।</p></div>
+    <div class="card"><h3>🛰️ Multi-Transport</h3><p>এক address → WebRTC (&lt;20ms), Nostr (&lt;150ms), Tor v3, I2P, IPFS — স্বয়ংক্রিয় selection + fallback।</p></div>
+    <div class="card"><h3>🧬 CRDT Sync</h3><p>GunDB mesh-ভিত্তিক flat-primitives JSON, conflict-free merge, delta sync, presence heartbeat।</p></div>
+    <div class="card"><h3>⚡ Serverless</h3><p>Cloudflare Workers + Durable Objects + Pages — local-first, সেন্ট্রাল সার্ভার নেই।</p></div>
+  </div>
+
+  <div class="demo" id="codec-demo">
+    <h2>🧪 .GDBx Address Codec Demo</h2>
+    <label for="pubkey">Public key (uncompressed P-256, hex — 04||X||Y, 130 chars)</label>
+    <textarea id="pubkey" placeholder="0404f2d1..."></textarea>
+    <label for="network" style="margin-top:10px">Network</label>
+    <select id="network">
+      <option value="0">mainnet</option>
+      <option value="1">testnet</option>
+      <option value="2">local</option>
+    </select>
+    <button id="gen">Generate .GDBx address</button>
+    <div class="out" id="out" style="display:none"></div>
+  </div>
+
+  <div class="demo" id="verify-demo">
+    <h2>🔎 Validate an address</h2>
+    <input id="check" placeholder="paste a .gdbx address">
+    <button id="verify">Validate</button>
+    <div class="out" id="vout" style="display:none"></div>
+  </div>
+</main>
+<footer>GDBx — MIT License · <a href="https://github.com/OpenCodeWEB/GDBX">github.com/OpenCodeWEB/GDBX</a> · Live: gdbx.pages.dev</footer>
+<script type="importmap">
+{
+  "imports": {
+    "@noble/hashes/blake3.js": "https://esm.sh/@noble/hashes@1.8.0/blake3.js",
+    "@noble/hashes/sha2.js": "https://esm.sh/@noble/hashes@1.8.0/sha2.js",
+    "@noble/hashes/_assert.js": "https://esm.sh/@noble/hashes@1.8.0/_assert.js",
+    "@noble/hashes/_md.js": "https://esm.sh/@noble/hashes@1.8.0/_md.js",
+    "@noble/hashes/_u64.js": "https://esm.sh/@noble/hashes@1.8.0/_u64.js",
+    "@noble/hashes/utils.js": "https://esm.sh/@noble/hashes@1.8.0/utils.js"
+  }
+}
+</script>
+<script type="module" src="/js/gdbx-codec.js"></script>
+<script type="module" src="/js/gdbx-demo.js"></script>
+</body>
+</html>

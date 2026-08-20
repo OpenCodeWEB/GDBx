@@ -1,0 +1,18 @@
+{
+  "name": "gdbx",
+  "version": "0.1.0",
+  "description": "GDBx ~ Global Decentralized DataBase Sync — one address, every technology",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/test_codec.mjs",
+    "worker:dev": "wrangler dev --port 8787",
+    "pages:dev": "wrangler pages dev public --port 8788"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.4.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
