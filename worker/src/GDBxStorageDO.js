@@ -22,6 +22,7 @@ import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
 import { createWebSocketHub } from "./websocket_handler.js";
 import { FirewallGuard } from "./FirewallGuard.js";
 import { ROLES, roleName, isSuperadminPub, parsePromoteRole } from "./roles.js";
+import { GDBxMirrorObject } from "./GDBxMirrorDO.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -190,6 +191,18 @@ export class GDBxStorageObject {
         return await this.leaderboard();
       }
 
+      /* Pool status (primary view) */
+      if (url.pathname === "/pool" && request.method === "GET") {
+        return json({
+          ok: true,
+          nodes: [
+            { role: "primary", name: "gdbx-storage", healthy: true },
+            { role: "mirror", name: "gdbx-mirror", healthy: Boolean(this.env?.GDBX_MIRROR) },
+          ],
+          health: "ok",
+        });
+      }
+
       return json({ error: "not found" }, 404);
     } catch (e) {
       return json({ error: String(e?.message || e) }, 400);
@@ -300,6 +313,11 @@ export class GDBxStorageObject {
     }
     if (!existing) this.stats.dids += 1;
     this.stats.lastTs = Date.now();
+    await this.state.storage.put("meta:stats", this.stats);
+
+    // Pool: replicate the DID document to the mirror
+    await this.replicateToMirror(addr, { did: didDoc });
+
     return json({ ok: true, did: didDoc, created: !existing, role: roleName(await this.getRole(addr)) }, existing ? 200 : 201);
   }
 
@@ -478,19 +496,92 @@ export class GDBxStorageObject {
     await Promise.all(writes);
     this.stats.lastTs = Date.now();
     await this.state.storage.put("meta:stats", this.stats);
+
+    // Pool: replicate applied writes to the mirror (best-effort, signed path)
+    if (applied > 0) {
+      const snapshot = { did, kv: {} };
+      for (const d of body.deltas) {
+        const existing = await this.state.storage.get(`kv:${addr}:${d.key}`);
+        if (existing) {
+          snapshot.kv[d.key] = {
+            value: existing.value,
+            clock: existing.clock,
+            ownerPub: existing.ownerPub,
+          };
+        }
+      }
+      await this.replicateToMirror(addr, snapshot);
+    }
     return json({ ok: true, applied, addr });
   }
 
   /** Get deltas for an address — ?prefix= filters keys. Returns map + ts. */
   async getDeltas(addr, keyPrefix, params) {
     const prefix = String(keyPrefix || params.get("prefix") || "");
-    const list = await this.state.storage.list({ prefix: `kv:${addr}:${prefix}` });
-    const entries = [];
-    for (const [k, v] of list.entries()) {
-      entries.push({ key: v.key, value: v.value, clock: v.clock, ownerPub: v.ownerPub });
-    }
-    entries.sort((a, b) => (a.clock - b.clock) || (a.key < b.key ? -1 : 1));
+    const entries = await this.readMerged(addr, prefix);
     return json({ ok: true, addr, count: entries.length, entries });
+  }
+
+  /**
+   * Pool read path: local entries merged with mirror entries (LWW — newest
+   * clock wins; tie → lexicographic owner). Falls back to local only when no
+   * mirror binding exists or the mirror is unreachable.
+   */
+  async readMerged(addr, prefix) {
+    const list = await this.state.storage.list({ prefix: `kv:${addr}:${prefix}` });
+    const merged = new Map();
+    for (const [, v] of list.entries()) {
+      merged.set(v.key, { key: v.key, value: v.value, clock: v.clock, ownerPub: v.ownerPub });
+    }
+
+    const binding = this.env?.GDBX_MIRROR;
+    if (binding) {
+      try {
+        const stub = await binding.get(binding.idFromName("gdbx-mirror"));
+        const target = new URL(
+          `https://do.local/sync/${addr}${prefix ? "?prefix=" + encodeURIComponent(prefix) : ""}`,
+        );
+        const res = await stub.fetch(new Request(target.toString(), { method: "GET" }));
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.entries)) {
+          for (const e of data.entries) {
+            const cur = merged.get(e.key);
+            if (
+              !cur ||
+              e.clock > cur.clock ||
+              (e.clock === cur.clock && (e.ownerPub || "") > (cur.ownerPub || ""))
+            ) {
+              merged.set(e.key, e);
+            }
+          }
+        }
+      } catch {
+        // mirror unavailable — serve local
+      }
+    }
+
+    return [...merged.values()].sort((a, b) => a.clock - b.clock || (a.key < b.key ? -1 : 1));
+  }
+
+  /**
+   * Pool: replicate a snapshot to the mirror node (best-effort — a mirror
+   * outage must never fail the client write).
+   */
+  async replicateToMirror(addr, snapshot) {
+    const binding = this.env?.GDBX_MIRROR;
+    if (!binding) return;
+    try {
+      const stub = await binding.get(binding.idFromName("gdbx-mirror"));
+      const target = new URL("https://do.local/replicate");
+      const proxy = new Request(target.toString(), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ addr, snapshot }),
+      });
+      await stub.fetch(proxy);
+    } catch (e) {
+      console.error("mirror replication failed:", e?.message || e);
+    }
   }
 
   /* ── Presence ────────────────────────────────────────────────────── */
@@ -698,13 +789,18 @@ function json(data, status = 200) {
 }
 
 export default {
+  GDBxStorageObject,
+  GDBxMirrorObject,
+
+  /**
+   * Entry Worker fetch: forwards everything (HTTP + WS upgrades) to the
+   * default Durable Object — the DO is a singleton isolate, so the WebSocket
+   * hub inside it sees every connection and broadcasts reliably.
+   */
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
 
-    // Everything (HTTP + WS upgrades) is handled by the Durable Object —
-    // the DO is a singleton isolate, so the WebSocket hub inside it sees
-    // every connection and broadcasts reliably.
     const id = env.GDBX_STORAGE.idFromName("default");
     const stub = env.GDBX_STORAGE.get(id);
     return stub.fetch(request);
