@@ -14,6 +14,7 @@
  */
 import { makeAddress } from "./gdbx-codec.js";
 import { minePoW, signBody, getDifficulty } from "./gdbx-sdk.js";
+import { sign as cryptoSign } from "./gdbx-crypto.js";
 
 export class GDBxWS {
   /**
@@ -75,8 +76,7 @@ export class GDBxWS {
     const ts = Date.now();
     const list = deltas.map((d) => ({ key: d.key, value: d.value, clock: d.clock ?? ts }));
     const { nonce, hash, diff } = await minePoW(this.addr, this.pair.pub, "sync.put", ts);
-    const SEA = (await import("gun/sea.js")).default;
-    const sig = await SEA.sign(signBody(this.addr, "sync.put", ts, JSON.stringify(list)), this.pair);
+    const sig = await cryptoSign(signBody(this.addr, "sync.put", ts, JSON.stringify(list)), this.pair);
     this.ws.send(JSON.stringify({
       type: "put",
       addr: this.addr,

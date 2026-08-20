@@ -12,11 +12,7 @@
  */
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
-if (!globalThis.Gun) globalThis.Gun = require("gun");
-const SEA = require("gun/sea.js");
+import { pair as cryptoPair, sign as cryptoSign } from "../sdk/gdbx-crypto.js";
 
 import { GDBxStorageObject } from "../worker/src/GDBxStorageDO.js";
 import { makeAddress } from "../sdk/gdbx-codec.js";
@@ -27,7 +23,7 @@ let pubkeyHex = null;
 let addr = null;
 
 before(async () => {
-  pair = await SEA.pair();
+  pair = await cryptoPair();
   pubkeyHex = await pubkeyToHex(pair);
   addr = makeAddress(pubkeyHex, 0);
 });
@@ -91,7 +87,7 @@ const doFetch = async (inst, path, method = "GET", body) => {
 async function registerDID(inst) {
   const t = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "did.register", t);
-  const sig = await SEA.sign(signBody(addr, "did.register", t, null), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", t, null), pair);
   await doFetch(inst, "/did", "POST", { addr, pubkey: pair.pub, pubkeyHex, ts: t, nonce, diff, hash, sig });
 }
 
@@ -99,7 +95,7 @@ async function putDelta(inst, key = "k", value = "v") {
   const t = Date.now();
   const deltas = [{ key, value, clock: t }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
-  const sig = await SEA.sign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
   await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas, ts: t, nonce, diff, hash, sig });
 }
 
@@ -112,7 +108,7 @@ test("export: signed snapshot returns did + kv entries (200)", async () => {
 
   const t = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "identity.export", t);
-  const sig = await SEA.sign(signBody(addr, "identity.export", t, null), pair);
+  const sig = await cryptoSign(signBody(addr, "identity.export", t, null), pair);
   const { status, data } = await doFetch(inst, "/export", "POST", {
     addr, pubkey: pair.pub, pubkeyHex, ts: t, nonce, diff, hash, sig,
   });
@@ -128,11 +124,11 @@ test("export: signed snapshot returns did + kv entries (200)", async () => {
 test("export: forged owner → 403", async () => {
   const { inst } = await makeDO();
   await registerDID(inst);
-  const other = await SEA.pair();
+  const other = await cryptoPair();
   const otherHex = await pubkeyToHex(other);
   const t = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, other.pub, "identity.export", t);
-  const sig = await SEA.sign(signBody(addr, "identity.export", t, null), other);
+  const sig = await cryptoSign(signBody(addr, "identity.export", t, null), other);
   const { status } = await doFetch(inst, "/export", "POST", {
     addr, pubkey: other.pub, pubkeyHex: otherHex, ts: t, nonce, diff, hash, sig,
   });
@@ -144,7 +140,7 @@ test("export: replay nonce → 401", async () => {
   await registerDID(inst);
   const t = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "identity.export", t);
-  const sig = await SEA.sign(signBody(addr, "identity.export", t, null), pair);
+  const sig = await cryptoSign(signBody(addr, "identity.export", t, null), pair);
   const body = { addr, pubkey: pair.pub, pubkeyHex, ts: t, nonce, diff, hash, sig };
   const first = await doFetch(inst, "/export", "POST", body);
   assert.equal(first.status, 200);

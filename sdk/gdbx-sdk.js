@@ -15,6 +15,7 @@
  */
 
 import { makeAddress, validateAddress, normalizeAddress, toDID } from "./gdbx-codec.js";
+import { pair as cryptoPair, sign as cryptoSign, signBody } from "./gdbx-crypto.js";
 
 export const API = "https://gdbx.pages.dev/api/v1";
 
@@ -53,24 +54,13 @@ export async function minePoW(addr, ownerPub, payload, ts, diff) {
   }
 }
 
-/* ── SEA helpers ─────────────────────────────────────────────────── */
-
-let _SEA = null;
-async function sea() {
-  if (!_SEA) _SEA = (await import("gun/sea.js")).default;
-  return _SEA;
-}
+/* ── crypto helpers (self-sovereign — gdbx-crypto, no gun) ──────────── */
 
 export async function makePair() {
-  const SEA = await sea();
-  const pair = await SEA.pair();
-  return { pub: pair.pub, priv: pair.priv, epub: pair.epub, epriv: pair.epriv };
+  return cryptoPair();
 }
 
-/** Canonical message object a signature covers (key order matters for SEA). */
-export function signBody(addr, action, ts, payload) {
-  return { addr, action, ts, payload };
-}
+export { signBody };
 
 /* ── HTTP ────────────────────────────────────────────────────────── */
 
@@ -99,11 +89,10 @@ export function addressFromPubkey(pubkeyHex, network = 0) {
  */
 export async function registerDID(opts) {
   const addr = addressFromPubkey(opts.pubkeyHex);
-  const SEA = await sea();
   const ts = Date.now();
   const payload = opts.didDoc || null;
   const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "did.register", ts);
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, payload), opts.pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, payload), opts.pair);
   return post("/did/register", {
     addr,
     pubkey: opts.pair.pub,
@@ -131,12 +120,11 @@ export async function resolveDID(addr) {
  */
 export async function putDeltas(opts) {
   const addr = addressFromPubkey(opts.pubkeyHex);
-  const SEA = await sea();
   const ts = Date.now();
   const deltas = opts.deltas.map((d) => ({ key: d.key, value: d.value, clock: d.clock ?? ts }));
   const payload = JSON.stringify(deltas);
   const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, payload), opts.pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, payload), opts.pair);
   return post("/sync", {
     addr,
     pubkey: opts.pair.pub,
@@ -180,10 +168,9 @@ export async function stats() {
  */
 export async function purgeIdentity(opts) {
   const addr = addressFromPubkey(opts.pubkeyHex);
-  const SEA = await sea();
   const ts = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "identity.purge", ts);
-  const sig = await SEA.sign(signBody(addr, "identity.purge", ts, null), opts.pair);
+  const sig = await cryptoSign(signBody(addr, "identity.purge", ts, null), opts.pair);
   const res = await fetch(`${API}/identity`, {
     method: "DELETE",
     headers: { "content-type": "application/json" },
@@ -211,10 +198,9 @@ export async function purgeIdentity(opts) {
  */
 export async function exportState(opts) {
   const addr = addressFromPubkey(opts.pubkeyHex);
-  const SEA = await sea();
   const ts = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "identity.export", ts);
-  const sig = await SEA.sign(signBody(addr, "identity.export", ts, null), opts.pair);
+  const sig = await cryptoSign(signBody(addr, "identity.export", ts, null), opts.pair);
   const res = await fetch(`${API}/export`, {
     method: "POST",
     headers: { "content-type": "application/json" },

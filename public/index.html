@@ -496,9 +496,11 @@
   }
 }
 </script>
-<!-- Gun SEA (global) for the live sync sandbox — loaded classic-style so window.Gun.SEA is available to module scripts -->
-<script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1241/gun.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1241/sea.js" defer></script>
+<!-- GDBxCrypto (self-sovereign, zero-dependency) for the live sync sandbox — classic import map + module, exposed on window.GDBxCrypto -->
+<script type="module">
+  import * as GDBxCrypto from "/js/gdbx-crypto.js";
+  window.GDBxCrypto = GDBxCrypto;
+</script>
 <script type="module" src="/js/gdbx-codec.js"></script>
 <script type="module" src="/js/gdbx-demo.js"></script>
 <script type="module" src="/js/gdbx-live.js"></script>

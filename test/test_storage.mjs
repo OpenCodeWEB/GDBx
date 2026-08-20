@@ -13,12 +13,8 @@
  */
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
 import { randomBytes } from "node:crypto";
-
-const require = createRequire(import.meta.url);
-if (!globalThis.Gun) globalThis.Gun = require("gun");
-const SEA = require("gun/sea.js");
+import { pair as cryptoPair, sign as cryptoSign } from "../sdk/gdbx-crypto.js";
 
 import { GDBxStorageObject } from "../worker/src/GDBxStorageDO.js";
 import { makeAddress, normalizeAddress } from "../sdk/gdbx-codec.js";
@@ -29,7 +25,7 @@ let pubkeyHex = null;
 let addr = null;
 
 before(async () => {
-  pair = await SEA.pair();
+  pair = await cryptoPair();
   // pubkey → hex (04||X||Y)
   const jwk = await crypto.subtle.exportKey("jwk", await importPairKey(pair));
   pubkeyHex = await pubkeyToHex(pair);
@@ -101,7 +97,7 @@ test("did: register with PoW + SEA → 201, resolve → document", async () => {
   const didDoc = {
     services: [{ id: "did:gdbx#transport", type: "GDBxTransportRouting", serviceEndpoint: { webrtc: "peer-1", nostr: ["wss://relay.damus.io"] } }],
   };
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, didDoc), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, didDoc), pair);
 
   const { status, data } = await doFetch(inst, "/did", "POST", {
     addr,
@@ -128,7 +124,7 @@ test("did: address suffix input accepted (.gdbx form)", async () => {
   const { inst } = await makeDO();
   const ts = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "did.register", ts);
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, null), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, null), pair);
   const { status } = await doFetch(inst, "/did", "POST", {
     addr: addr + ".gdbx",
     pubkey: pair.pub, pubkeyHex,
@@ -143,10 +139,10 @@ test("did: address suffix input accepted (.gdbx form)", async () => {
 
 test("did: forged signature rejected (403)", async () => {
   const { inst } = await makeDO();
-  const other = await SEA.pair();
+  const other = await cryptoPair();
   const ts = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "did.register", ts);
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, null), other); // wrong key
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, null), other); // wrong key
   const { status, data } = await doFetch(inst, "/did", "POST", {
     addr,
     pubkey: pair.pub, pubkeyHex,
@@ -162,13 +158,13 @@ test("did: forged signature rejected (403)", async () => {
 
 test("did: pubkey not matching address rejected (403)", async () => {
   const { inst } = await makeDO();
-  const other = await SEA.pair();
+  const other = await cryptoPair();
   const otherHex = await pubkeyToHex(other);
   const ts = Date.now();
   // PoW is anti-spam over the claimed addr; the identity binding fails because
   // pubkeyHex hashes to a different address than `addr`.
   const { nonce, hash, diff } = await minePoW(addr, other.pub, "did.register", ts);
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, null), other);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, null), other);
   const { status, data } = await doFetch(inst, "/did", "POST", {
     addr, // WRONG address — claims other's pubkey but this addr
     pubkey: other.pub, pubkeyHex: otherHex,
@@ -185,7 +181,7 @@ test("did: pubkey not matching address rejected (403)", async () => {
 test("did: missing PoW rejected (400)", async () => {
   const { inst } = await makeDO();
   const ts = Date.now();
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, null), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, null), pair);
   const { status } = await doFetch(inst, "/did", "POST", {
     addr,
     pubkey: pair.pub, pubkeyHex,
@@ -213,7 +209,7 @@ test("did: invalid address → 400", async () => {
 async function registerDID(inst) {
   const ts = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "did.register", ts);
-  const sig = await SEA.sign(signBody(addr, "did.register", ts, null), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", ts, null), pair);
   await doFetch(inst, "/did", "POST", { addr, pubkey: pair.pub, pubkeyHex, ts, nonce, diff, hash, sig });
 }
 
@@ -228,7 +224,7 @@ test("sync: put signed deltas → applied (LWW), get returns state", async () =>
   ];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
   const payload = JSON.stringify(deltas);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, payload), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, payload), pair);
 
   const { status, data } = await doFetch(inst, "/sync", "POST", {
     addr,
@@ -260,7 +256,7 @@ test("sync: prefix filter", async () => {
     { key: "b/two", value: 2, clock: ts },
   ];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
   await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas, ts, nonce, diff, hash, sig });
 
   const { data } = await doFetch(inst, "/sync/" + addr + "?prefix=a/");
@@ -275,13 +271,13 @@ test("sync: LWW — newer clock wins, older write ignored", async () => {
   const t1 = Date.now();
   const d1 = [{ key: "k", value: "old", clock: t1 }];
   const p1 = await minePoW(addr, pair.pub, "sync.put", t1);
-  const s1 = await SEA.sign(signBody(addr, "sync.put", t1, JSON.stringify(d1)), pair);
+  const s1 = await cryptoSign(signBody(addr, "sync.put", t1, JSON.stringify(d1)), pair);
   await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas: d1, ts: t1, ...p1, sig: s1 });
 
   const t2 = t1 + 1000;
   const d2 = [{ key: "k", value: "new", clock: t2 }];
   const p2 = await minePoW(addr, pair.pub, "sync.put", t2);
-  const s2 = await SEA.sign(signBody(addr, "sync.put", t2, JSON.stringify(d2)), pair);
+  const s2 = await cryptoSign(signBody(addr, "sync.put", t2, JSON.stringify(d2)), pair);
   const { data } = await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas: d2, ts: t2, ...p2, sig: s2 });
   assert.equal(data.applied, 1);
 
@@ -293,7 +289,7 @@ test("sync: LWW — newer clock wins, older write ignored", async () => {
   const t4 = Date.now();
   const d3 = [{ key: "k", value: "old-again", clock: t1 }];
   const p3 = await minePoW(addr, pair.pub, "sync.put", t4);
-  const s3 = await SEA.sign(signBody(addr, "sync.put", t4, JSON.stringify(d3)), pair);
+  const s3 = await cryptoSign(signBody(addr, "sync.put", t4, JSON.stringify(d3)), pair);
   const { data: r3 } = await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas: d3, ts: t4, ...p3, sig: s3 });
   assert.equal(r3.applied, 0);
 
@@ -306,7 +302,7 @@ test("sync: unregistered address rejected (403)", async () => {
   const ts = Date.now();
   const deltas = [{ key: "k", value: 1, clock: ts }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
   const { status, data } = await doFetch(inst, "/sync", "POST", {
     addr,
     pubkey: pair.pub, pubkeyHex,
@@ -324,11 +320,11 @@ test("sync: unregistered address rejected (403)", async () => {
 test("sync: forged sig rejected (403)", async () => {
   const { inst } = await makeDO();
   await registerDID(inst);
-  const other = await SEA.pair();
+  const other = await cryptoPair();
   const ts = Date.now();
   const deltas = [{ key: "k", value: "x", clock: ts }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), other);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), other);
   const { status, data } = await doFetch(inst, "/sync", "POST", {
     addr,
     pubkey: pair.pub, pubkeyHex,
@@ -349,7 +345,7 @@ test("sync: batch > 64 rejected (400)", async () => {
   const ts = Date.now();
   const deltas = Array.from({ length: 65 }, (_, i) => ({ key: "k" + i, value: i, clock: ts }));
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
   const { status } = await doFetch(inst, "/sync", "POST", {
     addr,
     pubkey: pair.pub, pubkeyHex,
@@ -387,7 +383,7 @@ test("stats: ledger counts dids + deltas", async () => {
   const ts = Date.now();
   const deltas = [{ key: "a", value: 1, clock: ts }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
-  const sig = await SEA.sign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
   await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas, ts, nonce, diff, hash, sig });
 
   const { data } = await doFetch(inst, "/stats");

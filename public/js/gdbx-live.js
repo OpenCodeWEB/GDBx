@@ -200,9 +200,9 @@ async function loadLeaderboard() {
   let pubkeyHex = null;
   let addr = null;
   try {
-    const SEA = window.Gun && window.Gun.SEA;
-    if (!SEA) throw new Error("Gun SEA not loaded");
-    pair = await SEA.pair();
+    const GDBxCrypto = window.GDBxCrypto;
+    if (!GDBxCrypto || !GDBxCrypto.pair) throw new Error("GDBxCrypto not loaded");
+    pair = await GDBxCrypto.pair();
     const [x, y] = pair.pub.split(".");
     const key = await crypto.subtle.importKey(
       "jwk", { kty: "EC", crv: "P-256", x, y, ext: true },
@@ -248,10 +248,10 @@ async function loadLeaderboard() {
       nonce += 1;
       if (nonce > 500000) return false;
     }
-    // sign canonical body with SEA
-    const SEA = window.Gun && window.Gun.SEA;
+    // sign canonical body with GDBxCrypto (self-sovereign, no gun)
+    const GDBxCrypto = window.GDBxCrypto;
     const canonical = { addr, action: "did.register", ts, payload: null };
-    const seaSig = await SEA.sign(canonical, pair);
+    const seaSig = await GDBxCrypto.sign(canonical, pair);
 
     const res = await fetch(`${API}/did/register`, {
       method: "POST",
@@ -325,7 +325,7 @@ async function loadLeaderboard() {
         nonce += 1;
         if (nonce > 500000) { log(termA, "[Node A] ✗ PoW timeout", "log-err"); return; }
       }
-      const SEA = window.Gun && window.Gun.SEA;
+      const SEA = window.GDBxCrypto;
       const deltas = [{ key, value, clock: ts }];
       const sig = await SEA.sign({ addr, action: "sync.put", ts, payload: JSON.stringify(deltas) }, pair);
       log(termA, `[Node A] → put ${key} = ${JSON.stringify(value)} (signed, PoW ✓)`, "log-info");

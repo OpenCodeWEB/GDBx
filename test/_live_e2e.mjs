@@ -1,13 +1,10 @@
-import { createRequire } from "node:module";
-const require = createRequire(import.meta.url);
-globalThis.Gun = require("gun");
-const SEA = require("gun/sea.js");
+import { pair as cryptoPair } from "../sdk/gdbx-crypto.js";
 
 import { makeAddress } from "../sdk/gdbx-codec.js";
 import { registerDID, resolveDID, putDeltas, getDeltas, purgeIdentity } from "../sdk/gdbx-sdk.js";
 
 const BASE = "https://gdbx.pages.dev";
-const pair = await SEA.pair();
+const pair = await cryptoPair();
 const jwk = await crypto.subtle.importKey(
   "jwk",
   { kty: "EC", crv: "P-256", x: pair.pub.split(".")[0], y: pair.pub.split(".")[1], ext: true },

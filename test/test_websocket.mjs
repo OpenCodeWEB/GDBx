@@ -13,11 +13,7 @@
  */
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
-if (!globalThis.Gun) globalThis.Gun = require("gun");
-const SEA = require("gun/sea.js");
+import { pair as cryptoPair, sign as cryptoSign } from "../sdk/gdbx-crypto.js";
 
 import { GDBxStorageObject } from "../worker/src/GDBxStorageDO.js";
 import { handleProtocolMessage, subscribeTestSocket, unsubscribeTestSocket, testSocketList } from "../worker/src/websocket_handler.js";
@@ -29,7 +25,7 @@ let pubkeyHex = null;
 let addr = null;
 
 before(async () => {
-  pair = await SEA.pair();
+  pair = await cryptoPair();
   pubkeyHex = await pubkeyToHex(pair);
   addr = makeAddress(pubkeyHex, 0);
 });
@@ -93,7 +89,7 @@ function fakeSocket() {
 async function registerDID(inst) {
   const t = Date.now();
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "did.register", t);
-  const sig = await SEA.sign(signBody(addr, "did.register", t, null), pair);
+  const sig = await cryptoSign(signBody(addr, "did.register", t, null), pair);
   const req = new Request("https://do.local/did", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -127,7 +123,7 @@ test("ws: put signed deltas → applied", async () => {
   const t = Date.now();
   const deltas = [{ key: "live/status", value: "online", clock: t }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
-  const sig = await SEA.sign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
   await handleProtocolMessage({
     type: "put", addr, pubkey: pair.pub, pubkeyHex,
     deltas, ts: t, nonce, diff, hash, sig,
@@ -147,12 +143,12 @@ test("ws: put with bad sig → error frame", async () => {
   const state = { addr, alive: true, lastPing: Date.now() };
   subscribeTestSocket(sock, state);
 
-  const other = await SEA.pair();
+  const other = await cryptoPair();
   const t = Date.now();
   const deltas = [{ key: "live/status", value: "hacked", clock: t }];
   // PoW mined with the real owner pub, but signed with a DIFFERENT key
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
-  const sig = await SEA.sign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), other);
+  const sig = await cryptoSign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), other);
   await handleProtocolMessage({
     type: "put", addr, pubkey: pair.pub, pubkeyHex,
     deltas, ts: t, nonce, diff, hash, sig,
@@ -170,7 +166,7 @@ test("ws: get → snapshot", async () => {
   const t = Date.now();
   const deltas = [{ key: "snap/one", value: 1, clock: t }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
-  const sig = await SEA.sign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
   const req = new Request("https://do.local/sync", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -214,7 +210,7 @@ test("ws: delta broadcast reaches second subscriber on same addr", async () => {
   const t = Date.now();
   const deltas = [{ key: "mesh/msg", value: "hello-peer", clock: t }];
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
-  const sig = await SEA.sign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
+  const sig = await cryptoSign(signBody(addr, "sync.put", t, JSON.stringify(deltas)), pair);
   await handleProtocolMessage({
     type: "put", addr, pubkey: pair.pub, pubkeyHex,
     deltas, ts: t, nonce, diff, hash, sig,

@@ -1,0 +1,8 @@
+{
+  "id": "self-sovereign-mesh",
+  "title": "Self-Sovereign Mesh, Firewall & Pool — gun-free zero-trust core",
+  "status": "spec_draft",
+  "created": "2026-08-21",
+  "phases": ["5"],
+  "tags": ["crypto", "mesh", "pool", "firewall", "supply-chain", "hybrid-transport"]
+}

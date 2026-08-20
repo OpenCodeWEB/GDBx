@@ -6,6 +6,7 @@
 | did-registry | DID registry + PoW gate (GDBxStorageDO) | completed | [spec](./tracks/did-registry/spec.md) | [plan](./tracks/did-registry/plan.md) |
 | crdt-sync | LWW-CRDT sync engine + Pages API v1 | completed | [spec](./tracks/crdt-sync/spec.md) | [plan](./tracks/crdt-sync/plan.md) |
 | hardening-realtime | Phase 4: replay protection, GDPR purge, rate limits, validation, WS live sync, export, leaderboard | completed | [spec](./tracks/hardening-realtime/spec.md) | [plan](./tracks/hardening-realtime/plan.md) |
+| self-sovereign-mesh | Phase 5: gun-free crypto core, zero-trust firewall (RBAC+ACL), replication pool, hybrid mesh (WS/Nostr/WebRTC), supply-chain hardening | plan_ready | [spec](./tracks/self-sovereign-mesh/spec.md) | [plan](./tracks/self-sovereign-mesh/plan.md) |
 
 ## Live deployment notes (2026-08-21)
 
