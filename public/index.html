@@ -1,77 +1,314 @@
-<!doctype html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GDBx ~ Global Decentralized DataBase Sync</title>
-<meta name="description" content="GDBx — one address, every technology. .GDBx TLD: Tor v3, I2P, Nostr, WebRTC, IPFS, GunDB mesh — all routable through one checksummed address.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDBx ~ Global Decentralized DataBase Sync — one address, every technology</title>
+<meta name="description" content="GDBx is an open-source, serverless, decentralized database sync protocol. A single checksummed .GDBx address routes every technology — Tor v3, I2P, Nostr, WebRTC, IPFS, GunDB mesh.">
+<meta name="theme-color" content="#020617">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, sans-serif; background: #0b1020; color: #e2e8f0; min-height: 100vh; }
-  header { padding: 24px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 12px; }
-  .logo { font-weight: 800; font-size: 20px; letter-spacing: 0.5px; }
-  .logo span { color: #22d3ee; }
-  .tag { color: #64748b; font-size: 13px; }
-  main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
-  h1 { font-size: 26px; line-height: 1.4; margin-bottom: 8px; }
-  h1 em { color: #22d3ee; font-style: normal; }
-  .sub { color: #94a3b8; margin-bottom: 28px; line-height: 1.6; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 32px; }
-  .card { background: #111a30; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
-  .card h3 { font-size: 14px; color: #22d3ee; margin-bottom: 8px; }
-  .card p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
-  .demo { background: #111a30; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-  .demo h2 { font-size: 16px; margin-bottom: 12px; }
-  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-  textarea, input, select { width: 100%; background: #0b1020; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 10px; font-family: ui-monospace, monospace; font-size: 13px; }
-  textarea { min-height: 90px; }
-  button { background: #0891b2; color: #04121a; border: 0; border-radius: 8px; padding: 10px 18px; font-weight: 700; cursor: pointer; margin-top: 10px; }
-  button:hover { background: #22d3ee; }
-  .out { margin-top: 12px; background: #0b1020; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: ui-monospace, monospace; font-size: 13px; word-break: break-all; color: #34d399; }
-  .err { color: #f87171; }
-  footer { text-align: center; color: #475569; font-size: 12px; padding: 20px; border-top: 1px solid #1e293b; }
-  a { color: #22d3ee; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .glow { box-shadow: 0 0 60px rgba(167,139,250,.18); }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+  .fade-in { animation: fadein .5s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .orb {
+    position: absolute; border-radius: 9999px; filter: blur(90px); opacity: .35; pointer-events: none;
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  .copyable { cursor: pointer; transition: background .2s; }
+  .copyable:hover { background: #1e293b; }
 </style>
 </head>
-<body>
-<header>
-  <div class="logo">GDB<span>x</span></div>
-  <div class="tag">Global Decentralized DataBase Sync — one address, every technology</div>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased overflow-x-hidden">
+
+<!-- ======= Header ======= -->
+<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg">
+        <i class="fa-solid fa-database"></i>
+      </div>
+      <div>
+        <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">GDBx</span>
+        <span class="text-xs ml-2 px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20 mono">gdbx.pages.dev</span>
+      </div>
+    </div>
+    <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-slate-300">
+      <a href="#protocol" class="hover:text-violet-300 transition-colors">Protocol</a>
+      <a href="#transports" class="hover:text-fuchsia-300 transition-colors">Transports</a>
+      <a href="#demo" class="hover:text-cyan-300 transition-colors">Codec Demo</a>
+      <a href="#api" class="hover:text-emerald-300 transition-colors">API</a>
+      <a href="#security" class="hover:text-amber-300 transition-colors">Security</a>
+      <a href="#roadmap" class="hover:text-rose-300 transition-colors">Roadmap</a>
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github"></i> GitHub</a>
+    </nav>
+  </div>
 </header>
-<main>
-  <h1>যেমন <em>.onion</em> Tor-কে বোঝায়, <em>.GDBx</em> বোঝায় Global Decentralized Database</h1>
-  <p class="sub">GDBx একটি ওপেনসোর্স, সার্ভারলেস, ডিসেন্ট্রালাইজড ডেটাবেস সিঙ্ক প্রোটোকল। একটি checksummed address দিয়ে Tor v3, I2P, Nostr, WebRTC, IPFS ও GunDB mesh — সব প্রযুক্তি একসাথে রাউটেবল।</p>
 
-  <div class="grid">
-    <div class="card"><h3>🔐 Checksummed Address</h3><p>BLAKE3 checksum + Base32 (RFC 4648) — 58-char, typo/forgery-proof, collision-resistant। Version ও Network byte সহ।</p></div>
-    <div class="card"><h3>🛰️ Multi-Transport</h3><p>এক address → WebRTC (&lt;20ms), Nostr (&lt;150ms), Tor v3, I2P, IPFS — স্বয়ংক্রিয় selection + fallback।</p></div>
-    <div class="card"><h3>🧬 CRDT Sync</h3><p>GunDB mesh-ভিত্তিক flat-primitives JSON, conflict-free merge, delta sync, presence heartbeat।</p></div>
-    <div class="card"><h3>⚡ Serverless</h3><p>Cloudflare Workers + Durable Objects + Pages — local-first, সেন্ট্রাল সার্ভার নেই।</p></div>
-  </div>
+<!-- ======= Hero ======= -->
+<section class="relative grid-bg border-b border-slate-800">
+  <div class="orb w-96 h-96 bg-violet-600 -top-20 -left-20"></div>
+  <div class="orb w-80 h-80 bg-cyan-500 top-40 right-0"></div>
+  <div class="max-w-6xl mx-auto px-4 py-24 relative">
+    <div class="flex items-center gap-2 mb-5 fade-in">
+      <span class="px-3 py-1 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25 text-xs font-semibold tracking-wide uppercase">Open Source</span>
+      <span class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 text-xs font-semibold tracking-wide uppercase">Serverless</span>
+      <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-xs font-semibold tracking-wide uppercase">Decentralized</span>
+    </div>
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+      One address.<br>
+      <span class="bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">Every technology.</span>
+    </h1>
+    <p class="mt-6 text-lg text-slate-400 max-w-2xl leading-relaxed">
+      Just as <code class="mono text-violet-300">.onion</code> identifies the Tor network,
+      <code class="mono text-cyan-300">.GDBx</code> identifies the <strong class="text-slate-200">Global Decentralized DataBase</strong> —
+      a cryptographically verifiable address that routes <strong class="text-slate-200">all of your technologies</strong> through one namespace.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      <a href="#demo" class="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-slate-950 font-bold hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/20">
+        <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Try the Codec
+      </a>
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="px-6 py-3 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:border-violet-500/50 hover:text-violet-300 transition-colors">
+        <i class="fa-brands fa-github mr-2"></i>View Source
+      </a>
+    </div>
 
-  <div class="demo" id="codec-demo">
-    <h2>🧪 .GDBx Address Codec Demo</h2>
-    <label for="pubkey">Public key (uncompressed P-256, hex — 04||X||Y, 130 chars)</label>
-    <textarea id="pubkey" placeholder="0404f2d1..."></textarea>
-    <label for="network" style="margin-top:10px">Network</label>
-    <select id="network">
-      <option value="0">mainnet</option>
-      <option value="1">testnet</option>
-      <option value="2">local</option>
-    </select>
-    <button id="gen">Generate .GDBx address</button>
-    <div class="out" id="out" style="display:none"></div>
+    <!-- live status strip -->
+    <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur p-4">
+        <div class="text-2xl font-extrabold mono text-violet-300">58</div>
+        <div class="text-xs text-slate-500 mt-1">char address · base32</div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur p-4">
+        <div class="text-2xl font-extrabold mono text-cyan-300">BLAKE3</div>
+        <div class="text-xs text-slate-500 mt-1">checksummed · forgery-proof</div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur p-4">
+        <div class="text-2xl font-extrabold mono text-fuchsia-300">6</div>
+        <div class="text-xs text-slate-500 mt-1">transport protocols</div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur p-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xl font-extrabold mono text-emerald-300" id="health-txt">…</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-1">API · live status</div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="demo" id="verify-demo">
-    <h2>🔎 Validate an address</h2>
-    <input id="check" placeholder="paste a .gdbx address">
-    <button id="verify">Validate</button>
-    <div class="out" id="vout" style="display:none"></div>
+<!-- ======= Protocol ======= -->
+<section id="protocol" class="max-w-6xl mx-auto px-4 py-20">
+  <h2 class="text-3xl font-extrabold tracking-tight mb-2">The <span class="bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">.GDBx</span> Protocol</h2>
+  <p class="text-slate-400 mb-10 max-w-2xl">A production-grade address namespace, evolved from the Tor v3 onion design — checksummed, versioned, and network-aware.</p>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-violet-500/40 transition-colors fade-in">
+      <div class="w-11 h-11 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-lock"></i></div>
+      <h3 class="font-bold text-lg">Checksummed Address</h3>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">BLAKE3 checksum + Base32 (RFC 4648). Typo-proof, forgery-proof, collision-resistant — with version &amp; network bytes built in.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-cyan-500/40 transition-colors fade-in">
+      <div class="w-11 h-11 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-satellite"></i></div>
+      <h3 class="font-bold text-lg">Multi-Transport</h3>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">One address → WebRTC (&lt;20ms), Nostr (&lt;150ms), Tor v3, I2P, IPFS, GunDB mesh. Automatic selection + fallback.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-fuchsia-500/40 transition-colors fade-in">
+      <div class="w-11 h-11 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-dna"></i></div>
+      <h3 class="font-bold text-lg">CRDT Sync</h3>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">GunDB mesh-based flat-primitives JSON. Conflict-free merge, delta sync, presence heartbeat, automatic pruning.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-emerald-500/40 transition-colors fade-in">
+      <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-bolt"></i></div>
+      <h3 class="font-bold text-lg">Serverless</h3>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">Cloudflare Workers + Durable Objects + Pages. Local-first by design — no central server, no single point of failure.</p>
+    </div>
   </div>
-</main>
-<footer>GDBx — MIT License · <a href="https://github.com/OpenCodeWEB/GDBX">github.com/OpenCodeWEB/GDBX</a> · Live: gdbx.pages.dev</footer>
+</section>
+
+<!-- ======= Transports ======= -->
+<section id="transports" class="border-y border-slate-800 bg-slate-900/30">
+  <div class="max-w-6xl mx-auto px-4 py-20">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-2">Every <span class="bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">Technology</span>, One Address</h2>
+    <p class="text-slate-400 mb-10 max-w-2xl">Route to any network through a single .GDBx address — the protocol picks the fastest available path.</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-violet-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-user-secret"></i></div>
+        <div><div class="font-bold">Tor v3 <span class="text-xs text-slate-500 mono">.onion</span></div><div class="text-xs text-slate-500 mt-1">anonymous, encrypted circuits</div></div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-fuchsia-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-mask"></i></div>
+        <div><div class="font-bold">I2P <span class="text-xs text-slate-500 mono">.i2p</span></div><div class="text-xs text-slate-500 mt-1">garlic-routed anonymity</div></div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-cyan-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-xl shrink-0"><i class="fa-brands fa-nfc-directional"></i></div>
+        <div><div class="font-bold">Nostr <span class="text-xs text-slate-500 mono">&lt;150ms</span></div><div class="text-xs text-slate-500 mt-1">relay-based event mesh</div></div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-emerald-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-tower-broadcast"></i></div>
+        <div><div class="font-bold">WebRTC <span class="text-xs text-slate-500 mono">&lt;20ms</span></div><div class="text-xs text-slate-500 mt-1">direct P2P, NAT-traversal</div></div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-amber-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-diagram-project"></i></div>
+        <div><div class="font-bold">IPFS <span class="text-xs text-slate-500 mono">CID</span></div><div class="text-xs text-slate-500 mt-1">content-addressed storage</div></div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-rose-500/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-network-wired"></i></div>
+        <div><div class="font-bold">GunDB mesh</div><div class="text-xs text-slate-500 mt-1">serverless P2P database</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= Codec Demo ======= -->
+<section id="demo" class="max-w-6xl mx-auto px-4 py-20">
+  <h2 class="text-3xl font-extrabold tracking-tight mb-2"><i class="fa-solid fa-wand-magic-sparkles text-violet-400 mr-2"></i>Live Codec Demo</h2>
+  <p class="text-slate-400 mb-8 max-w-2xl">Generate a .GDBx address from an uncompressed P-256 public key, or validate any address — fully client-side, zero data leaves your browser.</p>
+  <div class="grid lg:grid-cols-2 gap-6">
+
+    <!-- generate -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 glow">
+      <h3 class="font-bold text-lg mb-1">Generate</h3>
+      <p class="text-xs text-slate-500 mb-4">Public key — uncompressed P-256, hex (04||X||Y, 130 chars)</p>
+      <textarea id="pubkey" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 mono text-sm text-cyan-300 focus:outline-none focus:border-violet-500" placeholder="0404f2d1..."></textarea>
+      <div class="flex flex-wrap items-center gap-3 mt-4">
+        <label class="text-xs text-slate-500">Network</label>
+        <select id="network" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm mono text-slate-300 focus:outline-none focus:border-violet-500">
+          <option value="0">mainnet</option>
+          <option value="1">testnet</option>
+          <option value="2">local</option>
+        </select>
+        <button id="gen" class="ml-auto px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-slate-950 font-bold text-sm hover:opacity-90 transition-opacity">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Generate
+        </button>
+      </div>
+      <div id="out" class="hidden mt-4 rounded-xl bg-slate-950 border border-slate-800 p-4 mono text-sm leading-relaxed"></div>
+    </div>
+
+    <!-- validate -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <h3 class="font-bold text-lg mb-1">Validate</h3>
+      <p class="text-xs text-slate-500 mb-4">Paste any .gdbx address — checksum, version &amp; network are verified instantly</p>
+      <input id="check" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 mono text-sm text-cyan-300 focus:outline-none focus:border-violet-500" placeholder="abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwxyz234567.gdbx">
+      <div class="mt-4 flex justify-end">
+        <button id="verify" class="px-5 py-2 rounded-xl border border-cyan-500/40 text-cyan-300 font-bold text-sm hover:bg-cyan-500/10 transition-colors">
+          <i class="fa-solid fa-shield-halved mr-1"></i>Validate
+        </button>
+      </div>
+      <div id="vout" class="hidden mt-4 rounded-xl bg-slate-950 border border-slate-800 p-4 mono text-sm leading-relaxed"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= API ======= -->
+<section id="api" class="border-y border-slate-800 bg-slate-900/30">
+  <div class="max-w-6xl mx-auto px-4 py-20">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-2"><i class="fa-solid fa-code text-emerald-400 mr-2"></i>Public API</h2>
+    <p class="text-slate-400 mb-8 max-w-2xl">The GDBx API is open and CORS-enabled — build against it from any client, no keys required.</p>
+    <div class="space-y-3">
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
+        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
+        <code class="mono text-sm text-slate-200">/api/v1/address</code>
+        <span class="text-xs text-slate-500 ml-auto">pubkey → .gdbx address + DID</span>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
+        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
+        <code class="mono text-sm text-slate-200">/api/v1/address/:addr</code>
+        <span class="text-xs text-slate-500 ml-auto">validate + describe any address</span>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
+        <span class="px-2.5 py-1 rounded-md bg-violet-500/15 text-violet-300 text-xs font-bold mono">GET</span>
+        <code class="mono text-sm text-slate-200">/api/v1/health</code>
+        <span class="text-xs text-slate-500 ml-auto">liveness + timestamp</span>
+      </div>
+    </div>
+    <div class="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
+      <div class="text-slate-500 mb-2"># generate an address</div>
+      <div class="text-slate-200">curl -X POST https://gdbx.pages.dev/api/v1/address \<br>
+      <span class="text-slate-500">  -H</span> <span class="text-emerald-300">"content-type: application/json"</span> \<br>
+      <span class="text-slate-500">  -d</span> <span class="text-emerald-300">'{"pubkey":"040102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40","network":0}'</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= Security ======= -->
+<section id="security" class="max-w-6xl mx-auto px-4 py-20">
+  <h2 class="text-3xl font-extrabold tracking-tight mb-2"><i class="fa-solid fa-shield-halved text-amber-400 mr-2"></i>Security Model</h2>
+  <p class="text-slate-400 mb-10 max-w-2xl">Every layer of GDBx is hardened — from the address itself to the sync fabric.</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <h3 class="font-bold mb-2"><span class="text-amber-300 mono">01</span> BLAKE3 Checksum</h3>
+      <p class="text-sm text-slate-400 leading-relaxed">First 2 bytes of BLAKE3 over the payload — a single typo or forgery attempt is detected instantly. Same pattern proven by Tor v3 onion addresses.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <h3 class="font-bold mb-2"><span class="text-amber-300 mono">02</span> SEA Identity</h3>
+      <p class="text-sm text-slate-400 leading-relaxed">ECDSA P-256 public keys via Gun SEA. <code class="mono text-amber-300">did:gdbx:&lt;addr&gt;</code> — verifiable identity without any central authority.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <h3 class="font-bold mb-2"><span class="text-amber-300 mono">03</span> PoW Anti-Spam</h3>
+      <p class="text-sm text-slate-400 leading-relaxed">Difficulty-scaled proof-of-work gates writes — network abuse becomes economically infeasible while honest peers stay instant.</p>
+    </div>
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <h3 class="font-bold mb-2"><span class="text-amber-300 mono">04</span> Signed Deltas</h3>
+      <p class="text-sm text-slate-400 leading-relaxed">HMAC-SHA256 signed CRDT deltas — only authorized mutations merge into the mesh. End-to-end integrity at every hop.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======= Roadmap ======= -->
+<section id="roadmap" class="border-t border-slate-800 bg-slate-900/30">
+  <div class="max-w-6xl mx-auto px-4 py-20">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-8"><i class="fa-solid fa-map text-rose-400 mr-2"></i>Roadmap</h2>
+    <div class="space-y-4">
+      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
+        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
+        <div><div class="font-bold">Phase 0 · Scaffold</div><div class="text-sm text-slate-400">Conductor setup, Cloudflare Pages + Worker, CI-ready repo</div></div>
+      </div>
+      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
+        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
+        <div><div class="font-bold">Phase 1 · Address Codec</div><div class="text-sm text-slate-400">.GDBx format (BLAKE3 + base32), DID resolver, full test suite</div></div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex items-center gap-4">
+        <span class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-satellite text-sm"></i></span>
+        <div><div class="font-bold">Phase 2 · Multi-Transport Router + DID</div><div class="text-sm text-slate-400">WebRTC / Nostr / Tor / I2P / IPFS routing with automatic fallback</div></div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex items-center gap-4">
+        <span class="w-8 h-8 rounded-full bg-fuchsia-500/20 text-fuchsia-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-dna text-sm"></i></span>
+        <div><div class="font-bold">Phase 3 · CRDT Sync Engine</div><div class="text-sm text-slate-400">GDBxStorageDO — delta sync, presence heartbeat, pruning</div></div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex items-center gap-4">
+        <span class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-shield-halved text-sm"></i></span>
+        <div><div class="font-bold">Phase 4 · Hardening + Audit</div><div class="text-sm text-slate-400">Security review, rate limits, abuse mitigation, live load testing</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= Footer ======= -->
+<footer class="border-t border-slate-800 py-10">
+  <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database"></i></div>
+      <span class="text-sm text-slate-400">GDBx — MIT License · By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
+    </div>
+    <div class="flex items-center gap-4 text-sm text-slate-500">
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github mr-1"></i>github.com/OpenCodeWEB/GDBX</a>
+      <span class="mono text-xs">gdbx.pages.dev</span>
+    </div>
+  </div>
+</footer>
+
 <script type="importmap">
 {
   "imports": {

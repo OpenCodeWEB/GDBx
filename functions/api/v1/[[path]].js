@@ -1,7 +1,13 @@
 /**
- * /api/v1/* — GDBx public API (Pages Functions → Worker Durable Objects).
+ * /api/v1/* — GDBx public API (Pages Functions → GDBxStorageDO).
  *
- *   POST /api/v1/address   { pubkey (hex), network? } → { address, did, network }
+ *   POST /api/v1/did/register  { addr, pubkey, didDoc?, ts, nonce, diff, hash, sig }
+ *   GET  /api/v1/did/:addr              → DID document
+ *   POST /api/v1/sync                  { addr, pubkey, deltas[], ts, nonce, diff, hash, sig }
+ *   GET  /api/v1/sync/:addr?prefix=key  → signed state map
+ *   POST /api/v1/peers                 { addr, pubkey, transports[] }  (presence)
+ *   GET  /api/v1/stats                  → live ledger stats
+ *   POST /api/v1/address                { pubkey (hex), network? } → address + DID
  *   GET  /api/v1/address/:addr          → validate + describe
  *   GET  /api/v1/health                 → liveness
  */
@@ -22,10 +28,12 @@ export async function onRequest(context) {
   const path = url.pathname.replace(/^\/api\/v1\/?/, "");
   const segments = path.split("/").filter(Boolean);
 
+  /* ── health (no DO needed) ─────────────────────────────────────── */
   if (segments[0] === "health" && request.method === "GET") {
     return json({ ok: true, service: "gdbx", ts: Date.now() });
   }
 
+  /* ── address codec (no DO needed) ──────────────────────────────── */
   if (segments[0] === "address" && request.method === "POST" && segments.length === 1) {
     let body;
     try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
@@ -65,14 +73,53 @@ export async function onRequest(context) {
     });
   }
 
+  /* ── DID ───────────────────────────────────────────────────────── */
+  if (segments[0] === "did" && segments[1] === "register" && request.method === "POST") {
+    return await storageFetch(env, "/did", request);
+  }
+  if (segments[0] === "did" && segments.length === 2 && request.method === "GET") {
+    return await storageFetch(env, "/did/" + segments[1], request);
+  }
+
+  /* ── sync ──────────────────────────────────────────────────────── */
+  if (segments[0] === "sync" && request.method === "POST") {
+    return await storageFetch(env, "/sync", request);
+  }
+  if (segments[0] === "sync" && segments.length >= 2 && request.method === "GET") {
+    const rest = segments.slice(1).join("/");
+    return await storageFetch(env, "/sync/" + rest, request);
+  }
+
+  /* ── presence + stats ──────────────────────────────────────────── */
+  if (segments[0] === "peers" && request.method === "POST") {
+    return await storageFetch(env, "/peers", request);
+  }
+  if (segments[0] === "stats" && request.method === "GET") {
+    return await storageFetch(env, "/stats", request);
+  }
+
   return json({ error: "not found" }, 404);
+}
+
+/** Proxy to the GDBxStorageObject Durable Object. */
+async function storageFetch(env, targetPath, request) {
+  const id = env.GDBX_STORAGE.idFromName("default");
+  const stub = env.GDBX_STORAGE.get(id);
+  const target = new URL(request.url);
+  target.pathname = targetPath;
+  const proxy = new Request(target.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.method === "POST" ? await request.text() : undefined,
+  });
+  return stub.fetch(proxy);
 }
 
 let _codec = null;
 async function importCodec() {
   // Pages Functions bundler only resolves within the functions/ tree (plus
   // node_modules) — keep a synced copy at functions/_lib/gdbx-codec.js
-  // (canonical source: sdk/gdbx-codec.js; test_codec.mjs asserts equality).
+  // (canonical source: sdk/gdbx-codec.js; tests assert equality).
   if (!_codec) _codec = await import("../../_lib/gdbx-codec.js");
   return _codec;
 }
