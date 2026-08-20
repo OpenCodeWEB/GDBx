@@ -70,7 +70,7 @@ export async function onRequest(context) {
 
 let _codec = null;
 async function importCodec() {
-  if (!_codec) _codec = await import("../../../../sdk/gdbx-codec.js");
+  if (!_codec) _codec = await import("/sdk/gdbx-codec.js");
   return _codec;
 }
 
