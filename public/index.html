@@ -266,7 +266,7 @@
         <div class="term-head">
           <span class="term-dot bg-rose-500"></span><span class="term-dot bg-amber-400"></span><span class="term-dot bg-emerald-400"></span>
           <span class="ml-2 text-xs mono text-slate-400">Node B — live subscriber</span>
-          <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 mono">wss://gdbx.pages.dev</span>
+          <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 mono">wss://gdbx-do.xup.workers.dev</span>
         </div>
         <div class="term-body" id="term-b">
           <div class="log-info">// GDBx sandbox — Node B</div>
@@ -387,8 +387,8 @@
       <div class="text-slate-200">curl -X POST https://gdbx.pages.dev/api/v1/did/register \<br>
       <span class="text-slate-500">  -H</span> <span class="text-emerald-300">"content-type: application/json"</span> \<br>
       <span class="text-slate-500">  -d</span> <span class="text-emerald-300">'{"addr":"&lt;58-char&gt;","pubkey":"&lt;SEA pub&gt;","pubkeyHex":"04…","ts":…,"nonce":…,"diff":…,"hash":"…","sig":"…"}'</span></div>
-      <div class="text-slate-500 mt-3 mb-2"># real-time sync over WebSocket</div>
-      <div class="text-slate-200">const ws = new WebSocket(<span class="text-cyan-300">"wss://gdbx.pages.dev/api/v1/ws?addr=&lt;addr&gt;"</span>)</div>
+      <div class="text-slate-500 mt-3 mb-2"># real-time sync over WebSocket (served by the gdbx-do Worker — Pages does not proxy WS upgrades)</div>
+      <div class="text-slate-200">const ws = new WebSocket(<span class="text-cyan-300">"wss://gdbx-do.xup.workers.dev/ws?addr=&lt;addr&gt;"</span>)</div>
     </div>
   </div>
 </section>
@@ -496,6 +496,9 @@
   }
 }
 </script>
+<!-- Gun SEA (global) for the live sync sandbox — loaded classic-style so window.Gun.SEA is available to module scripts -->
+<script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1241/gun.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1241/sea.js" defer></script>
 <script type="module" src="/js/gdbx-codec.js"></script>
 <script type="module" src="/js/gdbx-demo.js"></script>
 <script type="module" src="/js/gdbx-live.js"></script>

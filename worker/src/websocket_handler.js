@@ -1,7 +1,9 @@
 /**
  * websocket_handler.js — Real-time WebSocket sync for GDBx.
  *
- * Endpoint: /ws?addr=:addr (plain HTTP worker path, proxied from Pages)
+ * Endpoint: /ws?addr=:addr (served by the gdbx-do Worker's Durable Object —
+ * the hub lives INSIDE the DO instance so all sockets for the same address
+ * share one isolate and broadcasts are reliable).
  *
  * Protocol (JSON text frames):
  *   client → { type:"hello", addr, pubkey }             — identify
@@ -14,7 +16,7 @@
  *   server → { type:"snapshot", addr, entries[] }
  *   client → { type:"ping" } / server → { type:"pong" }
  *
- * Broadcast scope: all sockets subscribed to the same addr (edge-local).
+ * Broadcast scope: all sockets subscribed to the same addr (DO-local hub).
  */
 
 const JSON_HEADERS = {
@@ -27,11 +29,18 @@ const JSON_HEADERS = {
 const PING_INTERVAL_MS = 30_000;
 const MAX_SOCKETS = 256;
 
-const sockets = new Set(); // all open websockets (single isolate — edge-local)
-const socketStates = new WeakMap(); // server socket → { addr, alive, lastPing }
+/**
+ * Create a self-contained WebSocket hub. Each hub owns its own socket set —
+ * embed one inside the Durable Object so every connection for the address
+ * lands in the same isolate (singleton DO) and broadcast works end to end.
+ *
+ * @param {(env:object)=>object} getStorageStub  returns a DO-like stub {fetch}
+ */
+export function createWebSocketHub(getStorageStub) {
+  const sockets = new Set(); // all open websockets (hub-local)
+  const socketStates = new WeakMap(); // server socket → { addr, alive, lastPing }
 
-export function registerWebSocketHandler(getStorageStub) {
-  return async function onWebSocket(request, env) {
+  async function accept(request, env) {
     const url = new URL(request.url);
     const addr = (url.searchParams.get("addr") || "").toLowerCase();
     if (!/^[a-z2-7]{58}$/.test(addr)) {
@@ -68,7 +77,7 @@ export function registerWebSocketHandler(getStorageStub) {
       }
 
       try {
-        await handleMessage(msg, server, state, getStorageStub, env);
+        await handleMessage(msg, server, state, env);
       } catch (e) {
         server.send(JSON.stringify({ type: "error", error: String(e?.message || e) }));
       }
@@ -101,112 +110,131 @@ export function registerWebSocketHandler(getStorageStub) {
 
     server.send(JSON.stringify({ type: "welcome", addr, ts: Date.now() }));
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async function handleMessage(msg, server, state, env, storageStubOverride) {
+    const storageStub = storageStubOverride || getStorageStub(env);
+    switch (msg.type) {
+      case "hello": {
+        const addr = (msg.addr || "").toLowerCase();
+        if (!/^[a-z2-7]{58}$/.test(addr)) {
+          server.send(JSON.stringify({ type: "error", error: "invalid addr" }));
+          return;
+        }
+        state.addr = addr;
+        server.send(JSON.stringify({ type: "welcome", addr, ts: Date.now() }));
+        return;
+      }
+
+      case "put": {
+        if (!state.addr) {
+          server.send(JSON.stringify({ type: "error", error: "send hello first" }));
+          return;
+        }
+        // reuse the exact same validation path as POST /sync
+        const stub = storageStub;
+        const body = { ...msg, addr: msg.addr || state.addr };
+        const target = new URL("https://do.local/sync");
+        const proxy = new Request(target.toString(), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const res = await stub.fetch(proxy);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          server.send(JSON.stringify({ type: "error", error: data.error || `HTTP ${res.status}`, status: res.status }));
+          return;
+        }
+        server.send(JSON.stringify({ type: "applied", addr: data.addr, applied: data.applied, ts: Date.now() }));
+        // live broadcast to every subscriber of the same addr — including the
+        // sender (like Gun's own-write echo): a single client can therefore
+        // observe its own writes landing, and cross-client peers get them too.
+        const appliedDeltas = Array.isArray(msg.deltas) ? msg.deltas : [];
+        for (const s of sockets) {
+          const otherState = socketStates.get(s);
+          if (otherState && otherState.addr === data.addr) {
+            for (const d of appliedDeltas) {
+              s.send(JSON.stringify({
+                type: "delta",
+                addr: data.addr,
+                key: d.key,
+                value: d.value,
+                clock: d.clock,
+                ownerPub: msg.pubkey || null,
+              }));
+            }
+          }
+        }
+        return;
+      }
+
+      case "get": {
+        if (!state.addr) {
+          server.send(JSON.stringify({ type: "error", error: "send hello first" }));
+          return;
+        }
+        const stub = storageStub;
+        const prefix = msg.prefix ? `?prefix=${encodeURIComponent(String(msg.prefix))}` : "";
+        const target = new URL(`https://do.local/sync/${state.addr}${prefix}`);
+        const proxy = new Request(target.toString(), { method: "GET" });
+        const res = await stub.fetch(proxy);
+        const data = await res.json().catch(() => ({}));
+        server.send(JSON.stringify({ type: "snapshot", addr: state.addr, count: data.count || 0, entries: data.entries || [] }));
+        return;
+      }
+
+      case "ping":
+        state.lastPing = Date.now();
+        server.send(JSON.stringify({ type: "pong" }));
+        return;
+
+      default:
+        server.send(JSON.stringify({ type: "error", error: "unknown message type: " + msg.type }));
+    }
+  }
+
+  return {
+    accept,
+    handleMessage,
+    sockets,
+    socketStates,
+    subscribe(socket, state) {
+      sockets.add(socket);
+      socketStates.set(socket, state);
+    },
+    unsubscribe(socket) {
+      sockets.delete(socket);
+      socketStates.delete(socket);
+    },
+    list() {
+      return [...sockets];
+    },
   };
 }
 
-async function handleMessage(msg, server, state, getStorageStub, env) {
-  switch (msg.type) {
-    case "hello": {
-      const addr = (msg.addr || "").toLowerCase();
-      if (!/^[a-z2-7]{58}$/.test(addr)) {
-        server.send(JSON.stringify({ type: "error", error: "invalid addr" }));
-        return;
-      }
-      state.addr = addr;
-      server.send(JSON.stringify({ type: "welcome", addr, ts: Date.now() }));
-      return;
-    }
+/* ── Backwards-compatible module-level hub (used by tests) ────────── */
 
-    case "put": {
-      if (!state.addr) {
-        server.send(JSON.stringify({ type: "error", error: "send hello first" }));
-        return;
-      }
-      // reuse the exact same validation path as POST /sync
-      const stub = await getStorageStub(env);
-      const body = { ...msg, addr: msg.addr || state.addr };
-      const target = new URL("https://do.local/sync");
-      const proxy = new Request(target.toString(), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const res = await stub.fetch(proxy);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        server.send(JSON.stringify({ type: "error", error: data.error || `HTTP ${res.status}`, status: res.status }));
-        return;
-      }
-      server.send(JSON.stringify({ type: "applied", addr: data.addr, applied: data.applied, ts: Date.now() }));
-      // live broadcast to other subscribers of the same addr
-      const appliedDeltas = Array.isArray(msg.deltas) ? msg.deltas : [];
-      for (const s of sockets) {
-        if (s === server) continue;
-        const otherState = socketState(s);
-        if (otherState && otherState.addr === data.addr) {
-          for (const d of appliedDeltas) {
-            s.send(JSON.stringify({
-              type: "delta",
-              addr: data.addr,
-              key: d.key,
-              value: d.value,
-              clock: d.clock,
-              ownerPub: msg.pubkey || null,
-            }));
-          }
-        }
-      }
-      return;
-    }
-
-    case "get": {
-      if (!state.addr) {
-        server.send(JSON.stringify({ type: "error", error: "send hello first" }));
-        return;
-      }
-      const stub = await getStorageStub(env);
-      const prefix = msg.prefix ? `?prefix=${encodeURIComponent(String(msg.prefix))}` : "";
-      const target = new URL(`https://do.local/sync/${state.addr}${prefix}`);
-      const proxy = new Request(target.toString(), { method: "GET" });
-      const res = await stub.fetch(proxy);
-      const data = await res.json().catch(() => ({}));
-      server.send(JSON.stringify({ type: "snapshot", addr: state.addr, count: data.count || 0, entries: data.entries || [] }));
-      return;
-    }
-
-    case "ping":
-      state.lastPing = Date.now();
-      server.send(JSON.stringify({ type: "pong" }));
-      return;
-
-    default:
-      server.send(JSON.stringify({ type: "error", error: "unknown message type: " + msg.type }));
-  }
-}
-
-/** Track addr per socket (weakly) for broadcast targeting. */
-function socketState(socket) {
-  return socketStates.get(socket) || null;
-}
+const defaultHub = createWebSocketHub(() => {
+  throw new Error("default hub requires a storage stub — pass it explicitly");
+});
 
 /** Exposed for tests: process one protocol message against a fake socket. */
 export async function handleProtocolMessage(msg, socket, state, storageStub) {
-  await handleMessage(msg, socket, state, () => Promise.resolve(storageStub), {});
+  await defaultHub.handleMessage(msg, socket, state, {}, storageStub);
 }
 
 /** Exposed for tests: subscribe a fake socket to broadcast addr. */
 export function subscribeTestSocket(socket, state) {
-  sockets.add(socket);
-  socketStates.set(socket, state);
+  defaultHub.subscribe(socket, state);
 }
 
 /** Exposed for tests: unsubscribe. */
 export function unsubscribeTestSocket(socket) {
-  sockets.delete(socket);
-  socketStates.delete(socket);
+  defaultHub.unsubscribe(socket);
 }
 
 /** Exposed for tests: list currently subscribed fake sockets. */
 export function testSocketList() {
-  return [...sockets];
+  return defaultHub.list();
 }

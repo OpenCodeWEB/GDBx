@@ -19,7 +19,7 @@
 
 import { verifyPoW, verifySeaSig, checkReplay } from "./verify.js";
 import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
-import { registerWebSocketHandler } from "./websocket_handler.js";
+import { createWebSocketHub } from "./websocket_handler.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -43,6 +43,10 @@ export class GDBxStorageObject {
     this.initialized = this.initialize();
     this.buckets = new Map(); // in-memory rate limiter
     this.seenNonces = new Map(); // nonce → ts (replay cache)
+    // WebSocket hub lives INSIDE the DO instance: the DO is a singleton
+    // isolate per name, so every socket for the address shares one hub and
+    // delta broadcasts are reliable (no cross-isolate misses).
+    this.wsHub = createWebSocketHub(() => this);
   }
 
   async initialize() {
@@ -99,6 +103,11 @@ export class GDBxStorageObject {
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
 
     try {
+      /* Real-time WebSocket sync: /ws?addr=:addr (upgrade handled inside the DO hub) */
+      if (url.pathname === "/ws" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+        return await this.wsHub.accept(request, this.env);
+      }
+
       /* DID */
       if (url.pathname === "/did" && request.method === "POST") {
         if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
@@ -600,15 +609,9 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
 
-    // Real-time WebSocket sync: /ws?addr=:addr
-    if (url.pathname === "/ws" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
-      const wsHandler = registerWebSocketHandler((e) => {
-        const id = e.GDBX_STORAGE.idFromName("default");
-        return e.GDBX_STORAGE.get(id);
-      });
-      return wsHandler(request, env);
-    }
-
+    // Everything (HTTP + WS upgrades) is handled by the Durable Object —
+    // the DO is a singleton isolate, so the WebSocket hub inside it sees
+    // every connection and broadcasts reliably.
     const id = env.GDBX_STORAGE.idFromName("default");
     const stub = env.GDBX_STORAGE.get(id);
     return stub.fetch(request);

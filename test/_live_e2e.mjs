@@ -4,7 +4,7 @@ globalThis.Gun = require("gun");
 const SEA = require("gun/sea.js");
 
 import { makeAddress } from "../sdk/gdbx-codec.js";
-import { minePoW, signBody, registerDID, resolveDID, putDeltas, getDeltas } from "../sdk/gdbx-sdk.js";
+import { registerDID, resolveDID, putDeltas, getDeltas, purgeIdentity } from "../sdk/gdbx-sdk.js";
 
 const BASE = "https://gdbx.pages.dev";
 const pair = await SEA.pair();
@@ -30,20 +30,28 @@ const reg = await registerDID({
   didDoc: { services: [{ id: "did:gdbx#transport", type: "GDBxTransportRouting", serviceEndpoint: { webrtc: "peer-live", nostr: ["wss://relay.damus.io"] } }] },
   pair,
 });
-console.log("register:", reg.status, reg.data?.created, reg.data?.error || "");
+console.log("register:", reg.ok ? "OK" : "FAIL", reg.created, reg.error || "");
 
 const res = await resolveDID(addr);
-console.log("resolve:", res.status, res.data?.did?.id === `did:gdbx:${addr}` ? "OK" : JSON.stringify(res.data).slice(0, 120));
+console.log("resolve:", res.ok, res.did?.id === `did:gdbx:${addr}` ? "OK" : JSON.stringify(res).slice(0, 120));
 
 const put = await putDeltas({
   addr, pubkey: pair.pub, pubkeyHex, pair,
   deltas: [{ key: "profile/name", value: "LiveTest", clock: Date.now() }],
 });
-console.log("put:", put.status, put.data?.applied, put.data?.error || "");
+console.log("put:", put.ok, put.applied, put.error || "");
 
 const get = await getDeltas(addr);
-const name = get.data?.state?.["profile/name"] || get.data?.state?.value;
-console.log("get:", get.status, "state keys:", get.data?.state ? Object.keys(get.data.state).length : 0, "name:", name);
+const name = get.entries?.find((e) => e.key === "profile/name")?.value;
+console.log("get:", get.ok, "count:", get.count, "name:", name);
 
 const stats = await fetch(BASE + "/api/v1/stats").then((r) => r.json());
 console.log("stats:", JSON.stringify(stats).slice(0, 160));
+
+const purge = await purgeIdentity({ addr, pubkey: pair.pub, pubkeyHex, pair });
+console.log("purge:", purge.ok, "erased:", purge.erased, purge.error || "");
+
+const after = await resolveDID(addr).catch((e) => ({ error: e.message }));
+console.log("after purge resolve:", after.error || "still resolvable (BAD)");
+
+console.log("LIVE E2E:", reg.ok && res.ok && put.ok && get.ok && purge.ok && after.error ? "PASS" : "FAIL");

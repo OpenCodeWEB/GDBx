@@ -8,6 +8,9 @@
  *    Node B receives the live delta broadcast.
  */
 const API = "https://gdbx.pages.dev/api/v1";
+// WebSocket live sync is served directly by the gdbx-do Worker (Pages Functions
+// cannot forward the WS upgrade handshake — Cloudflare limitation).
+const WS_BASE = "wss://gdbx-do.xup.workers.dev/ws";
 const $ = (id) => document.getElementById(id);
 
 /* ── Hero: animated mesh topology ─────────────────────────────── */
@@ -197,7 +200,8 @@ async function loadLeaderboard() {
   let pubkeyHex = null;
   let addr = null;
   try {
-    const SEA = (await import("https://esm.sh/gun@0.9.999/sea.js")).default;
+    const SEA = window.Gun && window.Gun.SEA;
+    if (!SEA) throw new Error("Gun SEA not loaded");
     pair = await SEA.pair();
     const [x, y] = pair.pub.split(".");
     const key = await crypto.subtle.importKey(
@@ -226,8 +230,9 @@ async function loadLeaderboard() {
     return;
   }
 
-  let ws = null;
+  let ws = null; // single sandbox socket — Node A writes, delta echoes feed Node B pane
   let registered = false;
+  let retryMs = 5000; // backoff: 5s → 10s → 20s (cap)
 
   const ensureRegistered = async () => {
     if (registered) return true;
@@ -244,7 +249,7 @@ async function loadLeaderboard() {
       if (nonce > 500000) return false;
     }
     // sign canonical body with SEA
-    const SEA = (await import("https://esm.sh/gun@0.9.999/sea.js")).default;
+    const SEA = window.Gun && window.Gun.SEA;
     const canonical = { addr, action: "did.register", ts, payload: null };
     const seaSig = await SEA.sign(canonical, pair);
 
@@ -272,8 +277,9 @@ async function loadLeaderboard() {
 
   const connect = () => {
     try {
-      ws = new WebSocket(`wss://gdbx.pages.dev/api/v1/ws?addr=${addr}`);
+      ws = new WebSocket(`${WS_BASE}?addr=${addr}`);
       ws.onopen = () => {
+        retryMs = 5000;
         ws.send(JSON.stringify({ type: "hello", addr }));
         if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i>connected — live sync ready</span>`;
         log(termB, `[Node B] subscribed to ${addr.slice(0, 12)}… via WebSocket`, "log-ok");
@@ -291,7 +297,8 @@ async function loadLeaderboard() {
       };
       ws.onclose = () => {
         if (statusEl) statusEl.innerHTML = `<span class="text-slate-500">disconnected — retrying…</span>`;
-        setTimeout(connect, 3000);
+        setTimeout(connect, retryMs);
+        retryMs = Math.min(retryMs * 2, 20000);
       };
       ws.onerror = () => { try { ws.close(); } catch {} };
     } catch {
@@ -318,7 +325,7 @@ async function loadLeaderboard() {
         nonce += 1;
         if (nonce > 500000) { log(termA, "[Node A] ✗ PoW timeout", "log-err"); return; }
       }
-      const SEA = (await import("https://esm.sh/gun@0.9.999/sea.js")).default;
+      const SEA = window.Gun && window.Gun.SEA;
       const deltas = [{ key, value, clock: ts }];
       const sig = await SEA.sign({ addr, action: "sync.put", ts, payload: JSON.stringify(deltas) }, pair);
       log(termA, `[Node A] → put ${key} = ${JSON.stringify(value)} (signed, PoW ✓)`, "log-info");
