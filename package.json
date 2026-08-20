@@ -6,6 +6,9 @@
   "private": true,
   "scripts": {
     "test": "node --test test/test_codec.mjs",
+    "test:all": "node --test test/test_codec.mjs test/test_crypto.mjs test/test_storage.mjs test/test_security_hardening.mjs test/test_websocket.mjs test/test_phase4.mjs",
+    "build": "node scripts/build-sdk.mjs",
+    "check:supply-chain": "node scripts/check-supply-chain.mjs",
     "worker:dev": "wrangler dev --port 8787",
     "pages:dev": "wrangler pages dev public --port 8788"
   },
@@ -13,6 +16,7 @@
     "@noble/hashes": "1.8.0"
   },
   "devDependencies": {
+    "esbuild": "^0.24.2",
     "wrangler": "^4.0.0"
   }
 }
