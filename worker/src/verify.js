@@ -12,6 +12,11 @@
 
 const ADDR_RE = /^[a-z2-7]{58}$/;
 
+/** Max clock skew between client and server (ms) — replay window. */
+export const TS_WINDOW_MS = 60_000;
+/** Minimum nonce value accepted (0 is reserved). */
+export const MIN_NONCE = 1;
+
 /** Difficulty bracket for a .gdbx address: long (free) 2, mid 3, short 4. */
 export function getDifficulty(input) {
   const len = String(input || "").length;
@@ -48,7 +53,7 @@ export async function verifyPoW(claim) {
   const ownerPub = typeof claim.ownerPub === "string" ? claim.ownerPub : String(claim.ownerPub ?? "");
   const payload = typeof claim.payload === "string" ? claim.payload : String(claim.payload ?? "");
   const nonce = typeof claim.nonce === "number" ? claim.nonce : Number(claim.nonce);
-  if (!Number.isFinite(nonce) || nonce < 0) return { ok: false, error: "invalid nonce" };
+  if (!Number.isFinite(nonce) || nonce < MIN_NONCE) return { ok: false, error: "invalid nonce" };
   const ts = typeof claim.ts === "number" ? claim.ts : Number(claim.ts);
   if (!Number.isFinite(ts)) return { ok: false, error: "invalid ts" };
   const hash = await sha256Hex(hashInput(addr, ownerPub, payload, ts, nonce));
@@ -56,6 +61,27 @@ export async function verifyPoW(claim) {
   if (!hash.startsWith(prefix)) return { ok: false, error: "proof-of-work not satisfied" };
   if (claim.hash && claim.hash !== hash) return { ok: false, error: "hash mismatch" };
   return { ok: true, hash };
+}
+
+/**
+ * Anti-replay check: timestamp must be inside the sliding window and the
+ * nonce must be fresh (caller keeps the seen-nonce set in the DO).
+ * Returns { ok:false, error, status } on failure, { ok:true } on pass.
+ */
+export function checkReplay({ ts, nonce, seenNonces, now = Date.now() }) {
+  if (typeof ts !== "number" || !Number.isFinite(ts)) {
+    return { ok: false, error: "invalid timestamp", status: 400 };
+  }
+  if (typeof nonce !== "number" || !Number.isFinite(nonce) || nonce < MIN_NONCE) {
+    return { ok: false, error: "invalid nonce", status: 400 };
+  }
+  if (Math.abs(now - ts) > TS_WINDOW_MS) {
+    return { ok: false, error: "expired timestamp window — request rejected", status: 401 };
+  }
+  if (seenNonces.has(nonce)) {
+    return { ok: false, error: "replay attack detected — nonce reused", status: 401 };
+  }
+  return { ok: true };
 }
 
 /** Canonical JSON string for message comparison — recursively key-sorted. */

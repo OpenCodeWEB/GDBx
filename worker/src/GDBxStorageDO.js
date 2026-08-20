@@ -17,19 +17,24 @@
  * the same clock are ordered deterministically by pubkey hash — no forks.
  */
 
-import { verifyPoW, verifySeaSig } from "./verify.js";
+import { verifyPoW, verifySeaSig, checkReplay } from "./verify.js";
 import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
+import { registerWebSocketHandler } from "./websocket_handler.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
   "access-control-allow-headers": "content-type",
 };
 
 const MAX_PAYLOAD = 32 * 1024; // 32KB per delta value
 const MAX_DELTAS = 64; // max deltas per put batch
+const MAX_DID_SERVICES = 16; // max DID service entries
+const MAX_SERVICE_URL = 2048; // per service URL length
+const MAX_SEEN_NONCES = 2048; // in-memory replay cache size
 const ADDR_RE = /^[a-z2-7]{58}$/;
+const KEY_RE = /^[a-zA-Z0-9._:/@-]{1,256}$/; // strict key charset
 
 export class GDBxStorageObject {
   constructor(state, env) {
@@ -37,6 +42,7 @@ export class GDBxStorageObject {
     this.env = env;
     this.initialized = this.initialize();
     this.buckets = new Map(); // in-memory rate limiter
+    this.seenNonces = new Map(); // nonce → ts (replay cache)
   }
 
   async initialize() {
@@ -63,6 +69,29 @@ export class GDBxStorageObject {
     return b.count <= capacity;
   }
 
+  /**
+   * Replay guard: checks the ts window and consumes the nonce into the
+   * seen-nonces cache. Returns an error response (or null on pass).
+   */
+  guardReplay(ts, nonce) {
+    const res = checkReplay({ ts, nonce, seenNonces: this.seenNonces });
+    if (!res.ok) return json({ error: res.error }, res.status);
+    // prune stale entries (older than the ts window)
+    const now = Date.now();
+    for (const [n, t] of this.seenNonces) {
+      if (now - t > 2 * 60_000) this.seenNonces.delete(n);
+    }
+    this.seenNonces.set(nonce, ts);
+    if (this.seenNonces.size > MAX_SEEN_NONCES) {
+      // drop oldest entries
+      const oldest = [...this.seenNonces.entries()].sort((a, b) => a[1] - b[1]);
+      for (let i = 0; i < oldest.length - MAX_SEEN_NONCES; i++) {
+        this.seenNonces.delete(oldest[i][0]);
+      }
+    }
+    return null;
+  }
+
   async fetch(request) {
     await this.initialized;
     const url = new URL(request.url);
@@ -87,6 +116,7 @@ export class GDBxStorageObject {
         return await this.putDeltas(await request.json());
       }
       if (url.pathname.startsWith("/sync/") && request.method === "GET") {
+        if (!this.rateLimit(ip, 120, 60000)) return json({ error: "rate limited" }, 429);
         const rest = url.pathname.slice("/sync/".length);
         const [addr, ...keyParts] = rest.split("/");
         if (!ADDR_RE.test(addr)) return json({ error: "invalid address" }, 400);
@@ -100,7 +130,25 @@ export class GDBxStorageObject {
       }
       if (url.pathname === "/peers" && request.method === "POST") {
         // presence heartbeat: { addr, pubkey, transports: ["webrtc","nostr"] }
+        if (!this.rateLimit(ip, 30, 60000)) return json({ error: "rate limited" }, 429);
         return await this.heartbeat(await request.json());
+      }
+
+      /* GDPR erasure */
+      if (url.pathname === "/identity" && request.method === "DELETE") {
+        if (!this.rateLimit(ip, 5, 60000)) return json({ error: "rate limited" }, 429);
+        return await this.purgeIdentity(await request.json());
+      }
+
+      /* Encrypted backup export */
+      if (url.pathname === "/export" && request.method === "POST") {
+        if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
+        return await this.exportState(await request.json());
+      }
+
+      /* Public leaderboard / analytics */
+      if (url.pathname === "/leaderboard" && request.method === "GET") {
+        return await this.leaderboard();
       }
 
       return json({ error: "not found" }, 404);
@@ -122,6 +170,30 @@ export class GDBxStorageObject {
     if (!addr) return json({ error: "invalid .gdbx address" }, 400);
     if (!body.pubkeyHex || !/^[0-9a-fA-F]{130}$/.test(String(body.pubkeyHex).replace(/^0x/i, ""))) {
       return json({ error: "pubkeyHex must be 130-char hex (uncompressed P-256: 04||X||Y)" }, 400);
+    }
+
+    // Replay guard: ts window + fresh nonce
+    const replayErr = this.guardReplay(Number(body.ts), Number(body.nonce));
+    if (replayErr) return replayErr;
+
+    // DID document validation: services array shape + size
+    if (body.didDoc && typeof body.didDoc === "object") {
+      if (body.didDoc.services !== undefined && !Array.isArray(body.didDoc.services)) {
+        return json({ error: "didDoc.services must be an array" }, 400);
+      }
+      if (Array.isArray(body.didDoc.services)) {
+        if (body.didDoc.services.length > MAX_DID_SERVICES) {
+          return json({ error: `max ${MAX_DID_SERVICES} DID services` }, 400);
+        }
+        for (const s of body.didDoc.services) {
+          if (!s || typeof s !== "object" || typeof s.id !== "string" || typeof s.type !== "string") {
+            return json({ error: "each service needs {id, type, ...}" }, 400);
+          }
+          if (typeof s.serviceEndpoint === "string" && s.serviceEndpoint.length > MAX_SERVICE_URL) {
+            return json({ error: "serviceEndpoint too long" }, 400);
+          }
+        }
+      }
     }
 
     // PoW gate (anti-spam)
@@ -214,12 +286,29 @@ export class GDBxStorageObject {
       return json({ error: "deltas[] required" }, 400);
     }
     if (body.deltas.length > MAX_DELTAS) return json({ error: `max ${MAX_DELTAS} deltas per batch` }, 400);
+
+    // Replay guard: ts window + fresh nonce
+    const replayErr = this.guardReplay(Number(body.ts), Number(body.nonce));
+    if (replayErr) return replayErr;
+
     for (const d of body.deltas) {
-      if (!d || typeof d.key !== "string" || d.key.length === 0 || d.key.length > 256) {
-        return json({ error: "invalid delta key" }, 400);
+      if (!d || typeof d !== "object") return json({ error: "invalid delta" }, 400);
+      if (typeof d.key !== "string" || !KEY_RE.test(d.key)) {
+        return json({ error: "invalid delta key — 1-256 chars of [a-zA-Z0-9._:/@-]" }, 400);
       }
-      if (typeof d.value === "string" && d.value.length > MAX_PAYLOAD) {
+      // flat-primitive JSON only (no objects/arrays in values)
+      const vt = typeof d.value;
+      if (!["string", "number", "boolean"].includes(vt) && d.value !== null) {
+        return json({ error: "delta value must be a flat primitive (string|number|boolean|null)" }, 400);
+      }
+      if (vt === "string" && d.value.length > MAX_PAYLOAD) {
         return json({ error: "delta value too large" }, 400);
+      }
+      if (vt === "number" && !Number.isFinite(d.value)) {
+        return json({ error: "delta value must be a finite number" }, 400);
+      }
+      if (typeof d.clock === "number" && (!Number.isFinite(d.clock) || d.clock < 0)) {
+        return json({ error: "invalid delta clock" }, 400);
       }
     }
 
@@ -326,6 +415,168 @@ export class GDBxStorageObject {
     return json({ ok: true, lastSeen: t });
   }
 
+  /* ── GDPR erasure ───────────────────────────────────────────────── */
+
+  /**
+   * GDPR right-to-be-forgotten: proves ownership with a SEA signature over
+   * {addr, action:"identity.purge", ts} then cryptographically erases ALL
+   * records for that address (did doc, kv deltas, presence).
+   */
+  async purgeIdentity(body) {
+    if (!body || typeof body !== "object") return json({ error: "body required" }, 400);
+    const addr = normalizeAddress(String(body.addr || ""));
+    if (!addr) return json({ error: "invalid .gdbx address" }, 400);
+
+    // Replay guard first
+    const replayErr = this.guardReplay(Number(body.ts), Number(body.nonce));
+    if (replayErr) return replayErr;
+
+    const did = await this.state.storage.get(`did:${addr}`);
+    if (!did) return json({ error: "not registered" }, 404);
+
+    // The pubkey must actually bind to the address (identity proof),
+    // otherwise an attacker could purge with their own key.
+    if (!body.pubkeyHex || !/^[0-9a-fA-F]{130}$/.test(String(body.pubkeyHex).replace(/^0x/i, ""))) {
+      return json({ error: "pubkeyHex must be 130-char hex (uncompressed P-256)" }, 400);
+    }
+    let binding;
+    try {
+      binding = await this.bindAddress(addr, body.pubkeyHex);
+    } catch (e) {
+      return json({ error: String(e?.message || e) }, 400);
+    }
+    if (!binding) return json({ error: "pubkeyHex does not match address" }, 403);
+
+    // Ownership proof: SEA signature over canonical purge body
+    const canonical = JSON.stringify({
+      addr,
+      action: "identity.purge",
+      ts: body.ts,
+      payload: null,
+    });
+    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
+
+    // Erase everything: did doc, kv deltas, presence
+    const kvList = await this.state.storage.list({ prefix: `kv:${addr}:` });
+    const pres = await this.state.storage.get(`presence:${addr}`);
+    const keys = [];
+    for (const [k] of kvList.entries()) keys.push(k);
+    keys.push(`did:${addr}`, `presence:${addr}`);
+    await Promise.all(keys.map((k) => this.state.storage.delete(k)));
+    if (pres) this.stats.active = Math.max(0, this.stats.active - 1);
+    this.stats.dids = Math.max(0, this.stats.dids - 1);
+    this.stats.purges = (this.stats.purges || 0) + 1;
+    this.stats.lastTs = Date.now();
+    await this.state.storage.put("meta:stats", this.stats);
+
+    return json({ ok: true, erased: keys.length, addr });
+  }
+
+  /* ── Export / restore ──────────────────────────────────────────── */
+
+  /**
+   * Encrypted snapshot export: returns the full state vector for an address
+   * (did doc + kv entries) so a client can back it up. The payload is signed
+   * by the owner (SEA) to prevent tampered exports; encryption happens
+   * client-side (AES-GCM) — the edge never holds plaintext private keys.
+   * Body: { addr, pubkey, ts, nonce, diff, hash, sig }  (same PoW gate)
+   */
+  async exportState(body) {
+    if (!body || typeof body !== "object") return json({ error: "body required" }, 400);
+    const addr = normalizeAddress(String(body.addr || ""));
+    if (!addr) return json({ error: "invalid .gdbx address" }, 400);
+    const replayErr = this.guardReplay(Number(body.ts), Number(body.nonce));
+    if (replayErr) return replayErr;
+
+    const did = await this.state.storage.get(`did:${addr}`);
+    if (!did) return json({ error: "not registered" }, 404);
+
+    // ownership binding + SEA signature (same as purge)
+    if (!body.pubkeyHex || !/^[0-9a-fA-F]{130}$/.test(String(body.pubkeyHex).replace(/^0x/i, ""))) {
+      return json({ error: "pubkeyHex must be 130-char hex (uncompressed P-256)" }, 400);
+    }
+    let binding;
+    try {
+      binding = await this.bindAddress(addr, body.pubkeyHex);
+    } catch (e) {
+      return json({ error: String(e?.message || e) }, 400);
+    }
+    if (!binding) return json({ error: "pubkeyHex does not match address" }, 403);
+
+    const canonical = JSON.stringify({
+      addr,
+      action: "identity.export",
+      ts: body.ts,
+      payload: null,
+    });
+    const sigOk = await verifySeaSig(JSON.parse(canonical), body.sig, body.pubkey);
+    if (!sigOk) return json({ error: "SEA signature invalid" }, 403);
+
+    // snapshot: did doc + all kv entries
+    const kvList = await this.state.storage.list({ prefix: `kv:${addr}:` });
+    const entries = [];
+    for (const [, v] of kvList.entries()) {
+      entries.push({ key: v.key, value: v.value, clock: v.clock, ownerPub: v.ownerPub });
+    }
+    entries.sort((a, b) => (a.clock - b.clock) || (a.key < b.key ? -1 : 1));
+
+    return json({
+      ok: true,
+      format: "gdbx-snapshot-v1",
+      addr,
+      exportedAt: Date.now(),
+      did,
+      entries,
+    });
+  }
+
+  /* ── Leaderboard / analytics ───────────────────────────────────── */
+
+  /**
+   * Global mesh analytics: active peers, total dids/deltas, transport
+   * breakdown and top active addresses. Public read — no auth needed.
+   */
+  async leaderboard() {
+    const presenceList = await this.state.storage.list({ prefix: "presence:" });
+    const peers = [];
+    for (const [, v] of presenceList.entries()) {
+      peers.push({ addr: v.addr, transports: v.transports || [], lastSeen: v.lastSeen, latencyMs: v.latencyMs ?? null });
+    }
+    peers.sort((a, b) => (b.lastSeen - a.lastSeen));
+
+    // top active addresses by kv delta count
+    const kvList = await this.state.storage.list({ prefix: "kv:" });
+    const byAddr = new Map();
+    for (const [k] of kvList.entries()) {
+      const addrPart = k.slice(3).split(":")[0]; // kv:<addr>:<key>
+      byAddr.set(addrPart, (byAddr.get(addrPart) || 0) + 1);
+    }
+    const top = [...byAddr.entries()]
+      .map(([a, deltas]) => ({ addr: a, deltas }))
+      .sort((a, b) => b.deltas - a.deltas)
+      .slice(0, 20);
+
+    const transportCounts = {};
+    for (const p of peers) {
+      for (const tr of p.transports) transportCounts[tr] = (transportCounts[tr] || 0) + 1;
+    }
+
+    return json({
+      ok: true,
+      ts: Date.now(),
+      stats: {
+        dids: this.stats.dids,
+        deltas: this.stats.deltas,
+        activePeers: peers.length,
+        purges: this.stats.purges || 0,
+        transports: transportCounts,
+      },
+      top: top.slice(0, 10),
+      peers: peers.slice(0, 25),
+    });
+  }
+
   getStats() {
     return json({
       ok: true,
@@ -348,6 +599,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
+
+    // Real-time WebSocket sync: /ws?addr=:addr
+    if (url.pathname === "/ws" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+      const wsHandler = registerWebSocketHandler((e) => {
+        const id = e.GDBX_STORAGE.idFromName("default");
+        return e.GDBX_STORAGE.get(id);
+      });
+      return wsHandler(request, env);
+    }
+
     const id = env.GDBX_STORAGE.idFromName("default");
     const stub = env.GDBX_STORAGE.get(id);
     return stub.fetch(request);

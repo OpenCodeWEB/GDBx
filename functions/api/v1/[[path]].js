@@ -7,6 +7,7 @@
  *   GET  /api/v1/sync/:addr?prefix=key  → signed state map
  *   POST /api/v1/peers                 { addr, pubkey, transports[] }  (presence)
  *   GET  /api/v1/stats                  → live ledger stats
+ *   DELETE /api/v1/identity             { addr, pubkey, pubkeyHex, ts, nonce, diff, hash, sig } (GDPR erasure)
  *   POST /api/v1/address                { pubkey (hex), network? } → address + DID
  *   GET  /api/v1/address/:addr          → validate + describe
  *   GET  /api/v1/health                 → liveness
@@ -98,6 +99,24 @@ export async function onRequest(context) {
     return await storageFetch(env, "/stats", request);
   }
 
+  /* ── GDPR erasure ──────────────────────────────────────────────── */
+  if (segments[0] === "identity" && segments.length === 1 && request.method === "DELETE") {
+    return await storageFetch(env, "/identity", request);
+  }
+
+  /* ── backup export + leaderboard ──────────────────────────────── */
+  if (segments[0] === "export" && segments.length === 1 && request.method === "POST") {
+    return await storageFetch(env, "/export", request);
+  }
+  if (segments[0] === "leaderboard" && segments.length === 1 && request.method === "GET") {
+    return await storageFetch(env, "/leaderboard", request);
+  }
+
+  /* ── real-time WebSocket ──────────────────────────────────────── */
+  if (segments[0] === "ws" && segments.length === 1) {
+    return await storageFetch(env, "/ws" + (url.search || ""), request);
+  }
+
   return json({ error: "not found" }, 404);
 }
 
@@ -110,7 +129,7 @@ async function storageFetch(env, targetPath, request) {
   const proxy = new Request(target.toString(), {
     method: request.method,
     headers: request.headers,
-    body: request.method === "POST" ? await request.text() : undefined,
+    body: ["POST", "DELETE"].includes(request.method) ? await request.text() : undefined,
   });
   return stub.fetch(proxy);
 }

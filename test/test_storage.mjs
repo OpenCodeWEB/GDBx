@@ -288,12 +288,13 @@ test("sync: LWW — newer clock wins, older write ignored", async () => {
   const { data: got } = await doFetch(inst, "/sync/" + addr);
   assert.equal(got.entries[0].value, "new");
 
-  // older write now loses
-  const t3 = t1; // same old clock
-  const d3 = [{ key: "k", value: "old-again", clock: t3 }];
-  const p3 = await minePoW(addr, pair.pub, "sync.put", t3);
-  const s3 = await SEA.sign(signBody(addr, "sync.put", t3, JSON.stringify(d3)), pair);
-  const { data: r3 } = await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas: d3, ts: t3, ...p3, sig: s3 });
+  // older write now loses — stale delta clock (t1) but a FRESH request
+  // timestamp+nonce so the replay guard (ts window + fresh nonce) passes.
+  const t4 = Date.now();
+  const d3 = [{ key: "k", value: "old-again", clock: t1 }];
+  const p3 = await minePoW(addr, pair.pub, "sync.put", t4);
+  const s3 = await SEA.sign(signBody(addr, "sync.put", t4, JSON.stringify(d3)), pair);
+  const { data: r3 } = await doFetch(inst, "/sync", "POST", { addr, pubkey: pair.pub, pubkeyHex, deltas: d3, ts: t4, ...p3, sig: s3 });
   assert.equal(r3.applied, 0);
 
   const { data: got2 } = await doFetch(inst, "/sync/" + addr);
