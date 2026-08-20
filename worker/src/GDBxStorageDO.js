@@ -203,6 +203,12 @@ export class GDBxStorageObject {
         });
       }
 
+      /* Hybrid mesh relay: Nostr kind-23124 event ingest */
+      if (url.pathname === "/relay" && request.method === "POST") {
+        if (!this.rateLimit(ip, 30, 60000)) return json({ error: "rate limited" }, 429);
+        return await this.relayEvent(await request.json());
+      }
+
       return json({ error: "not found" }, 404);
     } catch (e) {
       return json({ error: String(e?.message || e) }, 400);
@@ -582,6 +588,54 @@ export class GDBxStorageObject {
     } catch (e) {
       console.error("mirror replication failed:", e?.message || e);
     }
+  }
+
+  /**
+   * Hybrid mesh relay: ingests a Nostr kind-23124 event (GDBX1 envelope in
+   * content) and runs it through the exact same FirewallGuard pipeline as
+   * HTTP/WS sync.put — the mesh is transport-agnostic, one gate for all.
+   */
+  async relayEvent(ev) {
+    if (!ev || ev.kind !== 23124) return json({ error: "wrong kind" }, 400);
+    const addrTag = Array.isArray(ev.tags) ? ev.tags.find((t) => Array.isArray(t) && t[0] === "addr") : null;
+    if (!addrTag || !addrTag[1]) return json({ error: "missing addr tag" }, 400);
+    const addr = normalizeAddress(String(addrTag[1]));
+    if (!addr) return json({ error: "invalid .gdbx address" }, 400);
+
+    if (typeof ev.content !== "string" || !ev.content.startsWith("GDBX1")) {
+      return json({ error: "content not GDBX1 envelope" }, 400);
+    }
+    let m, pubkeyHex, nonce, diff, hash, sig;
+    try {
+      const envelope = JSON.parse(ev.content.slice(5));
+      m = envelope.m;
+      pubkeyHex = envelope.pubkeyHex;
+      nonce = envelope.nonce;
+      diff = envelope.diff;
+      hash = envelope.hash;
+      sig = envelope.s;
+      if (!m || typeof m !== "object") return json({ error: "malformed envelope" }, 400);
+    } catch {
+      return json({ error: "malformed envelope" }, 400);
+    }
+
+    // mesh events may bypass the explicit nonce/hash fields — derive them
+    // from the envelope when absent (the signature still gates everything).
+    const ts = Number(m.ts || ev.created_at * 1000 || Date.now());
+    const deltas = typeof m.payload === "string" ? JSON.parse(m.payload) : m.payload;
+    if (!Array.isArray(deltas)) return json({ error: "payload not deltas array" }, 400);
+
+    return await this.putDeltas({
+      addr,
+      pubkey: ev.pubkey,
+      pubkeyHex: pubkeyHex || m.pubkeyHex,
+      deltas,
+      ts,
+      nonce: Number(nonce || m.nonce || 1),
+      diff,
+      hash,
+      sig: sig || m.s,
+    });
   }
 
   /* ── Presence ────────────────────────────────────────────────────── */

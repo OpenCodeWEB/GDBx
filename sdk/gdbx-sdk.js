@@ -16,6 +16,7 @@
 
 import { makeAddress, validateAddress, normalizeAddress, toDID } from "./gdbx-codec.js";
 import { pair as cryptoPair, sign as cryptoSign, signBody } from "./gdbx-crypto.js";
+import { pickTransport, buildNostrEvent } from "./transport.js";
 
 export const API = "https://gdbx.pages.dev/api/v1";
 
@@ -125,6 +126,67 @@ export async function putDeltas(opts) {
   const payload = JSON.stringify(deltas);
   const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "sync.put", ts);
   const sig = await cryptoSign(signBody(addr, "sync.put", ts, payload), opts.pair);
+  return post("/sync", {
+    addr,
+    pubkey: opts.pair.pub,
+    pubkeyHex: opts.pubkeyHex,
+    deltas,
+    ts,
+    nonce,
+    diff,
+    hash,
+    sig,
+  });
+}
+
+/**
+ * Hybrid mesh write: same signed payload, delivered over the best
+ * available transport (ws → nostr → webrtc). Use when the primary WS hub
+ * is unreachable: the client falls back to publishing a Nostr kind-23124
+ * event to the worker relay, which ingests it through the same firewall.
+ *
+ * @param {object} opts    same as putDeltas, plus:
+ * @param {object} [extra] { transport?: "ws"|"nostr", fetch?: fn,
+ *                           wsAvailable?: boolean }
+ */
+export async function putDeltasHybrid(opts, extra = {}) {
+  const addr = addressFromPubkey(opts.pubkeyHex);
+  const ts = Date.now();
+  const deltas = opts.deltas.map((d) => ({ key: d.key, value: d.value, clock: d.clock ?? ts }));
+  const payload = JSON.stringify(deltas);
+  const { nonce, hash, diff } = await minePoW(addr, opts.pair.pub, "sync.put", ts);
+  const sig = await cryptoSign(signBody(addr, "sync.put", ts, payload), opts.pair);
+
+  const avail = {
+    ws: extra.transport === "ws" || (extra.wsAvailable === true),
+    nostr: extra.transport === "nostr" || extra.transport === undefined,
+    webrtc: false,
+  };
+  const transport = pickTransport(avail);
+
+  if (transport === "nostr") {
+    const event = await buildNostrEvent({
+      addr,
+      pubkey: opts.pair.pub,
+      pubkeyHex: opts.pubkeyHex,
+      ts,
+      nonce,
+      diff,
+      hash,
+      deltas,
+      sig,
+    });
+    const f = extra.fetch || fetch;
+    const res = await f(`${API}/relay`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(event),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return { ok: true, applied: data.applied ?? 0, addr, transport: "nostr" };
+  }
+
   return post("/sync", {
     addr,
     pubkey: opts.pair.pub,
