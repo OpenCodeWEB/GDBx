@@ -70,9 +70,10 @@ export async function onRequest(context) {
 
 let _codec = null;
 async function importCodec() {
-  // Relative import — Pages Functions bundler resolves outside the functions/
-  // tree only via relative paths (root-absolute "/sdk/..." fails at build).
-  if (!_codec) _codec = await import("../../sdk/gdbx-codec.js");
+  // Pages Functions bundler only resolves within the functions/ tree (plus
+  // node_modules) — keep a synced copy at functions/_lib/gdbx-codec.js
+  // (canonical source: sdk/gdbx-codec.js; test_codec.mjs asserts equality).
+  if (!_codec) _codec = await import("../../_lib/gdbx-codec.js");
   return _codec;
 }
 

@@ -118,3 +118,14 @@ test("codec: pubkey hash rejects wrong shapes", () => {
   assert.throws(() => makeAddress(new Uint8Array(32)), /uncompressed/i);
   assert.throws(() => makeAddress("zzz"), /pubkey/);
 });
+
+test("codec: functions/_lib copy matches canonical sdk source (no drift)", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const sdk = await readFile(new URL("../sdk/gdbx-codec.js", import.meta.url), "utf8");
+  const lib = await readFile(new URL("../functions/_lib/gdbx-codec.js", import.meta.url), "utf8");
+  assert.equal(
+    lib.trim(),
+    sdk.trim(),
+    "functions/_lib/gdbx-codec.js must mirror sdk/gdbx-codec.js — run: Copy-Item sdk\\gdbx-codec.js functions\\_lib\\gdbx-codec.js",
+  );
+});
