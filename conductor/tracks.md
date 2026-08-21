@@ -8,6 +8,7 @@
 | hardening-realtime | Phase 4: replay protection, GDPR purge, rate limits, validation, WS live sync, export, leaderboard | completed | [spec](./tracks/hardening-realtime/spec.md) | [plan](./tracks/hardening-realtime/plan.md) |
 | self-sovereign-mesh | Phase 5: gun-free crypto core, zero-trust firewall (RBAC+ACL), replication pool, hybrid mesh (WS/Nostr/WebRTC), supply-chain hardening | completed | [spec](./tracks/self-sovereign-mesh/spec.md) | [plan](./tracks/self-sovereign-mesh/plan.md) |
 | org-gdbx-unification | Phase 6: org-wide GDBx fabric — AiA & OS bridges, Python SDK, all OpenCodeWEB projects | completed | [spec](./tracks/org-gdbx-unification/spec.md) | [plan](./tracks/org-gdbx-unification/plan.md) |
+| gdbx-cli-visual | Phase 6.1: CLI (identity/sync/vector/backup) + Visual Inspector | completed | [spec](./tracks/gdbx-cli-visual/spec.md) | [plan](./tracks/gdbx-cli-visual/plan.md) |
 
 ## Live deployment notes (2026-08-21)
 

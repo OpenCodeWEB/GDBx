@@ -1,0 +1,11 @@
+{
+  "id": "gdbx-cli-visual",
+  "title": "GDBx CLI & Visual Inspector",
+  "status": "completed",
+  "completed": "2026-08-21",
+  "created": "2026-08-21",
+  "phases": ["6.1"],
+  "tags": ["cli", "dx", "inspector", "visual"],
+  "depends_on": ["org-gdbx-unification"],
+  "priority": "high"
+}

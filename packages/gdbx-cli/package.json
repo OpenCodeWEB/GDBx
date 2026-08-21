@@ -1,0 +1,15 @@
+{
+  "name": "@gdbx/cli",
+  "version": "0.1.0",
+  "description": "GDBx CLI — identity, sync, vector, backup",
+  "type": "module",
+  "bin": {
+    "gdbx": "bin/gdbx.js"
+  },
+  "scripts": {
+    "test": "node --test test/test_cli.mjs"
+  },
+  "dependencies": {
+    "commander": "11.1.0"
+  }
+}
