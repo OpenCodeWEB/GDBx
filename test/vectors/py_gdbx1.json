@@ -1,0 +1,11 @@
+{
+  "body": {
+    "addr": "aeagkhueijwkdvfxhp2t6yvevxlroe7h7exo6em33ukj4bxowq3fqlaa2y",
+    "action": "sync.put",
+    "ts": 1710000000000,
+    "payload": "[{\"key\":\"py/k\",\"value\":\"pyv\"}]"
+  },
+  "sig": "GDBX1{\"m\":\"{\\\"action\\\":\\\"sync.put\\\",\\\"addr\\\":\\\"aeagkhueijwkdvfxhp2t6yvevxlroe7h7exo6em33ukj4bxowq3fqlaa2y\\\",\\\"payload\\\":\\\"[{\\\\\\\"key\\\\\\\":\\\\\\\"py/k\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"pyv\\\\\\\"}]\\\",\\\"ts\\\":1710000000000}\",\"s\":\"zeXuU5CFd8kkvVueYWuMwLMiXZA74TM8sW-vE8WH2fCym_5OWTqXCMmCRD-GJ4kcnllFIKx-wHHtbV7JLbBPbA\"}",
+  "pub": "CED0AVNYVIPNytn-B6PkdmzFnyVEK_LcYqyN3YMDbF8.pJAgHZOXXmqI9omfPTiRGBn0M1MS-xLsuPu5fWXn7uc",
+  "addr": "aeagkhueijwkdvfxhp2t6yvevxlroe7h7exo6em33ukj4bxowq3fqlaa2y"
+}

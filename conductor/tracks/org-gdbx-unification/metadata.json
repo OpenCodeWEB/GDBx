@@ -1,0 +1,11 @@
+{
+  "id": "org-gdbx-unification",
+  "title": "Org-Wide GDBx Unification — AiA & OS + All OpenCodeWEB Projects",
+  "status": "completed",
+  "created": "2026-08-21",
+  "completed": "2026-08-21",
+  "phases": ["6"],
+  "tags": ["gdbx", "aia", "os", "integration", "python-sdk", "org-wide", "unification"],
+  "depends_on": ["self-sovereign-mesh"],
+  "priority": "high"
+}
