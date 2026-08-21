@@ -1,0 +1,10 @@
+{
+  "id": "gdbx-ftp",
+  "title": "GDBx FTP Bridge — Sovereign FTP Gateway",
+  "status": "plan_ready",
+  "created": "2026-08-21",
+  "phases": ["6.3"],
+  "tags": ["ftp", "gateway", "chunker", "sovereign"],
+  "depends_on": ["org-gdbx-unification", "gdbx-playground"],
+  "priority": "high"
+}

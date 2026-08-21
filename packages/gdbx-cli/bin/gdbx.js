@@ -105,4 +105,55 @@ backup
     console.log(JSON.stringify(r, null, 2));
   });
 
+// ftp — sovereign gateway (FileZilla → GDBx pool, GDBX1-signed, chunked)
+const ftp = program.command("ftp").description("sovereign FTP gateway (FileZilla → GDBx pool)");
+ftp
+  .command("gateway")
+  .description("start local FTP gateway on 127.0.0.1 (FileZilla → GDBx)")
+  .option("--port <port>", "127.0.0.1:2121", "2121")
+  .action(async (opts) => {
+    const { startGateway } = await import("../lib/ftp.js");
+    await startGateway({ port: Number(String(opts.port).split(":").pop()) });
+  });
+ftp
+  .command("put")
+  .description("upload local file to GDBx via FTP bridge (chunked, GDBX1-signed)")
+  .argument("<localPath>")
+  .argument("<remotePath>")
+  .action(async (localPath, remotePath) => {
+    const { ftpPut } = await import("../lib/ftp.js");
+    const r = await ftpPut(localPath, remotePath);
+    console.log(JSON.stringify(r, null, 2));
+  });
+ftp
+  .command("get")
+  .description("download GDBx file to local (reassemble chunks)")
+  .argument("<remotePath>")
+  .argument("<localPath>")
+  .action(async (remotePath, localPath) => {
+    const { ftpGet } = await import("../lib/ftp.js");
+    const r = await ftpGet(remotePath, localPath);
+    console.log(JSON.stringify(r, null, 2));
+  });
+ftp
+  .command("ls")
+  .description("list GDBx FTP manifests")
+  .argument("[prefix]", "/", "/")
+  .action(async (prefix) => {
+    const { ftpLs } = await import("../lib/ftp.js");
+    const r = await ftpLs(prefix);
+    console.log(JSON.stringify(r, null, 2));
+  });
+ftp
+  .command("sync")
+  .description("watch GDBx FTP prefix for changes")
+  .argument("[prefix]", "/", "/")
+  .action(async (prefix) => {
+    const { ftpSync } = await import("../lib/ftp.js");
+    console.log(`Syncing ${prefix} — Ctrl+C to exit`);
+    await ftpSync(prefix);
+    // keep process alive
+    await new Promise(() => {});
+  });
+
 program.parseAsync(process.argv);

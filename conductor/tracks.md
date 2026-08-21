@@ -10,6 +10,7 @@
 | org-gdbx-unification | Phase 6: org-wide GDBx fabric — AiA & OS bridges, Python SDK, all OpenCodeWEB projects | completed | [spec](./tracks/org-gdbx-unification/spec.md) | [plan](./tracks/org-gdbx-unification/plan.md) |
 | gdbx-cli-visual | Phase 6.1: CLI (identity/sync/vector/backup) + Visual Inspector | completed | [spec](./tracks/gdbx-cli-visual/spec.md) | [plan](./tracks/gdbx-cli-visual/plan.md) |
 | gdbx-playground | Phase 6.2: Live P2P Playground — GunX parity (chat, rooms, presence, file) | completed | [spec](./tracks/gdbx-playground/spec.md) | [plan](./tracks/gdbx-playground/plan.md) |
+| gdbx-ftp | Phase 6.3: Sovereign FTP Gateway — ftp-srv + GDBX1 + chunked pool | plan_ready | [spec](./tracks/gdbx-ftp/spec.md) | [plan](./tracks/gdbx-ftp/plan.md) |
 
 ## Live deployment notes (2026-08-21)
 

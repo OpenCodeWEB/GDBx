@@ -10,6 +10,8 @@
     "test": "node --test test/test_cli.mjs"
   },
   "dependencies": {
-    "commander": "11.1.0"
+    "commander": "11.1.0",
+    "ftp-srv": "4.6.1",
+    "basic-ftp": "5.0.5"
   }
 }
