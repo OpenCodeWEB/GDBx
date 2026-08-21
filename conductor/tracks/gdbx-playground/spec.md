@@ -1,0 +1,68 @@
+# Track: GDBx Live P2P Playground
+
+> **Track ID:** `gdbx-playground` | **Phase:** 6.2 | **Status:** spec draft
+> **Goal:** `gunx.pages.dev` এর Live P2P playground এর মতো বৈশিষ্ট্য `gdbx.pages.dev` এ যুক্ত করা — real-time chat + room + presence + file share, কিন্তু GDBx-এর sovereign mesh (GDBX1 + FirewallGuard + pool + hybrid mesh) দিয়ে।
+
+## 1. Context
+
+GunX playground (653 lines, `public/index.html` #playground):
+- Header: roomPill (room: public), roomLockPill (🔒 e2e), onlinePill (0 online), new private, join, clear view
+- Left: messages (h-72), msgForm (imgBtn, fileBtn, msgInput, Send), hidden img/file inputs, note: two tabs sync via `wss://gunx.pages.dev/gun`
+- Right: How it works (appKey, LWW, IndexedDB), Relay status (uptime, messages, bytes, backend)
+- Logic: `GunXRooms`, `gunx.get(root).map().on`, `rooms.send`, `gunx.uploadImage` (imgbb proxy), `gunx.shareFile` (WebRTC 64-256KB chunks, signaling via Gun souls), presence `gunx.joinPresence`, `gunx.onPeers`, `gunx.onTransferProgress`
+
+GDBx current (`gdbx.pages.dev`):
+- Hero (sovereign), Live Mesh (stats/leaderboard), Dual-pane Sandbox (Node A/B, key/value, WS `wss://gdbx-do.xup.workers.dev/ws?addr=`), Codec Demo, Inspector
+- No chat-style playground. Sandbox is key/value, not room-based chat. No private rooms, no image/file, no presence, no relay status for playground.
+
+## 2. Goals
+
+### G1. Playground Section (#playground) — Parity with GunX
+- **Layout:** Same 3-column grid? GunX uses `md:grid-cols-3` (2/3 chat + 1/3 how-it-works/relay status). GDBx should use `violet/cyan` theme (not teal), `rounded-2xl border border-slate-800 bg-slate-900/60 glow`
+- **Header:** `Live P2P Playground` + `room: public` pill, `🔒 e2e` hidden, `0 online`, `new private`, `join`, `clear view`
+- **Left:** `messages` (h-72), `msgForm` (imgBtn, fileBtn, msgInput, Send), note: `Open in two tabs — messages sync via GDBx pool (WS + mirror + hybrid-mesh)`
+- **Right:** `How it works` (4 steps: connect `wss://gdbx-do.../ws?addr=`, namespace `.GDBx`, FirewallGuard, IndexedDB/offline), `Playground status` (uptime, deltas, pool health, backend) polling `GET /pool` + `GET /stats`
+- **Behavior:** Messages sync real-time across tabs via shared demo address `aeaagiao64onmpxlv7bjgk4chnpvl5h77erwqq7gockpvm2kafwzwmzt3u` (hardcoded demo keypair, gun-free GDBX1). Each message is a signed delta `playground/<room>/msg/<ts>-<rand>` with flat JSON string value.
+
+### G2. Room Management (GDBx-native)
+- Public room: `playground/public` (default)
+- Private rooms: `playground/private/<roomId>` derived from `invite link` `https://gdbx.pages.dev/#r=<roomId>&k=<base64url AES key>` — messages AES-GCM encrypted with room key before put, decrypted on receive. `roomLockPill` visible when private.
+- `new private` → generate `roomId` (nanoid) + AES key (256-bit, `crypto.getRandomValues`), store in URL hash, copy invite link
+- `join` → prompt invite link, parse `r` & `k`, switch room, decrypt
+- `clear view` → only DOM clear, no relay delete (like GunX)
+- Rooms use same demo address but isolated by key prefix — no extra DID.
+
+### G3. Presence & Stats
+- Heartbeat: `POST /api/v1/peers` (or `POST /peers` via worker) with `{addr: DEMO_ADDR, transports: ["playground", "ws"]}` every 10s, visitor ID `visitor-xxxx` in localStorage
+- Online count: poll `GET /api/v1/leaderboard` or `GET /stats` → `active` or `peers.length`, update `onlinePill`
+- Relay status: poll `GET /stats` (dids, deltas) + `GET /pool` (mirror health) every 5s, update `stUptime`, `stMessages`, `stPool`, `stBackend` (like GunX's `stUptime`, `stMessages`, `stBytes`, `stBackend`)
+
+### G4. Attachments (lite)
+- **Image:** For MVP, if <32KB, base64 data URL stored as delta value (flat string, within GDBx 32KB limit), rendered as `<img>` in chat. Larger → show "too large for GDBx delta (32KB) — use P2P file"
+- **File:** P2P via GDBx hybrid mesh WebRTC direct channel (reuse `sdk/transport.js` `buildSignal`/`parseSignal` + `GDBxWS` DataChannel? For MVP, fallback to same delta method if file <32KB, else WebRTC stub showing "P2P file — open in second tab")
+- For full file P2P (like GunX's `shareFile`), reuse `public/js/direct_rtc.js` logic but adapted for GDBx (signaling via GDBx souls `playground/sig/<from>`?) — deferred to phase 2, show tooltip.
+
+## 3. Non-Goals
+- Full Direct Pair QR flow (already exists as separate Direct Pair section in GunX — GDBx has Inspector, not needed now)
+- Nostr Mesh section (GDBx already has hybrid mesh Nostr kind 23124 — playground will optionally sync via `/relay` if `wss://relay.damus.io` connected — deferred)
+- .gunx TLD registry (not applicable to GDBx — GDBx has .GDBx address codec)
+
+## 4. Design Constraints
+- **No gun:** All writes via `GDBxCrypto.sign` (GDBX1) + PoW (diff 2) + `FirewallGuard` — same as `gdbx-live.js` sandbox
+- **Supply-chain clean:** No new runtime deps (reuse `@noble/hashes`, `commander` not needed)
+- **Offline-first:** Messages queued if WS offline, replayed on reconnect (like sandbox's `ensureRegistered` + WS retry)
+- **Flat-primitive:** `value` must be string (JSON string of `{text, from, ts, room, img?}`) — 32KB cap
+
+## 5. Files
+- `public/js/gdbx-playground.js` (new, ~400 lines, module, exports `initPlayground`)
+- `public/index.html` — add `#playground` section after `#live` (before `#sandbox`), add nav link `Playground`, include script `type="module" src="/js/gdbx-playground.js"`
+- `public/js/gdbx-live.js` — no changes (keep sandbox)
+
+## 6. Acceptance
+- [ ] `gdbx.pages.dev/#playground` shows chat, `room: public`, `0 online`, `new private/join/clear view` buttons
+- [ ] Two tabs, same room, text syncs in <500ms via WS (or <3s via poll fallback)
+- [ ] Private room invite link `https://gdbx.pages.dev/#r=...&k=...` opens same room, lock pill visible, messages isolated by room prefix, E2E encrypted
+- [ ] Online count updates (heartbeat → leaderboard)
+- [ ] Image <32KB renders in chat, file >32KB shows WebRTC placeholder
+- [ ] `GET /pool` + `GET /stats` polling updates relay status cards
+- [ ] No `gun` import, `GDBxCrypto` only, `npm audit 0`

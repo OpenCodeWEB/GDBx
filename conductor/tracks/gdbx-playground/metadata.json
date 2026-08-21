@@ -1,0 +1,11 @@
+{
+  "id": "gdbx-playground",
+  "title": "GDBx Live P2P Playground — GunX parity",
+  "status": "completed",
+  "completed": "2026-08-21",
+  "created": "2026-08-21",
+  "phases": ["6.2"],
+  "tags": ["playground", "p2p", "gunx-parity", "live"],
+  "depends_on": ["org-gdbx-unification", "gdbx-cli-visual"],
+  "priority": "high"
+}
