@@ -108,6 +108,64 @@ export function initPlayground() {
     for (let i = 0; i < n; i++) s += a[r[i] % a.length];
     return s;
   }
+  // GDBx delta is 32KB max (flat-primitive, DoS protection) — but GunX playground supports any size via imgbb proxy + P2P.
+  // For GDBx we do GunX parity: image → /api/imgbb proxy (10MB, server-side key), fallback → chunked pool (sovereign, any size)
+  // File → chunked pool (sovereign, any size) with manifest, reassembled on receive. P2P WebRTC direct (any size, no relay) deferred but stub.
+  async function putSingleDelta(key, value) {
+    const ts = Date.now();
+    const hashInput = `${DEMO.addr}:${DEMO.pub}:sync.put:${ts}:`;
+    let nonce = 1, found = null;
+    for (; nonce < 500000; nonce++) {
+      const buf = new TextEncoder().encode(hashInput + nonce);
+      const digest = await crypto.subtle.digest("SHA-256", buf);
+      const hex = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      if (hex.startsWith("00")) { found = { nonce, hash: hex }; break; }
+    }
+    if (!found) throw new Error("PoW timeout");
+    const GDBxCrypto = window.GDBxCrypto;
+    const deltas = [{ key, value, clock: ts }];
+    const sig = await GDBxCrypto.sign({ addr: DEMO.addr, action: "sync.put", ts, payload: JSON.stringify(deltas) }, { pub: DEMO.pub, priv: DEMO.priv });
+    const body = { addr: DEMO.addr, pubkey: DEMO.pub, pubkeyHex: DEMO.pubkeyHex, deltas, ts, nonce: found.nonce, diff: 2, hash: found.hash, sig };
+    // prefer WS if open
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "put", ...body }));
+      return;
+    }
+    const res = await fetch(`${API}/sync`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  async function sendChunked(text, dataUrl, fname, fsize) {
+    const CHUNK = 28000; // leave margin for JSON overhead (<32KB)
+    const msgId = `${Date.now()}-${nanoid(6)}`;
+    const chunks = [];
+    for (let i = 0; i < dataUrl.length; i += CHUNK) chunks.push(dataUrl.slice(i, i + CHUNK));
+    // manifest first so receivers know to expect chunks (like GunX's file manifest)
+    const manifest = { text, from: visitorId, ts: Date.now(), room: currentRoom, isChunked: true, msgId, chunks: chunks.length, fname, fsize, isImage: dataUrl.startsWith("data:image") };
+    const manifestKey = `${currentRoom}/msg/${Date.now()}-${nanoid(4)}`;
+    await putSingleDelta(manifestKey, JSON.stringify(manifest));
+    seenKeys.add(manifestKey);
+    addMsg(text, true, { fname, fsize, img: manifest.isImage ? "(chunked image — reassembling...)" : null });
+    // then chunks
+    for (let i = 0; i < chunks.length; i++) {
+      const key = `${currentRoom}/chunk/${msgId}/${String(i).padStart(4, "0")}`;
+      await putSingleDelta(key, chunks[i]);
+      seenKeys.add(key);
+    }
+  }
+  async function reassembleChunked(manifest) {
+    const { msgId, chunks } = manifest;
+    const prefix = `${currentRoom}/chunk/${msgId}/`;
+    // fetch all chunks via HTTP (pool)
+    try {
+      const res = await fetch(`${API}/sync/${DEMO.addr}?prefix=${encodeURIComponent(prefix)}`);
+      const data = await res.json();
+      if (!data.entries) return null;
+      data.entries.sort((a, b) => a.key.localeCompare(b.key));
+      if (data.entries.length < chunks) return null; // not all yet
+      return data.entries.map((e) => e.value).join("");
+    } catch { return null; }
+  }
   async function encryptText(text, key) {
     if (!key) return text;
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -189,18 +247,41 @@ export function initPlayground() {
         try { msg = JSON.parse(ev.data); } catch { return; }
         if (msg.type === "delta") {
           if (!msg.key || !msg.key.startsWith(currentRoom)) return;
+          if (msg.key.includes("/chunk/")) return; // sovereign chunked pieces, not messages
           if (seenKeys.has(msg.key)) return;
           seenKeys.add(msg.key);
           let text = String(msg.value || "");
-          // value is JSON string of {text, from, ts, img?, fname?} or plain text for legacy
           let parsed = null;
           try { parsed = JSON.parse(text); } catch {}
           if (parsed && typeof parsed === "object" && parsed.text) {
+            if (parsed.isChunked && parsed.msgId) {
+              const reassembled = await reassembleChunked(parsed);
+              if (reassembled) {
+                if (parsed.isImage || (reassembled && reassembled.startsWith("data:image"))) {
+                  addMsg(parsed.text, parsed.from === visitorId, { img: reassembled, fname: parsed.fname, fsize: parsed.fsize });
+                } else if (parsed.fname) {
+                  // file: reassembled is dataUrl, create blob URL for download
+                  try {
+                    const res = await fetch(reassembled);
+                    const blob = await res.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    addMsg(parsed.text, parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize, blobUrl });
+                  } catch {
+                    addMsg(parsed.text, parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+                  }
+                } else {
+                  text = await decryptText(reassembled, roomKey);
+                  addMsg(text, parsed.from === visitorId);
+                }
+              } else {
+                addMsg(parsed.text + " (reassembling…)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+              }
+              return;
+            }
             text = await decryptText(parsed.text, roomKey);
             const mine = parsed.from === visitorId;
             addMsg(text, mine, { img: parsed.img, fname: parsed.fname, fsize: parsed.fsize, blobUrl: parsed.blobUrl });
           } else {
-            // fallback: plain text value
             text = await decryptText(text, roomKey);
             addMsg(text, false);
           }
@@ -221,15 +302,38 @@ export function initPlayground() {
       const res = await fetch(`${API}/sync/${DEMO.addr}?prefix=${encodeURIComponent(currentRoom)}/`);
       const data = await res.json();
       if (!data.entries) return;
-      // sort by clock
       data.entries.sort((a, b) => (a.clock || 0) - (b.clock || 0));
       for (const e of data.entries) {
+        if (e.key.includes("/chunk/")) continue;
         if (seenKeys.has(e.key)) continue;
         seenKeys.add(e.key);
         let text = String(e.value || "");
         let parsed = null;
         try { parsed = JSON.parse(text); } catch {}
         if (parsed && typeof parsed === "object" && parsed.text) {
+          if (parsed.isChunked && parsed.msgId) {
+            const reassembled = await reassembleChunked(parsed);
+            if (reassembled) {
+              if (parsed.isImage || (reassembled && reassembled.startsWith("data:image"))) {
+                addMsg(parsed.text, parsed.from === visitorId, { img: reassembled, fname: parsed.fname, fsize: parsed.fsize });
+              } else if (parsed.fname) {
+                try {
+                  const res2 = await fetch(reassembled);
+                  const blob = await res2.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  addMsg(parsed.text, parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize, blobUrl });
+                } catch {
+                  addMsg(parsed.text, parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+                }
+              } else {
+                text = await decryptText(reassembled, roomKey);
+                addMsg(text, parsed.from === visitorId);
+              }
+            } else {
+              addMsg(parsed.text + " (reassembling…)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+            }
+            continue;
+          }
           text = await decryptText(parsed.text, roomKey);
           const mine = parsed.from === visitorId;
           addMsg(text, mine, { img: parsed.img, fname: parsed.fname, fsize: parsed.fsize });
@@ -252,9 +356,12 @@ export function initPlayground() {
     let payloadText = text;
     if (roomKey) payloadText = await encryptText(text, roomKey);
     const valueObj = { text: payloadText, from: visitorId, ts, room: currentRoom, ...extra };
-    const value = JSON.stringify(valueObj);
-    if (value.length > 32 * 1024) {
-      addMsg("too large for GDBx delta (32KB) — try smaller file", true);
+    let value = JSON.stringify(valueObj);
+    if (value.length > 28000) {
+      // GunX parity for large payloads: GDBx delta is 32KB max per delta (DoS protection, LWW) — but any size is supported via sovereign chunked pool
+      // Chunk the value into 28KB pieces + manifest, like IPFS chunking — no external relay, pool-replicated, reassembled on receive
+      // For images/files, extra.img/dataUrl is already large, so chunk the full value
+      await sendChunked(text, value, extra.fname, extra.fsize);
       return;
     }
     // PoW
@@ -343,15 +450,36 @@ export function initPlayground() {
 
   if (imgBtn && imgInput) {
     imgBtn.addEventListener("click", () => imgInput.click());
-    imgInput.addEventListener("change", () => {
+    imgInput.addEventListener("change", async () => {
       const file = imgInput.files[0];
       imgInput.value = "";
       if (!file) return;
-      if (file.size > 28 * 1024) { alert("Image too large for GDBx delta (32KB max) — try smaller image (<28KB)"); return; }
+      // GunX parity: image via /api/imgbb proxy (any size up to 10MB, server-side key, like GunX)
+      if (file.type.startsWith("image/")) {
+        try {
+          const fd = new FormData();
+          fd.append("image", file);
+          const res = await fetch("/api/imgbb", { method: "POST", body: fd });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.display_url) {
+            await sendMessage(file.name, { img: data.display_url, fname: file.name, fsize: file.size });
+            return;
+          }
+          if (res.status !== 500) throw new Error(data.error || "imgbb failed");
+          console.warn("imgbb proxy not configured (no IMGBB_KEY), fallback to sovereign chunked pool");
+        } catch (e) {
+          console.warn("imgbb proxy failed, fallback to sovereign chunked:", e.message);
+        }
+      }
+      // fallback: sovereign chunked GDBx pool (no external dependency, any size) — split dataUrl
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         const dataUrl = reader.result;
-        sendMessage(file.name, { img: dataUrl, fname: file.name, fsize: file.size });
+        if (dataUrl.length <= 28000) {
+          await sendMessage(file.name, { img: dataUrl, fname: file.name, fsize: file.size });
+        } else {
+          await sendChunked(file.name, dataUrl, file.name, file.size);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -363,16 +491,12 @@ export function initPlayground() {
       const file = fileInput.files[0];
       fileInput.value = "";
       if (!file) return;
-      if (file.size > 28 * 1024) {
-        // For larger files, we would use P2P WebRTC direct channel (deferred) — show placeholder
-        addMsg(`file "${file.name}" (${file.size}B) too large for GDBx delta — P2P direct file share coming soon. Open second tab to test text sync.`, true);
-        return;
-      }
+      // GunX parity: file via P2P WebRTC (any size) — for GDBx we use sovereign chunked pool (any size, pool-replicated, no external relay) + future P2P direct
+      // GDBx delta is 32KB max per delta (DoS protection) — but any size file is chunked into 28KB deltas and reassembled (like IPFS chunking)
       const reader = new FileReader();
-      reader.onload = () => {
-        const b64 = reader.result.split(",")[1] || "";
-        // store as data URL is too big, store as base64 with separate fields
-        sendMessage(`sent file via GDBx`, { fname: file.name, fsize: file.size, img: null });
+      reader.onload = async () => {
+        const dataUrl = reader.result; // data:*/*;base64,...
+        await sendChunked(`file: ${file.name}`, dataUrl, file.name, file.size);
       };
       reader.readAsDataURL(file);
     });
