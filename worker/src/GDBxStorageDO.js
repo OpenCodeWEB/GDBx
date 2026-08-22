@@ -26,6 +26,9 @@ import { GDBxMirrorObject } from "./GDBxMirrorDO.js";
 // wrangler discovers Durable Object classes via NAMED exports from the
 // entrypoint module — mirror must be exported alongside the primary.
 export { GDBxMirrorObject };
+import { GunPeerObject } from "./GunRelayDO.js";
+// Gun-compat engine (GunX absorbed into GDBx): gun.js clients peer at /gun
+export { GunPeerObject };
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -890,15 +893,22 @@ function json(data, status = 200) {
 export default {
   GDBxStorageObject,
   GDBxMirrorObject,
+  GunPeerObject,
 
   /**
-   * Entry Worker fetch: forwards everything (HTTP + WS upgrades) to the
-   * default Durable Object — the DO is a singleton isolate, so the WebSocket
-   * hub inside it sees every connection and broadcasts reliably.
+   * Entry Worker fetch: routes to the right engine —
+   *   /gun*            → GunPeerObject  (Gun wire-compat relay, GunX absorbed)
+   *   everything else  → GDBxStorageObject (CRDT ledger + WS hub + pool)
    */
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
+
+    // Gun-compatible engine: /gun (+ its stats/health live under /gun/*)
+    if (url.pathname === "/gun" || url.pathname.startsWith("/gun/")) {
+      const gunId = env.GUN_PEER.idFromName("default");
+      return env.GUN_PEER.get(gunId).fetch(request);
+    }
 
     const id = env.GDBX_STORAGE.idFromName("default");
     const stub = env.GDBX_STORAGE.get(id);
