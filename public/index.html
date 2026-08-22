@@ -86,9 +86,9 @@
       <a href="#playground" class="hover:text-violet-300 transition-colors">Playground</a>
       <a href="#ftp" class="hover:text-amber-300 transition-colors">FTP</a>
       <a href="#sandbox" class="hover:text-cyan-300 transition-colors">Sandbox</a>
-      <a href="#api" class="hover:text-emerald-300 transition-colors">API</a>
+      <a href="/Api" class="hover:text-emerald-300 transition-colors">API</a>
       <a href="#security" class="hover:text-amber-300 transition-colors">Security</a>
-      <a href="#roadmap" class="hover:text-rose-300 transition-colors">Roadmap</a>
+      <a href="/RoadMap" class="hover:text-rose-300 transition-colors">Roadmap</a>
       <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github"></i> GitHub</a>
     </nav>
   </div>
@@ -124,7 +124,7 @@
       <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="px-6 py-3 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:border-violet-500/50 hover:text-violet-300 transition-colors">
         <i class="fa-brands fa-github mr-2"></i>View Source
       </a>
-      <a href="#api" class="px-6 py-3 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:border-cyan-500/50 hover:text-cyan-300 transition-colors">
+      <a href="/Api" class="px-6 py-3 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:border-cyan-500/50 hover:text-cyan-300 transition-colors">
         <i class="fa-solid fa-code mr-2"></i>API Docs
       </a>
     </div>
@@ -427,60 +427,25 @@ gdbx ftp sync /docs --watch</pre>
   </div>
 </section>
 
-<!-- ======= API ======= -->
+<!-- ======= API teaser (full reference at /Api) ======= -->
 <section id="api" class="border-y border-slate-800 bg-slate-900/30">
   <div class="max-w-7xl mx-auto px-4 py-20">
-    <h2 class="text-3xl font-extrabold tracking-tight mb-2"><i class="fa-solid fa-code text-emerald-400 mr-2"></i>Public API</h2>
-    <p class="text-slate-400 mb-8 max-w-2xl">The GDBx API is open and CORS-enabled — build against it from any client, no keys required. Every write is SEA-signed + PoW-gated + replay-protected.</p>
-    <div class="space-y-3">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
-        <code class="mono text-sm text-slate-200">/api/v1/did/register</code>
-        <span class="text-xs text-slate-500 ml-auto">register identity (PoW + SEA)</span>
+    <div class="rounded-2xl border border-emerald-500/25 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 p-10 text-center">
+      <i class="fa-solid fa-code text-emerald-400 text-3xl"></i>
+      <h2 class="text-3xl font-extrabold tracking-tight mt-4">Public <span class="bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">API</span></h2>
+      <p class="text-slate-400 mt-3 max-w-xl mx-auto">Open and CORS-enabled — DID registry, signed CRDT sync over HTTP/WS/Nostr relay, pool status, GDPR purge. Every write is GDBX1-signed + PoW-gated; reads need no keys.</p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3 text-xs mono">
+        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold">POST /did</span>
+        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold">POST /sync</span>
+        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 font-bold">GET /sync/:addr</span>
+        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 font-bold">GET /pool</span>
+        <span class="px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-300 font-bold">WS /ws</span>
+        <span class="px-2.5 py-1 rounded-md bg-violet-500/15 text-violet-300 font-bold">POST /relay</span>
+        <span class="text-slate-600 px-1 py-1">+8 more</span>
       </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
-        <code class="mono text-sm text-slate-200">/api/v1/sync</code>
-        <span class="text-xs text-slate-500 ml-auto">signed CRDT delta batch</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/api/v1/sync/:addr?prefix=</code>
-        <span class="text-xs text-slate-500 ml-auto">read state vector</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-300 text-xs font-bold mono">WS</span>
-        <code class="mono text-sm text-slate-200">/api/v1/ws?addr=:addr</code>
-        <span class="text-xs text-slate-500 ml-auto">real-time full-duplex sync</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 text-xs font-bold mono">DELETE</span>
-        <code class="mono text-sm text-slate-200">/api/v1/identity</code>
-        <span class="text-xs text-slate-500 ml-auto">GDPR right-to-be-forgotten</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
-        <code class="mono text-sm text-slate-200">/api/v1/export</code>
-        <span class="text-xs text-slate-500 ml-auto">signed backup snapshot</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/api/v1/leaderboard</code>
-        <span class="text-xs text-slate-500 ml-auto">global mesh analytics</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/api/v1/health</code>
-        <span class="text-xs text-slate-500 ml-auto">liveness + timestamp</span>
-      </div>
-    </div>
-    <div class="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-      <div class="text-slate-500 mb-2"># register a DID (PoW + SEA signed)</div>
-      <div class="text-slate-200">curl -X POST https://gdbx.pages.dev/api/v1/did/register \<br>
-      <span class="text-slate-500">  -H</span> <span class="text-emerald-300">"content-type: application/json"</span> \<br>
-      <span class="text-slate-500">  -d</span> <span class="text-emerald-300">'{"addr":"&lt;58-char&gt;","pubkey":"&lt;SEA pub&gt;","pubkeyHex":"04…","ts":…,"nonce":…,"diff":…,"hash":"…","sig":"…"}'</span></div>
-      <div class="text-slate-500 mt-3 mb-2"># real-time sync over WebSocket (served by the gdbx-do Worker — Pages does not proxy WS upgrades)</div>
-      <div class="text-slate-200">const ws = new WebSocket(<span class="text-cyan-300">"wss://gdbx-do.xup.workers.dev/ws?addr=&lt;addr&gt;"</span>)</div>
+      <a href="/Api" class="inline-flex items-center gap-2 mt-8 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">
+        <i class="fa-solid fa-book mr-1"></i>Full API Reference
+      </a>
     </div>
   </div>
 </section>
@@ -525,39 +490,24 @@ gdbx ftp sync /docs --watch</pre>
   </div>
 </section>
 
-<!-- ======= Roadmap ======= -->
+<!-- ======= Roadmap teaser (full board at /RoadMap) ======= -->
 <section id="roadmap" class="border-t border-slate-800 bg-slate-900/30">
   <div class="max-w-7xl mx-auto px-4 py-20">
-    <h2 class="text-3xl font-extrabold tracking-tight mb-8"><i class="fa-solid fa-map text-rose-400 mr-2"></i>Roadmap</h2>
-    <div class="space-y-4">
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
-        <div><div class="font-bold">Phase 0 · Scaffold</div><div class="text-sm text-slate-400">Conductor setup, Cloudflare Pages + Worker, CI-ready repo</div></div>
+    <div class="rounded-2xl border border-rose-500/25 bg-gradient-to-r from-rose-500/5 to-violet-500/5 p-10 text-center">
+      <i class="fa-solid fa-map text-rose-400 text-3xl"></i>
+      <h2 class="text-3xl font-extrabold tracking-tight mt-4"><span class="bg-gradient-to-r from-rose-400 to-violet-300 bg-clip-text text-transparent">Roadmap</span></h2>
+      <p class="text-slate-400 mt-3 max-w-xl mx-auto">Seven phases shipped and live — from the .GDBx address codec to the self-sovereign mesh, replication pool, hybrid transports, playground, CLI, FTP gateway and org-wide fabric.</p>
+      <div class="mt-6 flex flex-wrap justify-center gap-2 text-xs mono max-w-2xl mx-auto">
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ Codec</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ DID + PoW</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ CRDT</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ Hardening</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ Sovereign Mesh</span>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">✓ Org Fabric</span>
       </div>
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
-        <div><div class="font-bold">Phase 1 · Address Codec</div><div class="text-sm text-slate-400">.GDBx format (BLAKE3 + base32), DID resolver, full test suite</div></div>
-      </div>
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
-        <div><div class="font-bold">Phase 2 · DID Registry + PoW Gate</div><div class="text-sm text-slate-400">GDBxStorageDO — signed writes (SEA v1), adaptive PoW anti-spam</div></div>
-      </div>
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
-        <div><div class="font-bold">Phase 3 · CRDT Sync Engine</div><div class="text-sm text-slate-400">LWW merge, presence heartbeat, stats ledger, Pages API v1</div></div>
-      </div>
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-sm"></i></span>
-        <div><div class="font-bold">Phase 4 · Hardening + Real-time</div><div class="text-sm text-slate-400">Replay protection, GDPR erasure, rate limits, strict validation, WebSocket live sync, export/backup, leaderboard</div></div>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-fuchsia-500/20 text-fuchsia-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-satellite text-sm"></i></span>
-        <div><div class="font-bold">Phase 5 · Multi-Transport Router</div><div class="text-sm text-slate-400">WebRTC / Nostr / Tor / I2P / IPFS routing with automatic fallback</div></div>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex items-center gap-4">
-        <span class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-bug-slash text-sm"></i></span>
-        <div><div class="font-bold">Phase 6 · Public Audit</div><div class="text-sm text-slate-400">Independent security audit, load testing, formal spec</div></div>
-      </div>
+      <a href="/RoadMap" class="inline-flex items-center gap-2 mt-8 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-slate-950 font-bold hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/20">
+        <i class="fa-solid fa-map mr-1"></i>Open Full Roadmap
+      </a>
     </div>
   </div>
 </section>

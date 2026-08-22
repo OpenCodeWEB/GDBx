@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roadmap — GDBx ~ Global Decentralized DataBase Sync</title>
+<meta name="description" content="GDBx roadmap — shipped phases and what's next on the sovereign data mesh: gun-compat engine, multi-region replication, vector search, formal audit.">
+<meta name="theme-color" content="#020617">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+
+<!-- Header -->
+<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 group">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg"><i class="fa-solid fa-database"></i></div>
+      <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">GDBx</span>
+      <span class="text-xs ml-1 px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 mono">/RoadMap</span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm font-medium text-slate-300">
+      <a href="/#protocol" class="hover:text-violet-300 transition-colors hidden md:inline">Protocol</a>
+      <a href="/#playground" class="hover:text-violet-300 transition-colors hidden md:inline">Playground</a>
+      <a href="/Api" class="hover:text-emerald-300 transition-colors">API</a>
+      <a href="/" class="hover:text-cyan-300 transition-colors"><i class="fa-solid fa-house mr-1"></i>Home</a>
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github"></i></a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="grid-bg border-b border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/25 text-xs font-semibold tracking-wide uppercase">Roadmap</span>
+      <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-xs mono">7 phases shipped</span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Where <span class="bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">.GDBx</span> is headed</h1>
+    <p class="mt-4 text-lg text-slate-400 max-w-2xl">Every phase below is tracked in the open — specs and plans live in
+      <code class="mono text-violet-300">conductor/tracks/</code>. Shipped means live on <code class="mono text-cyan-300">gdbx.pages.dev</code>, not just merged.</p>
+  </div>
+</section>
+
+<!-- Shipped -->
+<section class="max-w-5xl mx-auto px-4 py-16">
+  <h2 class="text-2xl font-extrabold tracking-tight mb-8 flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center"><i class="fa-solid fa-check text-sm"></i></span>Shipped</h2>
+  <div class="space-y-4">
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 0 · Scaffold</div><div class="text-sm text-slate-400 mt-1">Conductor setup, Cloudflare Pages + Worker, CI-ready repo</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 1 · Address Codec</div><div class="text-sm text-slate-400 mt-1">.GDBx format — Version+Network+SHA256(pubkey)+BLAKE3 checksum → 58 base32 chars; JS codec + Python parity vectors</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 2 · DID Registry + PoW Gate</div><div class="text-sm text-slate-400 mt-1">GDBxStorageDO (Durable Object SQLite), did:gdbx:&lt;addr&gt; documents, adaptive SHA-256 PoW anti-spam</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 3 · CRDT Sync Engine</div><div class="text-sm text-slate-400 mt-1">LWW merge with deterministic tie-break, flat-primitive schema, presence heartbeat, Pages API v1</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 4 · Hardening + Real-time</div><div class="text-sm text-slate-400 mt-1">Replay protection (60s window + nonce), GDPR purge, rate limits, strict validation, WebSocket hub inside the DO, encrypted export, leaderboard</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 5 · Self-Sovereign Mesh</div><div class="text-sm text-slate-400 mt-1">Gun-free crypto core (GDBX1 envelope, pure WebCrypto ECDSA P-256, SEA v1 compat) · zero-trust FirewallGuard (PoW→replay→sig→RBAC→ACL) on every mutation · GDBxMirrorDO replication pool with rejoin healing · hybrid transports WS → Nostr kind-23124 → WebRTC signaling · supply-chain hardening (@noble/hashes only, npm audit 0)</div></div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex items-start gap-4">
+      <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check text-sm"></i></span>
+      <div><div class="font-bold">Phase 6 · Org Fabric &amp; Developer Platform</div><div class="text-sm text-slate-400 mt-1">
+        Python SDK (<span class="mono text-violet-300">gdbx-py</span>) with JS↔PY cross-verified GDBX1 vectors · AiA + OS bridges · Live P2P Playground (rooms, E2E AES-GCM private rooms, imgbb proxy + sovereign chunked files) · CLI (<span class="mono text-violet-300">identity / sync / vector / backup / ftp gateway</span>) · Sovereign FTP Gateway (ftp-srv loopback, FileZilla-compatible, 256KB AES-GCM BLAKE3 chunks) · Gun-compat engine absorbed (serverless relay semantics natively)
+      </div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- In Progress / Next -->
+<section class="border-t border-slate-800 bg-slate-900/30">
+  <div class="max-w-5xl mx-auto px-4 py-16">
+    <h2 class="text-2xl font-extrabold tracking-tight mb-2">In progress &amp; next</h2>
+    <p class="text-slate-400 mb-8 text-sm">Pulled from the live tracks registry — statuses move as work lands.</p>
+    <div class="grid md:grid-cols-2 gap-4">
+
+      <div class="rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-fuchsia-500/20 text-fuchsia-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-diagram-project text-sm"></i></span>
+        <div><div class="font-bold">Gun-Compat Wire Engine</div><div class="text-sm text-slate-400 mt-1">Full legacy wire-protocol surface so existing Gun clients peer with a .GDBx address unmodified.</div><a href="https://github.com/OpenCodeWEB/GDBX/tree/Dev/conductor/tracks/gun-compat-engine" target="_blank" class="inline-flex items-center gap-1 mt-2 text-xs mono text-fuchsia-300 hover:text-fuchsia-200">track spec <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></a></div>
+      </div>
+
+      <div class="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-vector-square text-sm"></i></span>
+        <div><div class="font-bold">Vector Search (sqlite-vec)</div><div class="text-sm text-slate-400 mt-1">Native cosine search inside the Durable Object for AI-agent memory at scale — replaces client-side brute force.</div></div>
+      </div>
+
+      <div class="rounded-xl border border-violet-500/30 bg-violet-500/5 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-shield-halved text-sm"></i></span>
+        <div><div class="font-bold">Public Audit &amp; Formal Spec</div><div class="text-sm text-slate-400 mt-1">Independent security review, load testing, and a versioned protocol specification document.</div></div>
+      </div>
+
+      <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-globe text-sm"></i></span>
+        <div><div class="font-bold">Tor v3 / I2P / IPFS Transports</div><div class="text-sm text-slate-400 mt-1">Dark-net and content-addressed routing behind the same .GDBx address — adapter interfaces already reserved.</div></div>
+      </div>
+
+      <div class="rounded-xl border border-rose-500/30 bg-rose-500/5 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-database text-sm"></i></span>
+        <div><div class="font-bold">Multi-Region Backup Relay</div><div class="text-sm text-slate-400 mt-1">Cross-cloud snapshot mirroring (R2/S3/Fly.io) beyond the built-in MirrorDO pool.</div></div>
+      </div>
+
+      <div class="rounded-xl border border-slate-700 bg-slate-950/60 p-5 flex items-start gap-4">
+        <span class="w-8 h-8 rounded-full bg-slate-700/40 text-slate-300 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-fingerprint text-sm"></i></span>
+        <div><div class="font-bold">DIDComm v2 · UCAN · Verifiable Credentials</div><div class="text-sm text-slate-400 mt-1">SSI interoperability, offline capability delegation, and verifiable badges on did:gdbx identities.</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-slate-800 py-10">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database"></i></div>
+      <span class="text-sm text-slate-400">GDBx — MIT License · By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
+    </div>
+    <div class="flex items-center gap-4 text-sm text-slate-500">
+      <a href="/Api" class="hover:text-emerald-300 transition-colors">API Reference</a>
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github mr-1"></i>GDBX</a>
+      <span class="mono text-xs">gdbx.pages.dev/RoadMap</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
