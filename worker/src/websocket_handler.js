@@ -131,7 +131,10 @@ export function createWebSocketHub(getStorageStub) {
           server.send(JSON.stringify({ type: "error", error: "send hello first" }));
           return;
         }
-        // reuse the exact same validation path as POST /sync
+        // Reuse the exact same validation path as POST /sync (FirewallGuard:
+        // PoW → replay → signature → RBAC → ACL). The DO's rate limiter is
+        // keyed by IP+addr and gives demo keys a generous burst budget, so a
+        // normal sandbox session never sees "rate limited".
         const stub = storageStub;
         const body = { ...msg, addr: msg.addr || state.addr };
         const target = new URL("https://do.local/sync");

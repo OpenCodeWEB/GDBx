@@ -195,36 +195,49 @@ async function loadLeaderboard() {
     el.scrollTop = el.scrollHeight;
   };
 
-  // Generate an ephemeral sandbox identity (client-side, never leaves the browser except signed deltas)
+  // Sandbox identity — reuse from localStorage to avoid 10/min DID rate limit (like GunX's persistent pair)
   let pair = null;
   let pubkeyHex = null;
   let addr = null;
   try {
     const GDBxCrypto = window.GDBxCrypto;
     if (!GDBxCrypto || !GDBxCrypto.pair) throw new Error("GDBxCrypto not loaded");
-    pair = await GDBxCrypto.pair();
-    const [x, y] = pair.pub.split(".");
-    const key = await crypto.subtle.importKey(
-      "jwk", { kty: "EC", crv: "P-256", x, y, ext: true },
-      { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"],
-    );
-    const jwk = await crypto.subtle.exportKey("jwk", key);
-    const b64uToHex = (s) => {
-      const pad = s.replace(/-/g, "+").replace(/_/g, "/");
-      const bin = atob(pad + (pad.length % 4 === 0 ? "" : "=".repeat(4 - (pad.length % 4))));
-      return [...new Uint8Array(bin.length)].map((_, i) => bin.charCodeAt(i).toString(16).padStart(2, "0")).join("");
-    };
-    pubkeyHex = "04" + b64uToHex(jwk.x) + b64uToHex(jwk.y);
-
-    // address via public API (no local BLAKE3 dep needed here)
-    const ar = await fetch(`${API}/address`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ pubkey: pubkeyHex, network: 0 }),
-    });
-    const ad = await ar.json();
-    addr = ad.bare;
+    const STORAGE_KEY = "gdbx-sandbox-identity-v1";
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch {}
+    if (stored && stored.pub && stored.priv && stored.pubkeyHex && stored.addr) {
+      pair = { pub: stored.pub, priv: stored.priv };
+      pubkeyHex = stored.pubkeyHex;
+      addr = stored.addr;
+    } else {
+      pair = await GDBxCrypto.pair();
+      const [x, y] = pair.pub.split(".");
+      const key = await crypto.subtle.importKey(
+        "jwk", { kty: "EC", crv: "P-256", x, y, ext: true },
+        { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"],
+      );
+      const jwk = await crypto.subtle.exportKey("jwk", key);
+      const b64uToHex = (s) => {
+        const pad = s.replace(/-/g, "+").replace(/_/g, "/");
+        const bin = atob(pad + (pad.length % 4 === 0 ? "" : "=".repeat(4 - (pad.length % 4))));
+        return [...new Uint8Array(bin.length)].map((_, i) => bin.charCodeAt(i).toString(16).padStart(2, "0")).join("");
+      };
+      pubkeyHex = "04" + b64uToHex(jwk.x) + b64uToHex(jwk.y);
+      const ar = await fetch(`${API}/address`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ pubkey: pubkeyHex, network: 0 }),
+      });
+      const ad = await ar.json();
+      addr = ad.bare;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ pub: pair.pub, priv: pair.priv, pubkeyHex, addr })); } catch {}
+    }
     if (addrEl) addrEl.textContent = addr.slice(0, 10) + "…";
+    // quick check: if DID already exists, mark registered (avoid 429)
+    try {
+      const chk = await fetch(`${API}/did/${addr}`);
+      if (chk.ok) registered = true;
+    } catch {}
   } catch (e) {
     if (statusEl) statusEl.innerHTML = `<span class="text-rose-400">identity setup failed: ${e.message}</span>`;
     return;
@@ -306,9 +319,22 @@ async function loadLeaderboard() {
     }
   };
 
-  sendBtn.addEventListener("click", async () => {
-    const key = keyInput.value.trim();
-    const value = valInput.value.trim();
+  // 429 auto-retry with backoff (sandbox optimization): if the DO rate limiter
+  // rejects a burst, retry the same put after a short wait instead of failing —
+  // the bucket refills every minute and demo capacity is now 120/min.
+  let sendRetryTimer = null;
+  function scheduleRetry(key, value, attempt = 1) {
+    if (attempt > 3) {
+      log(termA, "[Node A] ✗ still rate limited after 3 retries — try again in ~30s", "log-warn");
+      return;
+    }
+    const waitMs = attempt * 3000;
+    if (sendRetryTimer) clearTimeout(sendRetryTimer);
+    log(termA, `[Node A] ↻ rate limited — retrying in ${waitMs / 1000}s (attempt ${attempt}/3)…`, "log-warn");
+    sendRetryTimer = setTimeout(() => doSend(key, value, attempt + 1), waitMs);
+  }
+
+  async function doSend(key, value, retryAttempt = 0) {
     if (!key) { log(termA, "[Node A] ✗ key required", "log-warn"); return; }
     if (!ws || ws.readyState !== WebSocket.OPEN) { log(termA, "[Node A] ✗ not connected", "log-warn"); return; }
     try {
@@ -326,16 +352,48 @@ async function loadLeaderboard() {
         if (nonce > 500000) { log(termA, "[Node A] ✗ PoW timeout", "log-err"); return; }
       }
       const SEA = window.GDBxCrypto;
-      const deltas = [{ key, value, clock: ts }];
+      const deltas = [{ key: `sandbox/${key.replace(/^\/+/, "")}`, value, clock: ts }];
       const sig = await SEA.sign({ addr, action: "sync.put", ts, payload: JSON.stringify(deltas) }, pair);
-      log(termA, `[Node A] → put ${key} = ${JSON.stringify(value)} (signed, PoW ✓)`, "log-info");
-      ws.send(JSON.stringify({
-        type: "put", addr, pubkey: pair.pub, pubkeyHex,
-        deltas, ts, nonce: found.nonce, diff: 2, hash: found.hash, sig,
-      }));
+      log(termA, `[Node A] → put sandbox/${key} = ${JSON.stringify(value)} (signed, PoW ✓)`, "log-info");
+
+      // send and await ack/error so we can auto-retry on 429
+      const resp = await new Promise((resolve) => {
+        const handler = (ev) => {
+          let m;
+          try { m = JSON.parse(ev.data); } catch { return; }
+          const isOurs = m.type === "applied" || m.type === "error";
+          if (!isOurs) return;
+          ws.removeEventListener("message", handler);
+          resolve(m);
+        };
+        ws.addEventListener("message", handler);
+        ws.send(JSON.stringify({
+          type: "put", addr, pubkey: pair.pub, pubkeyHex,
+          deltas, ts, nonce: found.nonce, diff: 2, hash: found.hash, sig,
+        }));
+        setTimeout(() => { ws.removeEventListener("message", handler); resolve({ type: "timeout" }); }, 10000);
+      });
+
+      if (resp.type === "applied") {
+        log(termA, `[Node A] ✓ applied ${resp.applied} delta(s) — broadcast live`, "log-ok");
+      } else if (resp.type === "error") {
+        if (/rate limited/i.test(resp.error || "")) {
+          scheduleRetry(key, value, Math.max(retryAttempt, 1));
+          return;
+        }
+        log(termA, `[Node A] ✗ ${resp.error}`, "log-err");
+      } else {
+        log(termA, "[Node A] ⚠ no ack from hub (timeout)", "log-warn");
+      }
     } catch (e) {
       log(termA, `[Node A] ✗ ${e.message}`, "log-err");
     }
+  }
+
+  sendBtn.addEventListener("click", () => {
+    const key = keyInput.value.trim();
+    const value = valInput.value.trim();
+    doSend(key, value, 0);
   });
 
   connect();

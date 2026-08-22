@@ -139,8 +139,23 @@ export class GDBxStorageObject {
 
       /* DID */
       if (url.pathname === "/did" && request.method === "POST") {
-        if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
-        return await this.registerDID(await request.json());
+        const body = await request.json();
+        const addr = normalizeAddress(String(body.addr || ""));
+        // idempotent re-register: if DID already exists, allow with per-addr higher limit (demo)
+        if (addr) {
+          const existing = await this.state.storage.get(`did:${addr}`);
+          if (existing) {
+            const key = `${ip}:${addr}`;
+            if (!this.rateLimit(key, 30, 60000)) {
+              return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "2" } });
+            }
+            return await this.registerDID(body);
+          }
+        }
+        if (!this.rateLimit(ip, 20, 60000)) {
+          return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "3" } });
+        }
+        return await this.registerDID(body);
       }
       /* RBAC: superadmin-signed promotion / demotion */
       if (url.pathname === "/identity/role" && request.method === "POST") {
@@ -155,8 +170,27 @@ export class GDBxStorageObject {
 
       /* Sync */
       if (url.pathname === "/sync" && request.method === "POST") {
-        if (!this.rateLimit(ip, 30, 60000)) return json({ error: "rate limited" }, 429);
-        return await this.putDeltas(await request.json());
+        const body = await request.json();
+        // Rate limiting strategy (optimized after sandbox "rate limited" reports):
+        // - Bucket key = IP+addr (not bare IP) so many users on the same NAT/CGNAT
+        //   don't starve each other, and one busy demo address doesn't block others.
+        // - Sandbox keys (`test/`, `sandbox/`) and playground chat get a demo-friendly
+        //   burst budget; normal writes keep the anti-spam default.
+        // - PoW + GDBX1 signature still gate every write — rate limit is only the
+        //   second line of defense, so raising capacity stays zero-trust safe.
+        const isDemo = Array.isArray(body.deltas) && body.deltas.some((d) => {
+          const k = String(d.key || "");
+          return k.startsWith("playground/") || k.startsWith("sandbox/") || k.startsWith("test/");
+        });
+        const capacity = isDemo ? 120 : 30;
+        const key = body.addr ? `${ip}:${normalizeAddress(String(body.addr))}` : ip;
+        if (!this.rateLimit(key, capacity, 60000)) {
+          return new Response(JSON.stringify({ error: "rate limited", retryAfterMs: 2000 }), {
+            status: 429,
+            headers: { ...JSON_HEADERS, "retry-after": "2" },
+          });
+        }
+        return await this.putDeltas(body);
       }
       if (url.pathname.startsWith("/sync/") && request.method === "GET") {
         if (!this.rateLimit(ip, 120, 60000)) return json({ error: "rate limited" }, 429);
@@ -172,8 +206,11 @@ export class GDBxStorageObject {
         return this.getStats();
       }
       if (url.pathname === "/peers" && request.method === "POST") {
-        // presence heartbeat: { addr, pubkey, transports: ["webrtc","nostr"] }
-        if (!this.rateLimit(ip, 30, 60000)) return json({ error: "rate limited" }, 429);
+        const bodyPeek = await request.clone().json().catch(() => ({}));
+        const peerKey = bodyPeek.addr ? `${ip}:${normalizeAddress(String(bodyPeek.addr)) || ip}` : ip;
+        if (!this.rateLimit(peerKey, 60, 60000)) {
+          return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "2" } });
+        }
         return await this.heartbeat(await request.json());
       }
 
