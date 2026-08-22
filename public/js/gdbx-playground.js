@@ -8,7 +8,7 @@
  * - Relay status (pool + stats)
  * - Image (<32KB base64) + file stub
  *
- * Demo identity (shared public playground address) — gun-free GDBX1:
+ * Demo identity (shared public playground address) — gun-free GDBx:
  */
 const DEMO = {
   pub: "xb_tjiMr6afzWikmd6yyNjPSaLkWoj_jDBEB-TqgJio.AR_uV6kJN1Re4STtyUH92_3jGH3GaVAPnTi4yNEyLaY",

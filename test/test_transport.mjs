@@ -3,7 +3,7 @@
  *
  * Covers:
  *   - transport router picks ws → nostr → webrtc by availability
- *   - nostr event builder: kind 23124, signed GDBX1 content, addr tag
+ *   - nostr event builder: kind 23124, signed GDBx content, addr tag
  *   - nostr event parser round-trips
  *   - webrtc signal builder (offer/answer/candidate) round-trips
  *   - worker /relay ingests a signed nostr event through FirewallGuard
@@ -127,16 +127,16 @@ test("mesh: nostr event builder — kind 23124, signed content, addr tag", async
   assert.ok(event.tags.some((tag) => tag[0] === "addr" && tag[1] === addr));
   assert.ok(event.created_at > 0);
   assert.equal(typeof event.content, "string");
-  // content is the GDBX1 envelope: "GDBX1{...}"
-  assert.ok(event.content.startsWith("GDBX1"));
-  const parsed = JSON.parse(event.content.slice(5));
+  // content is the GDBx envelope: "GDBx{...}"
+  assert.ok(event.content.startsWith("GDBx"));
+  const parsed = JSON.parse(event.content.slice(4));
   assert.equal(parsed.m.addr, addr);
   assert.equal(parsed.m.action, "sync.put");
   assert.equal(parsed.s, "sig");
 });
 
 test("mesh: nostr event parser round-trips", () => {
-  const content = "GDBX1" + JSON.stringify({
+  const content = "GDBx" + JSON.stringify({
     m: { addr, action: "sync.put", ts: 1234, payload: JSON.stringify([{ key: "k", value: "v", clock: 1234 }]) },
     s: "sig",
   });
@@ -222,7 +222,7 @@ test("mesh: /relay rejects bad signature", async () => {
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", t);
   const event = await buildNostrEvent({
     addr, pubkey: pair.pub, pubkeyHex, ts: t, nonce, diff, hash, deltas,
-    sig: "GDBX1bad",
+    sig: "GDBxbad",
   });
   const req = new Request("https://do.local/relay", {
     method: "POST",
@@ -251,5 +251,5 @@ test("mesh: SDK putDeltasHybrid falls back to nostr relay", async () => {
   const event = JSON.parse(captured.init.body);
   assert.equal(event.kind, 23124);
   assert.equal(event.pubkey, pair.pub);
-  assert.ok(event.content.startsWith("GDBX1"));
+  assert.ok(event.content.startsWith("GDBx"));
 });

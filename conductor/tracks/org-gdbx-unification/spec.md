@@ -22,7 +22,7 @@
 
 ### 1.2 GDBx Phase 5 Baseline (what we have to share)
 
-- **Crypto:** `sdk/gdbx-crypto.js` pure WebCrypto ECDSA P-256, GDBX1 envelope, SEA v1 compat
+- **Crypto:** `sdk/gdbx-crypto.js` pure WebCrypto ECDSA P-256, GDBx envelope, SEA v1 compat
 - **Firewall:** `FirewallGuard` PoW→replay→sig→RBAC→ACL on every mutation (HTTP/WS/Nostr)
 - **Pool:** `GDBxMirrorDO` replication, LWW merge, `/pool` health
 - **Mesh:** `sdk/transport.js` ws→nostr (kind 23124)→webrtc, `POST /relay`, `putDeltasHybrid`
@@ -90,7 +90,7 @@ OS currently has `gun-relay/` (bridge.js, relay.js, supervisor) + `os-gunx` trac
 ## 4. Functional Requirements
 
 ### FR1. Python SDK Parity
-- `gdbx_py.crypto` — `pair()`, `sign(body, pair)`, `verify(body, sig, pub)` — WebCrypto-equivalent via `cryptography` or `ecdsa` + `hashlib` — GDBX1 envelope identical to JS
+- `gdbx_py.crypto` — `pair()`, `sign(body, pair)`, `verify(body, sig, pub)` — WebCrypto-equivalent via `cryptography` or `ecdsa` + `hashlib` — GDBx envelope identical to JS
 - `gdbx_py.codec` — `make_address(pubkey_hex, network)`, `normalize_address()` — BLAKE3 + base32, matches `sdk/gdbx-codec.js` vectors
 - `gdbx_py.client` — `GdbxClient(base_url, pair, pubkey_hex)` with `register_did()`, `put_deltas(deltas)`, `get_deltas(prefix)`, `put_vector(key, vector)`, `search_vector(query_vec, top_k)`
 - PoW: `mine_pow(addr, pub, payload, ts, diff)` — same `hash_input` + SHA256 + difficulty as worker
@@ -136,7 +136,7 @@ OS currently has `gun-relay/` (bridge.js, relay.js, supervisor) + `os-gunx` trac
 
 | Risk | Mitigation |
 |---|---|
-| Python crypto diverges from JS WebCrypto (GDBX1) | Cross-verify tests + shared test vectors (`test/vectors/gdbx1.json`) |
+| Python crypto diverges from JS WebCrypto (GDBx) | Cross-verify tests + shared test vectors (`test/vectors/gdbx-vectors-js.json`) |
 | AiA/OS env var sprawl | Single `GDBX_*` set, documented in `conductor/product.md`, fallback to gun |
 | Worker `/vector/*` not yet implemented | Stub cosine search in Python/client first, migrate to DO `sqlite-vec` next track |
 | Org rollout breaks other repos | Opt-in docs only, no forced migration; `examples/` template |

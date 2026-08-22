@@ -7,8 +7,8 @@
 
 ## Step 0 — Shared Vectors & Test Harness (1h)
 
-**Files:** `test/vectors/gdbx1.json`, `test/test_gdbx_py_parity.mjs` stub
-- Extract 2-3 GDBX1 sign vectors from `sdk/gdbx-crypto.js` (addr, body, sig, pub, pubkeyHex) into `test/vectors/gdbx1.json`
+**Files:** `test/vectors/gdbx-vectors-js.json`, `test/test_gdbx_py_parity.mjs` stub
+- Extract 2-3 GDBx sign vectors from `sdk/gdbx-crypto.js` (addr, body, sig, pub, pubkeyHex) into `test/vectors/gdbx-vectors-js.json`
 - This unblocks Python parity without live network
 
 ## Step 1 — Python SDK `gdbx-py` (TDD, 4h)
@@ -16,7 +16,7 @@
 **Files:** `packages/gdbx-py/pyproject.toml`, `packages/gdbx-py/gdbx_py/{__init__.py,crypto.py,codec.py,client.py,pow.py}`, `packages/gdbx-py/tests/test_*.py`
 **Test:** `pytest packages/gdbx-py -q` + `node test/test_gdbx_py_parity.mjs` (red first)
 
-- `crypto.py` — `pair()`, `sign(body, priv_jwk)`, `verify(body, sig, pub)` — ECDSA P-256 via `cryptography` (preferred) or `ecdsa` + `hashlib` — GDBX1 envelope `"GDBX1"+canonical_json{m,s}` (key-sorted, same as JS `canonicalJson`)
+- `crypto.py` — `pair()`, `sign(body, priv_jwk)`, `verify(body, sig, pub)` — ECDSA P-256 via `cryptography` (preferred) or `ecdsa` + `hashlib` — GDBx envelope `"GDBx"+canonical_json{m,s}` (key-sorted, same as JS `canonicalJson`)
 - `codec.py` — `make_address(pubkey_hex, network)`, `normalize_address()`, `base32_encode/decode`, `pubkey_hash` — BLAKE3 via `hashlib.blake2b` or `blake3` pip, vectors from `sdk/gdbx-codec.js`
 - `pow.py` — `get_difficulty(addr)`, `hash_input()`, `mine_pow(addr, pub, payload, ts, diff)` — SHA256, same as `worker/src/verify.js`
 - `client.py` — `GdbxClient(base_url, pair, pubkey_hex)` — `register_did()`, `put_deltas()`, `get_deltas()`, `put_vector()`, `search_vector()` (vector stub: kv with cosine in Python)
@@ -53,7 +53,7 @@
 
 ## Step 5 — Integration Tests & Live Verify (2h)
 
-**Files:** `GDBX/test/test_org_integration.mjs`, `scripts/check-supply-chain.mjs` (extend to check `packages/gdbx-py`), `GDBX/test/vectors/gdbx1.json` final
+**Files:** `GDBX/test/test_org_integration.mjs`, `scripts/check-supply-chain.mjs` (extend to check `packages/gdbx-py`), `GDBX/test/vectors/gdbx-vectors-js.json` final
 
 - `test_org_integration.mjs` — uses `GdbxStorageObject` + `GDBxMirrorObject` mocks + `gdbx_py` vectors to verify AiA→OS convergence: AiA `put_deltas` (`aia/memory/test`) → OS `get_deltas` sees it (pool merge semantics)
 - Add `test_gdbx_py_parity` to `package.json` `test:all` (`pytest packages/gdbx-py -q && node --test ...`)

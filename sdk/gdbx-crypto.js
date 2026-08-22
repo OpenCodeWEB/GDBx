@@ -5,8 +5,8 @@
  * package, no third-party runtime deps — the whole identity/signature layer
  * is owned by GDBx.
  *
- * Signature envelope (GDBX1):
- *   "GDBX1" + JSON.stringify({ m, s })
+ * Signature envelope (GDBx):
+ *   "GDBx" + JSON.stringify({ m, s })
  *   m = canonical key-sorted JSON of the signed body
  *   s = base64url raw ECDSA P-256 / SHA-256 signature
  *
@@ -116,32 +116,32 @@ async function signKey(pair) {
 /* ── signing ──────────────────────────────────────────────────────────── */
 
 /**
- * Sign a canonical body with GDBX1 envelope.
+ * Sign a canonical body with GDBx envelope.
  * @param {object} body  message object (key order irrelevant — canonicalized)
  * @param {{pub:string, priv?:string, privJwk?:object|string}} keyPair
- * @returns {Promise<string>} "GDBX1" + JSON.stringify({m, s})
+ * @returns {Promise<string>} "GDBx" + JSON.stringify({m, s})
  */
 export async function sign(body, keyPair) {
   const m = canonicalJson(body);
   const key = await signKey(keyPair);
   const hash = await subtle().digest("SHA-256", new TextEncoder().encode(m));
   const rawSig = await subtle().sign({ name: "ECDSA", hash: "SHA-256" }, key, hash);
-  return "GDBX1" + JSON.stringify({ m, s: bytesToB64url(new Uint8Array(rawSig)) });
+  return "GDBx" + JSON.stringify({ m, s: bytesToB64url(new Uint8Array(rawSig)) });
 }
 
 /**
- * Verify a GDBX1 envelope (pure).
+ * Verify a GDBx envelope (pure).
  * @param {object} body  the expected canonical message
- * @param {string} sig   "GDBX1" envelope
+ * @param {string} sig   "GDBx" envelope
  * @param {string} pub   `x.y` base64url public key
  * @returns {Promise<boolean>}
  */
 export async function verify(body, sig, pub) {
   try {
-    if (typeof sig !== "string" || !sig.startsWith("GDBX1")) return false;
-    const env = JSON.parse(sig.slice(5));
+    if (typeof sig !== "string" || !sig.startsWith("GDBx")) return false;
+    const env = JSON.parse(sig.slice(4));
     if (!env || typeof env !== "object" || typeof env.s !== "string") return false;
-    // GDBX1 stores m as canonical string; legacy shapes may store the object
+    // GDBx stores m as canonical string; legacy shapes may store the object
     const mStr = typeof env.m === "string" ? env.m : canonicalJson(env.m);
     if (mStr !== canonicalJson(body)) return false;
 
@@ -162,14 +162,14 @@ export async function verify(body, sig, pub) {
 }
 
 /**
- * Verify GDBX1 OR legacy SEA v1 envelope (backward compatible).
+ * Verify GDBx OR legacy SEA v1 envelope (backward compatible).
  * @param {object} body
  * @param {string} sig
  * @param {string} pub
  * @returns {Promise<boolean>}
  */
 export async function verifyCompat(body, sig, pub) {
-  if (typeof sig === "string" && sig.startsWith("GDBX1")) return verify(body, sig, pub);
+  if (typeof sig === "string" && sig.startsWith("GDBx")) return verify(body, sig, pub);
   // legacy SEA v1: "SEA" + JSON.stringify({m, s})
   try {
     const raw = typeof sig === "string" && sig.slice(0, 4) === "SEA{" ? sig.slice(3) : sig;

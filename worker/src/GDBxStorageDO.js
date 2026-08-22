@@ -179,7 +179,7 @@ export class GDBxStorageObject {
         //   don't starve each other, and one busy demo address doesn't block others.
         // - Sandbox keys (`test/`, `sandbox/`) and playground chat get a demo-friendly
         //   burst budget; normal writes keep the anti-spam default.
-        // - PoW + GDBX1 signature still gate every write — rate limit is only the
+        // - PoW + GDBx signature still gate every write — rate limit is only the
         //   second line of defense, so raising capacity stays zero-trust safe.
         const isDemo = Array.isArray(body.deltas) && body.deltas.some((d) => {
           const k = String(d.key || "");
@@ -381,7 +381,7 @@ export class GDBxStorageObject {
    *   target     = pubkey (x.y) of the identity whose role changes
    *   targetAddr = .gdbx address of that identity (must be registered)
    *   role       = "user" | "manager" | "admin" | "guest" (demote)
-   *   sig        = GDBX1/SEA over canonical({addr, action:"identity.promote", ts, payload})
+   *   sig        = GDBx/SEA over canonical({addr, action:"identity.promote", ts, payload})
    */
   async setRole(body) {
     if (!body || typeof body !== "object") return json({ error: "body required" }, 400);
@@ -639,7 +639,7 @@ export class GDBxStorageObject {
   }
 
   /**
-   * Hybrid mesh relay: ingests a Nostr kind-23124 event (GDBX1 envelope in
+   * Hybrid mesh relay: ingests a Nostr kind-23124 event (GDBx envelope in
    * content) and runs it through the exact same FirewallGuard pipeline as
    * HTTP/WS sync.put — the mesh is transport-agnostic, one gate for all.
    */
@@ -650,12 +650,12 @@ export class GDBxStorageObject {
     const addr = normalizeAddress(String(addrTag[1]));
     if (!addr) return json({ error: "invalid .gdbx address" }, 400);
 
-    if (typeof ev.content !== "string" || !ev.content.startsWith("GDBX1")) {
-      return json({ error: "content not GDBX1 envelope" }, 400);
+    if (typeof ev.content !== "string" || !ev.content.startsWith("GDBx")) {
+      return json({ error: "content not GDBx envelope" }, 400);
     }
     let m, pubkeyHex, nonce, diff, hash, sig;
     try {
-      const envelope = JSON.parse(ev.content.slice(5));
+      const envelope = JSON.parse(ev.content.slice(4));
       m = envelope.m;
       pubkeyHex = envelope.pubkeyHex;
       nonce = envelope.nonce;

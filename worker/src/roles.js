@@ -6,7 +6,7 @@
  * - A new DID registers as guest: read-only, cannot write.
  * - Roles are upgraded ONLY by a superadmin-signed `identity.promote` action.
  * - superadmin set comes from the ROOT_PUBKEYS worker var (comma-separated
- *   GDBX1/SEA public keys).
+ *   GDBx/SEA public keys).
  * - Node-level ACL: each addr keeps a `collaborators` list (owner + collabs
  *   may write shared keys).
  */
@@ -39,7 +39,7 @@ export function canWrite(level) {
 
 /**
  * Is this pubkey in the superadmin set?
- * @param {string} pub   GDBX1/SEA pubkey (x.y)
+ * @param {string} pub   GDBx/SEA pubkey (x.y)
  * @param {string|undefined} rootPubkeys  comma-separated ROOT_PUBKEYS env
  */
 export function isSuperadminPub(pub, rootPubkeys) {

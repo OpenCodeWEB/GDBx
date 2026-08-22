@@ -1,10 +1,10 @@
 """
-gdbx_py.crypto — GDBX1 pure-python crypto, gun-free.
+gdbx_py.crypto — GDBx pure-python crypto, gun-free.
 
 Matches sdk/gdbx-crypto.js exactly:
 - canonical_json: key-sorted JSON (same as JS)
 - pair: ECDSA P-256, pub = x.y (base64url), priv = base64url raw d (32 bytes)
-- sign: "GDBX1" + JSON.stringify({m: canonical_json(body), s: base64url(raw_sig)})
+- sign: "GDBx" + JSON.stringify({m: canonical_json(body), s: base64url(raw_sig)})
   where raw_sig = ECDSA P-256 sign over SHA256(SHA256(m)) double-hash (see JS)
 - verify: checks m == canonical_json(body) and ECDSA verify over double-hash
 """
@@ -110,7 +110,7 @@ def _load_public(pub: str):
 
 
 def sign(body: Any, key_pair: Dict[str, str]) -> str:
-    """Sign body -> GDBX1 envelope."""
+    """Sign body -> GDBx envelope."""
     m = canonical_json(body)
     # JS does: hash = SHA256(m), then sign hash with ECDSA SHA256 (double hash)
     # So we sign SHA256(m) as prehashed SHA256
@@ -121,14 +121,14 @@ def sign(body: Any, key_pair: Dict[str, str]) -> str:
     der = priv.sign(digest, ec.ECDSA(hashes.SHA256()))
     raw = _der_to_raw(der)
     s = bytes_to_b64url(raw)
-    return "GDBX1" + json.dumps({"m": m, "s": s}, separators=(",", ":"))
+    return "GDBx" + json.dumps({"m": m, "s": s}, separators=(",", ":"))
 
 
 def verify(body: Any, sig: str, pub: str) -> bool:
     try:
-        if not isinstance(sig, str) or not sig.startswith("GDBX1"):
+        if not isinstance(sig, str) or not sig.startswith("GDBx"):
             return False
-        env = json.loads(sig[5:])
+        env = json.loads(sig[4:])
         if not env or not isinstance(env, dict) or "s" not in env:
             return False
         m_str = env["m"] if isinstance(env["m"], str) else canonical_json(env["m"])
@@ -148,7 +148,7 @@ def verify(body: Any, sig: str, pub: str) -> bool:
 
 
 def verify_compat(body: Any, sig: str, pub: str) -> bool:
-    if isinstance(sig, str) and sig.startswith("GDBX1"):
+    if isinstance(sig, str) and sig.startswith("GDBx"):
         return verify(body, sig, pub)
     # legacy SEA: "SEA" + JSON {m,s}
     try:

@@ -2,7 +2,7 @@
 
 Pure Python SDK for [GDBX](../../) — Global Decentralized DataBase Sync.
 
-- `gdbx_py.crypto` — ECDSA P-256 GDBX1 sign/verify (gun-free, matches `sdk/gdbx-crypto.js`)
+- `gdbx_py.crypto` — ECDSA P-256 GDBx sign/verify (gun-free, matches `sdk/gdbx-crypto.js`)
 - `gdbx_py.codec` — `.gdbx` address (BLAKE3 + base32, matches `sdk/gdbx-codec.js`)
 - `gdbx_py.client` — `GdbxClient` HTTP + WS (mirrors `sdk/gdbx-sdk.js`)
 - `gdbx_py.pow` — PoW mining

@@ -6,7 +6,7 @@
  *
  *   1. PoW          — SHA-256 difficulty (anti-spam)
  *   2. Replay       — ts window + fresh nonce
- *   3. Signature    — GDBX1 or legacy SEA v1 (owner identity proof)
+ *   3. Signature    — GDBx or legacy SEA v1 (owner identity proof)
  *   4. RBAC         — role ≥ user to write; promote needs superadmin
  *   5. ACL          — node-level: owner or collaborator may write a key
  *
@@ -20,7 +20,7 @@ export const FirewallGuard = {
    * Run the full gate pipeline for a mutation request.
    * @param {object} p
    * @param {object} p.body       canonical signed body {addr, action, ts, payload}
-   * @param {string} p.sig        GDBX1 or SEA v1 envelope
+   * @param {string} p.sig        GDBx or SEA v1 envelope
    * @param {string} p.pubkey     signer public key (x.y)
    * @param {string} p.pubkeyHex  130-char hex (binding proof)
    * @param {number} p.ts         client timestamp
@@ -58,7 +58,7 @@ export const FirewallGuard = {
     if (!replay.ok) return replay;
     if (typeof p.consumeNonce === "function") p.consumeNonce(p.nonce, p.ts);
 
-    // 3. Signature (GDBX1 | SEA v1)
+    // 3. Signature (GDBx | SEA v1)
     const sigOk = await verifySig(p.body, p.sig, p.pubkey);
     if (!sigOk) return { ok: false, error: "signature invalid", status: 403 };
 

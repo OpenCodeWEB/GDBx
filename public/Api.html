@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>API Reference — GDBx ~ Global Decentralized DataBase Sync</title>
-<meta name="description" content="GDBx public API reference — open, CORS-enabled, zero-key. Signed CRDT sync over HTTP/WebSocket/Nostr relay, DID registry, pool status, GDPR purge. Every write is GDBX1-signed and PoW-gated.">
+<meta name="description" content="GDBx public API reference — open, CORS-enabled, zero-key. Signed CRDT sync over HTTP/WebSocket/Nostr relay, DID registry, pool status, GDPR purge. Every write is GDBx-signed and PoW-gated.">
 <meta name="theme-color" content="#020617">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -50,7 +50,7 @@
     </div>
     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">API <span class="bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">Reference</span></h1>
     <p class="mt-4 text-lg text-slate-400 max-w-2xl">Build against the sovereign data mesh from any client. Every write is
-      <strong class="text-slate-200">GDBX1-signed (ECDSA P-256)</strong>, <strong class="text-slate-200">PoW-gated</strong> and
+      <strong class="text-slate-200">GDBx-signed (ECDSA P-256)</strong>, <strong class="text-slate-200">PoW-gated</strong> and
       <strong class="text-slate-200">replay-protected</strong>; reads are open.</p>
 
     <!-- Base URLs -->
@@ -120,7 +120,7 @@
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/relay</code>
-      <span class="text-xs text-slate-500 ml-auto">Nostr kind-23124 ingest — GDBX1 envelope in content, same firewall as HTTP/WS</span>
+      <span class="text-xs text-slate-500 ml-auto">Nostr kind-23124 ingest — GDBx envelope in content, same firewall as HTTP/WS</span>
     </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
@@ -171,7 +171,7 @@
         <div class="text-slate-200">curl https://gdbx-do.xup.workers.dev/health<br>curl https://gdbx-do.xup.workers.dev/pool</div>
       </div>
       <div class="rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed overflow-x-auto">
-        <div class="text-slate-500 mb-2"># 3 · write = PoW + GDBX1 signature (SDK does this for you)</div>
+        <div class="text-slate-500 mb-2"># 3 · write = PoW + GDBx signature (SDK does this for you)</div>
         <div class="text-slate-200">import { makePair, minePoW } from "gdbx";<br>
         import { sign } from "gdbx/crypto";<br><br>
         const sig = await sign({ addr, action:"sync.put", ts, payload }, pair);<br>

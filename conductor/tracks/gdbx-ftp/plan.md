@@ -6,7 +6,7 @@
 ## Step 1 — Chunker Core (Priority 1, TDD)
 **Files:** `sdk/utils/chunker.js`, `test/test_chunker.mjs` (red first)
 - `chunker.process(fileData: Uint8Array, opts?: {chunkSize: 256*1024}) → {manifest, encryptedChunks, iv}`
-  - `iv = crypto.getRandomValues(12)`, `key = AES-GCM 256` (derived from GDBx identity? For MVP, per-file random key stored in manifest `keyB64` encrypted with GDBX1? Simpler: random key, manifest stores `keyB64` base64url raw key — in prod, encrypt key with owner's pub)
+  - `iv = crypto.getRandomValues(12)`, `key = AES-GCM 256` (derived from GDBx identity? For MVP, per-file random key stored in manifest `keyB64` encrypted with GDBx? Simpler: random key, manifest stores `keyB64` base64url raw key — in prod, encrypt key with owner's pub)
   - For each chunk: `encrypted = AES-GCM(key, iv+index)`, `hash = BLAKE3(encrypted).hex()`, store
   - `manifest = {path, size, chunks: [hash], iv: base64url(iv), keyB64: base64url(key), hash: BLAKE3(manifest).hex()}`
 - `chunker.assemble(encryptedChunks: Uint8Array[], iv, keyB64) → Uint8Array` — decrypt
@@ -20,7 +20,7 @@
   - `put(localPath|Uint8Array, remotePath) → {success, path, manifest}` — chunker.process → putDelta(`sys/ftp/manifest/${remotePath}`, signedManifest) + stream chunks via `transport.streamChunks` (for MVP, put chunks as `sys/ftp/chunk/<hash>` deltas, pool-replicated)
   - `get(remotePath) → Uint8Array` — getDelta manifest → fetch chunks → assemble → verify hash
   - `sync(prefix, cb) → unsubscribe` — subscribeDeltas `sys/ftp/manifest/${prefix}/*`
-- GDBX1 signed manifest: `sign({addr, action:"ftp.stor", ts, payload: JSON.stringify(manifest)}, pair)` — verified via `FirewallGuard`
+- GDBx signed manifest: `sign({addr, action:"ftp.stor", ts, payload: JSON.stringify(manifest)}, pair)` — verified via `FirewallGuard`
 - Tests: mock GdbxClient (no network), put→get roundtrip, sync callback, signed command verify
 
 ## Step 3 — CLI Gateway (Priority 3, TDD)

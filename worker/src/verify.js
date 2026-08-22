@@ -142,20 +142,20 @@ export async function verifySeaSig(body, sig, pub) {
 }
 
 /**
- * Verify a GDBX1 signature envelope — self-sovereign format:
- *   "GDBX1" + JSON.stringify({m, s})
+ * Verify a GDBx signature envelope — self-sovereign format:
+ *   "GDBx" + JSON.stringify({m, s})
  *   m = canonical key-sorted JSON of the signed body
  *   s = base64url raw ECDSA P-256 / SHA-256 signature
  *
  * @param {object} body   canonical message object (sig excluded)
- * @param {string} sig    GDBX1 envelope
+ * @param {string} sig    GDBx envelope
  * @param {string} pub    public key: base64url x . base64url y
  * @returns {Promise<boolean>}
  */
-export async function verifyGdbx1Sig(body, sig, pub) {
+export async function verifyGdbxSig(body, sig, pub) {
   try {
-    if (typeof sig !== "string" || !sig.startsWith("GDBX1")) return false;
-    const env = JSON.parse(sig.slice(5));
+    if (typeof sig !== "string" || !sig.startsWith("GDBx")) return false;
+    const env = JSON.parse(sig.slice(4));
     if (!env || typeof env !== "object" || typeof env.s !== "string") return false;
     const mStr = typeof env.m === "string" ? env.m : canonicalJson(env.m);
     if (mStr !== canonicalJson(body)) return false;
@@ -182,14 +182,14 @@ export async function verifyGdbx1Sig(body, sig, pub) {
 }
 
 /**
- * Verify either envelope — GDBX1 (self-sovereign) or legacy SEA v1.
- * New clients sign GDBX1; old clients keep working via SEA v1.
+ * Verify either envelope — GDBx (self-sovereign) or legacy SEA v1.
+ * New clients sign GDBx; old clients keep working via SEA v1.
  *
  * @returns {Promise<boolean>}
  */
 export async function verifySig(body, sig, pub) {
-  if (typeof sig === "string" && sig.startsWith("GDBX1")) return verifyGdbx1Sig(body, sig, pub);
+  if (typeof sig === "string" && sig.startsWith("GDBx")) return verifyGdbxSig(body, sig, pub);
   return verifySeaSig(body, sig, pub);
 }
 
-export default { getDifficulty, hashInput, sha256Hex, verifyPoW, canonicalJson, b64ToBytes, verifySeaSig, verifyGdbx1Sig, verifySig };
+export default { getDifficulty, hashInput, sha256Hex, verifyPoW, canonicalJson, b64ToBytes, verifySeaSig, verifyGdbxSig, verifySig };

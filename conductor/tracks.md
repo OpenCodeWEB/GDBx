@@ -10,7 +10,7 @@
 | org-gdbx-unification | Phase 6: org-wide GDBx fabric — AiA & OS bridges, Python SDK, all OpenCodeWEB projects | completed | [spec](./tracks/org-gdbx-unification/spec.md) | [plan](./tracks/org-gdbx-unification/plan.md) |
 | gdbx-cli-visual | Phase 6.1: CLI (identity/sync/vector/backup) + Visual Inspector | completed | [spec](./tracks/gdbx-cli-visual/spec.md) | [plan](./tracks/gdbx-cli-visual/plan.md) |
 | gdbx-playground | Phase 6.2: Live P2P Playground — GunX parity (chat, rooms, presence, file) | completed | [spec](./tracks/gdbx-playground/spec.md) | [plan](./tracks/gdbx-playground/plan.md) |
-| gdbx-ftp | Phase 6.3: Sovereign FTP Gateway — ftp-srv + GDBX1 + chunked pool | completed | [spec](./tracks/gdbx-ftp/spec.md) | [plan](./tracks/gdbx-ftp/plan.md) |
+| gdbx-ftp | Phase 6.3: Sovereign FTP Gateway — ftp-srv + GDBx + chunked pool | completed | [spec](./tracks/gdbx-ftp/spec.md) | [plan](./tracks/gdbx-ftp/plan.md) |
 | gun-compat-engine | Phase 6.4: GunX serverless relay absorbed — /gun wire protocol, gun.js clients peer directly | completed | — (see commit 6af063b) | — |
 
 ## Live deployment notes (2026-08-21)
@@ -31,7 +31,7 @@
 - **Pool (live)**: `GDBxMirrorDO` second namespace; primary replicates DID+delta snapshots
   post-write; pool read path merges primary+mirror (LWW, rejoin healing); `/pool` shows
   primary+mirror healthy. Verified live: `/pool` 200 both nodes.
-- **Hybrid mesh (live)**: Nostr kind-23124 events carry GDBX1 envelopes; `/relay` verified
+- **Hybrid mesh (live)**: Nostr kind-23124 events carry GDBx envelopes; `/relay` verified
   live (signed event → applied delta). WebRTC signaling builders ready in `sdk/transport.js`.
 - **Verified**: LIVE E2E PASS (register→put→get→stats→purge→resolve), 84/84 unit tests,
   WS handshake welcome, live relay ingest applied, pool status healthy.

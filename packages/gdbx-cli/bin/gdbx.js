@@ -105,7 +105,7 @@ backup
     console.log(JSON.stringify(r, null, 2));
   });
 
-// ftp — sovereign gateway (FileZilla → GDBx pool, GDBX1-signed, chunked)
+// ftp — sovereign gateway (FileZilla → GDBx pool, GDBx-signed, chunked)
 const ftp = program.command("ftp").description("sovereign FTP gateway (FileZilla → GDBx pool)");
 ftp
   .command("gateway")
@@ -117,7 +117,7 @@ ftp
   });
 ftp
   .command("put")
-  .description("upload local file to GDBx via FTP bridge (chunked, GDBX1-signed)")
+  .description("upload local file to GDBx via FTP bridge (chunked, GDBx-signed)")
   .argument("<localPath>")
   .argument("<remotePath>")
   .action(async (localPath, remotePath) => {

@@ -11,7 +11,7 @@
  *   3. webrtc  — p2p: direct peer-to-peer when the hub is unreachable
  *                (offline-first), signaling carried as signed JSON messages
  *
- * All three share one envelope format: the GDBX1 message produced by
+ * All three share one envelope format: the GDBx message produced by
  * gdbx-crypto.js (canonical body + base64url ECDSA P-256 signature).
  * The mesh is therefore transport-agnostic: whatever medium delivers the
  * envelope, the receiver verifies it identically.
@@ -35,8 +35,8 @@ export function pickTransport({ ws = false, nostr = false, webrtc = false } = {}
 }
 
 /**
- * Build a Nostr event carrying a GDBX1 envelope.
- * Kind 23124, tags: ["addr", <addr>], content = GDBX1 JSON string.
+ * Build a Nostr event carrying a GDBx envelope.
+ * Kind 23124, tags: ["addr", <addr>], content = GDBx JSON string.
  *
  * @param {{addr:string, pubkey:string, ts:number, nonce:number, diff:number,
  *          hash:string, deltas:object[], sig:string}} o
@@ -64,7 +64,7 @@ export async function buildNostrEvent(o) {
     pubkey: o.pubkey,
     created_at: Math.floor(o.ts / 1000),
     tags: [["addr", o.addr]],
-    content: "GDBX1" + canonicalJson(envelope),
+    content: "GDBx" + canonicalJson(envelope),
   };
 }
 
@@ -78,11 +78,11 @@ export function parseNostrEvent(ev) {
   const addrTag = Array.isArray(ev.tags) ? ev.tags.find((t) => Array.isArray(t) && t[0] === "addr") : null;
   if (!addrTag || !addrTag[1]) return { ok: false, error: "missing addr tag" };
   const addr = addrTag[1];
-  if (typeof ev.content !== "string" || !ev.content.startsWith("GDBX1")) {
-    return { ok: false, error: "content not GDBX1 envelope" };
+  if (typeof ev.content !== "string" || !ev.content.startsWith("GDBx")) {
+    return { ok: false, error: "content not GDBx envelope" };
   }
   try {
-    const envelope = JSON.parse(ev.content.slice(5));
+    const envelope = JSON.parse(ev.content.slice(4));
     const m = envelope.m;
     if (!m || typeof m !== "object" || !m.addr || !m.action || !m.payload) {
       return { ok: false, error: "malformed envelope" };
@@ -110,7 +110,7 @@ export function parseNostrEvent(ev) {
 
 /**
  * Build a WebRTC signaling message (offer/answer/candidate) carrying a
- * signed GDBX1 envelope so peers can authenticate each other.
+ * signed GDBx envelope so peers can authenticate each other.
  */
 export async function buildSignal({ type, addr, payload, pubkey, ts, sig }) {
   const m = {

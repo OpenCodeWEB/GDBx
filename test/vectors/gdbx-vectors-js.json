@@ -1,5 +1,5 @@
 {
-  "description": "GDBX1 cross-verify vectors — JS signed, Python must verify",
+  "description": "GDBx cross-verify vectors — JS signed, Python must verify",
   "pub": "tO2yDgiw8lfJ0G5R_RuRNKr5xXzmcJNQS8FHJiyQV6Y.TFGJUcxeOE4JcQUWO-KM8l8dEnxVPmru5HtL0aJUDw8",
   "pubkeyHex": "04b4edb20e08b0f257c9d06e51fd1b9134aaf9c57ce67093504bc147262c9057a64c518951cc5e384e097105163be28cf25f1d127c553e6aeee47b4bd1a2540f0f",
   "addr": "aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea",
@@ -12,7 +12,7 @@
         "ts": 1710000000000,
         "payload": "[{\"key\":\"test/k\",\"value\":\"v\",\"clock\":1710000000000}]"
       },
-      "sig": "GDBX1{\"m\":\"{\\\"action\\\":\\\"sync.put\\\",\\\"addr\\\":\\\"aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea\\\",\\\"payload\\\":\\\"[{\\\\\\\"key\\\\\\\":\\\\\\\"test/k\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"v\\\\\\\",\\\\\\\"clock\\\\\\\":1710000000000}]\\\",\\\"ts\\\":1710000000000}\",\"s\":\"a0JOIosaap87ti8Mb_WF07Ub_7DIRPxyTpKWf9WjivFwBKar67uClHril-8Q3DcEkhZlHoasqyuvERKaqXMZNA\"}",
+      "sig": "GDBx{\"m\":\"{\\\"action\\\":\\\"sync.put\\\",\\\"addr\\\":\\\"aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea\\\",\\\"payload\\\":\\\"[{\\\\\\\"key\\\\\\\":\\\\\\\"test/k\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"v\\\\\\\",\\\\\\\"clock\\\\\\\":1710000000000}]\\\",\\\"ts\\\":1710000000000}\",\"s\":\"a0JOIosaap87ti8Mb_WF07Ub_7DIRPxyTpKWf9WjivFwBKar67uClHril-8Q3DcEkhZlHoasqyuvERKaqXMZNA\"}",
       "canonical": "{\"action\":\"sync.put\",\"addr\":\"aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea\",\"payload\":\"[{\\\"key\\\":\\\"test/k\\\",\\\"value\\\":\\\"v\\\",\\\"clock\\\":1710000000000}]\",\"ts\":1710000000000}",
       "pub": "tO2yDgiw8lfJ0G5R_RuRNKr5xXzmcJNQS8FHJiyQV6Y.TFGJUcxeOE4JcQUWO-KM8l8dEnxVPmru5HtL0aJUDw8",
       "pubkeyHex": "04b4edb20e08b0f257c9d06e51fd1b9134aaf9c57ce67093504bc147262c9057a64c518951cc5e384e097105163be28cf25f1d127c553e6aeee47b4bd1a2540f0f",
@@ -26,7 +26,7 @@
         "ts": 1710000000000,
         "payload": "[{\"key\":\"test/k\",\"value\":\"tampered\",\"clock\":1710000000000}]"
       },
-      "sig": "GDBX1{\"m\":\"{\\\"action\\\":\\\"sync.put\\\",\\\"addr\\\":\\\"aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea\\\",\\\"payload\\\":\\\"[{\\\\\\\"key\\\\\\\":\\\\\\\"test/k\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"v\\\\\\\",\\\\\\\"clock\\\\\\\":1710000000000}]\\\",\\\"ts\\\":1710000000000}\",\"s\":\"a0JOIosaap87ti8Mb_WF07Ub_7DIRPxyTpKWf9WjivFwBKar67uClHril-8Q3DcEkhZlHoasqyuvERKaqXMZNA\"}",
+      "sig": "GDBx{\"m\":\"{\\\"action\\\":\\\"sync.put\\\",\\\"addr\\\":\\\"aeakqetd7xjb3grdchq6u66dpvyuat6nauj6q7j4swtth67hxj5s5h23ea\\\",\\\"payload\\\":\\\"[{\\\\\\\"key\\\\\\\":\\\\\\\"test/k\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"v\\\\\\\",\\\\\\\"clock\\\\\\\":1710000000000}]\\\",\\\"ts\\\":1710000000000}\",\"s\":\"a0JOIosaap87ti8Mb_WF07Ub_7DIRPxyTpKWf9WjivFwBKar67uClHril-8Q3DcEkhZlHoasqyuvERKaqXMZNA\"}",
       "pub": "tO2yDgiw8lfJ0G5R_RuRNKr5xXzmcJNQS8FHJiyQV6Y.TFGJUcxeOE4JcQUWO-KM8l8dEnxVPmru5HtL0aJUDw8",
       "valid": false
     }

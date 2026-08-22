@@ -1,7 +1,7 @@
 # Track: GDBx Live P2P Playground
 
 > **Track ID:** `gdbx-playground` | **Phase:** 6.2 | **Status:** spec draft
-> **Goal:** `gunx.pages.dev` এর Live P2P playground এর মতো বৈশিষ্ট্য `gdbx.pages.dev` এ যুক্ত করা — real-time chat + room + presence + file share, কিন্তু GDBx-এর sovereign mesh (GDBX1 + FirewallGuard + pool + hybrid mesh) দিয়ে।
+> **Goal:** `gunx.pages.dev` এর Live P2P playground এর মতো বৈশিষ্ট্য `gdbx.pages.dev` এ যুক্ত করা — real-time chat + room + presence + file share, কিন্তু GDBx-এর sovereign mesh (GDBx + FirewallGuard + pool + hybrid mesh) দিয়ে।
 
 ## 1. Context
 
@@ -22,7 +22,7 @@ GDBx current (`gdbx.pages.dev`):
 - **Header:** `Live P2P Playground` + `room: public` pill, `🔒 e2e` hidden, `0 online`, `new private`, `join`, `clear view`
 - **Left:** `messages` (h-72), `msgForm` (imgBtn, fileBtn, msgInput, Send), note: `Open in two tabs — messages sync via GDBx pool (WS + mirror + hybrid-mesh)`
 - **Right:** `How it works` (4 steps: connect `wss://gdbx-do.../ws?addr=`, namespace `.GDBx`, FirewallGuard, IndexedDB/offline), `Playground status` (uptime, deltas, pool health, backend) polling `GET /pool` + `GET /stats`
-- **Behavior:** Messages sync real-time across tabs via shared demo address `aeaagiao64onmpxlv7bjgk4chnpvl5h77erwqq7gockpvm2kafwzwmzt3u` (hardcoded demo keypair, gun-free GDBX1). Each message is a signed delta `playground/<room>/msg/<ts>-<rand>` with flat JSON string value.
+- **Behavior:** Messages sync real-time across tabs via shared demo address `aeaagiao64onmpxlv7bjgk4chnpvl5h77erwqq7gockpvm2kafwzwmzt3u` (hardcoded demo keypair, gun-free GDBx). Each message is a signed delta `playground/<room>/msg/<ts>-<rand>` with flat JSON string value.
 
 ### G2. Room Management (GDBx-native)
 - Public room: `playground/public` (default)
@@ -48,7 +48,7 @@ GDBx current (`gdbx.pages.dev`):
 - .gunx TLD registry (not applicable to GDBx — GDBx has .GDBx address codec)
 
 ## 4. Design Constraints
-- **No gun:** All writes via `GDBxCrypto.sign` (GDBX1) + PoW (diff 2) + `FirewallGuard` — same as `gdbx-live.js` sandbox
+- **No gun:** All writes via `GDBxCrypto.sign` (GDBx) + PoW (diff 2) + `FirewallGuard` — same as `gdbx-live.js` sandbox
 - **Supply-chain clean:** No new runtime deps (reuse `@noble/hashes`, `commander` not needed)
 - **Offline-first:** Messages queued if WS offline, replayed on reconnect (like sandbox's `ensureRegistered` + WS retry)
 - **Flat-primitive:** `value` must be string (JSON string of `{text, from, ts, room, img?}`) — 32KB cap

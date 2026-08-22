@@ -1,13 +1,13 @@
 /**
- * test_crypto.mjs — GDBX1 crypto core (self-sovereign, zero-dependency).
+ * test_crypto.mjs — GDBx crypto core (self-sovereign, zero-dependency).
  *
  * Covers:
  *   - pair() generation (P-256, x.y pubkey format)
- *   - sign() / verify() roundtrip with GDBX1 envelope
+ *   - sign() / verify() roundtrip with GDBx envelope
  *   - tampered body rejected
  *   - wrong pubkey rejected
  *   - known-vector lock (fixed pair → deterministic sig verification)
- *   - verifyCompat accepts GDBX1 AND legacy SEA v1 envelopes
+ *   - verifyCompat accepts GDBx AND legacy SEA v1 envelopes
  *   - canonical JSON stability (key order independence)
  */
 import { test } from "node:test";
@@ -64,12 +64,12 @@ test("pair() generates P-256 keys with x.y base64url pubkey", async () => {
   assert.equal(key.type, "public");
 });
 
-test("sign()/verify() roundtrip with GDBX1 envelope", async () => {
+test("sign()/verify() roundtrip with GDBx envelope", async () => {
   const p = await pair();
   const body = { addr: "a".repeat(58), action: "sync.put", ts: 12345, payload: "[{}]" };
   const sig = await sign(body, p);
-  assert.ok(sig.startsWith("GDBX1"), "GDBX1 envelope prefix");
-  const env = JSON.parse(sig.slice(5));
+  assert.ok(sig.startsWith("GDBx"), "GDBx envelope prefix");
+  const env = JSON.parse(sig.slice(4));
   assert.ok(env.m && env.s, "envelope carries message + signature");
   const ok = await verify(body, sig, p.pub);
   assert.equal(ok, true);
@@ -114,7 +114,7 @@ test("canonicalJson is deterministic and key-sorted", () => {
   assert.equal(canonicalJson(null), "null");
 });
 
-test("verifyCompat accepts GDBX1 envelope", async () => {
+test("verifyCompat accepts GDBx envelope", async () => {
   const p = await pair();
   const body = { addr: "c".repeat(58), action: "sync.put", ts: 42, payload: "[]" };
   const sig = await sign(body, p);
@@ -159,15 +159,15 @@ test("signBody() builds canonical body for worker-compatible signing", async () 
   assert.equal(await verify(body, sig, p.pub), true);
 });
 
-test("worker verifySig accepts GDBX1 AND legacy SEA v1", async () => {
+test("worker verifySig accepts GDBx AND legacy SEA v1", async () => {
   const { verifySig } = await import("../worker/src/verify.js");
   const p = await pair();
   const body = { addr: "f".repeat(58), action: "sync.put", ts: 777, payload: "[]" };
 
-  // GDBX1 path
-  const gdbx1 = await sign(body, p);
-  assert.equal(await verifySig(body, gdbx1, p.pub), true);
-  assert.equal(await verifySig({ ...body, ts: 778 }, gdbx1, p.pub), false);
+  // GDBx path
+  const envSig = await sign(body, p);
+  assert.equal(await verifySig(body, envSig, p.pub), true);
+  assert.equal(await verifySig({ ...body, ts: 778 }, envSig, p.pub), false);
 
   // Legacy SEA v1 path (build envelope without gun)
   const mStr = canonicalJson(body);

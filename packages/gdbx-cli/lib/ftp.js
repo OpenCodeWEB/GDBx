@@ -2,7 +2,7 @@
  * ftp.js — GDBx FTP Gateway (local loopback, FileZilla compatible)
  *
  * Starts ftp-srv on 127.0.0.1:2121, translates FTP commands to GDBx pool
- * via GDBxFTP SDK (GDBX1-signed, chunked, pool-replicated).
+ * via GDBxFTP SDK (GDBx-signed, chunked, pool-replicated).
  *
  * Usage: gdbx ftp gateway --port 2121
  *   FileZilla: Host 127.0.0.1, Port 2121, Username <addr>.gdbx, Password <priv> (or any)
@@ -42,7 +42,7 @@ export async function startGateway(opts = {}) {
   server.on("login", ({ connection, username, password }, resolve, reject) => {
     // Username is expected to be <addr>.gdbx or addr, password is priv or session token
     // For MVP, accept any username that matches local addr or "anonymous", and any password
-    // In production, verify GDBX1 signature of password
+    // In production, verify GDBx signature of password
     const cleanUser = String(username || "").replace(/\.gdbx$/i, "").toLowerCase();
     const localAddr = String(identity.addr || "").toLowerCase();
     if (cleanUser && cleanUser !== localAddr && cleanUser !== "anonymous" && cleanUser !== "gdbx") {
@@ -100,7 +100,7 @@ export async function startGateway(opts = {}) {
 
   await server.listen();
   console.log(`[ftp] GDBx FTP Gateway listening on ${url} — FileZilla: Host 127.0.0.1 Port ${port} User ${identity.addr}.gdbx`);
-  console.log(`[ftp] GDBx pool: ${identity.addr} — .GDBx sovereign, GDBX1-signed, chunked`);
+  console.log(`[ftp] GDBx pool: ${identity.addr} — .GDBx sovereign, GDBx-signed, chunked`);
   return server;
 }
 

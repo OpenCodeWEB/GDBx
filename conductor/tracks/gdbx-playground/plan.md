@@ -20,7 +20,7 @@
 
 ## Step 3 — Live Sync (GDBx-native, Gun-free)
 **Files:** `public/js/gdbx-playground.js`
-- `ensureRegistered()` — `POST /api/v1/did/register` with PoW diff 2 + GDBX1 sign (reuse `gdbx-live.js` logic)
+- `ensureRegistered()` — `POST /api/v1/did/register` with PoW diff 2 + GDBx sign (reuse `gdbx-live.js` logic)
 - WS: `new WebSocket(wss://gdbx-do.xup.workers.dev/ws?addr=DEMO_ADDR)` → `send hello`, `onmessage delta` → if `msg.key.startsWith(currentRoom)` then `addMsg(decrypted(text), !mine)`
 - HTTP put: `POST /api/v1/sync` (or WS `put`) with signed delta `playground/<room>/msg/<ts>-<rand>` → value `JSON.stringify({text, from: visitorId, ts, room, img?})` (flat string)
 - Poll fallback: `GET /api/v1/sync/<addr>?prefix=playground/<room>/` every 3s if WS not open, deduplicate via `seenKeys` Set

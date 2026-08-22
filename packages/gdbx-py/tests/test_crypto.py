@@ -6,7 +6,7 @@ def test_pair_and_sign_verify():
     p = pair()
     body = {"addr": "aeaqtest123456789012345678901234567890123456789012345678", "action": "sync.put", "ts": 123, "payload": "[]"}
     sig = sign(body, p)
-    assert sig.startswith("GDBX1")
+    assert sig.startswith("GDBx")
     assert verify(body, sig, p["pub"]) is True
 
 def test_tamper_fails():
@@ -17,14 +17,14 @@ def test_tamper_fails():
     assert verify(body2, sig, p["pub"]) is False
 
 def test_js_vector():
-    vec = json.loads(pathlib.Path("../../test/vectors/gdbx1.json").read_text() if pathlib.Path("../../test/vectors/gdbx1.json").exists() else pathlib.Path("test/vectors/gdbx1.json").read_text())
+    vec = json.loads(pathlib.Path("../../test/vectors/gdbx-vectors-js.json").read_text() if pathlib.Path("../../test/vectors/gdbx-vectors-js.json").exists() else pathlib.Path("test/vectors/gdbx-vectors-js.json").read_text())
     # fallback path
     try:
-        p = pathlib.Path("test/vectors/gdbx1.json")
+        p = pathlib.Path("test/vectors/gdbx-vectors-js.json")
         if not p.exists():
-            p = pathlib.Path("../../test/vectors/gdbx1.json")
+            p = pathlib.Path("../../test/vectors/gdbx-vectors-js.json")
         if not p.exists():
-            p = pathlib.Path("D:/OpenCodeWEBsUI/OpenCodeWEB/GDBX/test/vectors/gdbx1.json")
+            p = pathlib.Path("D:/OpenCodeWEBsUI/OpenCodeWEB/GDBX/test/vectors/gdbx-vectors-js.json")
         vec = json.loads(p.read_text())
     except Exception as e:
         assert False, str(e)

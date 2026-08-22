@@ -1,7 +1,7 @@
 /**
  * ftp_bridge.js — GDBx FTP Bridge SDK (GDBx-native, sovereign)
  *
- * Maps FTP files to GDBx pool via chunker + GDBX1-signed manifests.
+ * Maps FTP files to GDBx pool via chunker + GDBx-signed manifests.
  * Works in browser, Node, and Workers (WebCrypto + @noble/hashes).
  *
  * Usage:
@@ -50,7 +50,7 @@ export class GDBxFTP {
     if (!this.pair || !this.pubkeyHex) throw new Error("GDBxFTP: pair/pubkeyHex required");
     const data = localData instanceof Uint8Array ? localData : new Uint8Array(localData);
     const { manifest, encryptedChunks } = await process(data, { path: remotePath });
-    // 1. Put manifest (signed via putDeltas which does PoW+GDBX1)
+    // 1. Put manifest (signed via putDeltas which does PoW+GDBx)
     const manifestKey = pathToKey(remotePath);
     const manifestValue = JSON.stringify(manifest);
     await this._putDeltas({ pubkeyHex: this.pubkeyHex, pair: this.pair, deltas: [{ key: manifestKey, value: manifestValue }] });
