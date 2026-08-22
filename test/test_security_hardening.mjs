@@ -150,14 +150,31 @@ test("security: invalid PoW rejected (400)", async () => {
 
 /* ── Strict input validation ─────────────────────────────────────── */
 
-test("validation: oversized delta value rejected (400)", async () => {
+test("validation: 33KB delta value now accepted — zero-limit policy", async () => {
   const { inst } = await makeDO();
   await registerDID(inst);
-  const big = "x".repeat(33 * 1024); // > 32KB
+  const big = "x".repeat(33 * 1024); // previously > 32KB cap
   const { status } = await putDelta(inst, Date.now(), { value: big });
-  assert.equal(status, 400);
+  assert.equal(status, 200);
   const { data: stats } = await doFetch(inst, "/stats");
-  assert.equal(stats.policy.maxPayload, 32 * 1024);
+  assert.equal(stats.policy.maxPayload, 2 * 1024 * 1024); // platform boundary only
+});
+
+test("validation: 1MB delta value accepted (single delta, no chunking)", async () => {
+  const { inst } = await makeDO();
+  await registerDID(inst);
+  const big = "y".repeat(1024 * 1024);
+  const { status, data } = await putDelta(inst, Date.now(), { value: big });
+  assert.equal(status, 200);
+  assert.equal(data.applied, 1);
+});
+
+test("validation: platform-boundary guard (>2MB rejected)", async () => {
+  const { inst } = await makeDO();
+  await registerDID(inst);
+  const huge = "z".repeat(2 * 1024 * 1024 + 1); // beyond DO value ceiling
+  const { status } = await putDelta(inst, Date.now(), { value: huge });
+  assert.equal(status, 400);
 });
 
 test("validation: nested object delta value rejected (400)", async () => {
@@ -182,10 +199,10 @@ test("validation: bad key charset rejected (400)", async () => {
   assert.match(data.error, /key/i);
 });
 
-test("validation: oversized DID services array rejected (400)", async () => {
+test("validation: DID services — 256 accepted, 257 rejected (platform headroom)", async () => {
   const { inst } = await makeDO();
   const t = Date.now();
-  const services = Array.from({ length: 17 }, (_, i) => ({
+  const services = Array.from({ length: 257 }, (_, i) => ({
     id: `svc-${i}`,
     type: "GDBxTransportRouting",
     serviceEndpoint: "https://example.com/" + i,

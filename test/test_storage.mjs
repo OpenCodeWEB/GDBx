@@ -339,11 +339,11 @@ test("sync: forged sig rejected (403)", async () => {
   assert.match(data.error, /signature/i);
 });
 
-test("sync: batch > 64 rejected (400)", async () => {
+test("sync: batch of 1000 accepted — zero-limit batches (boundary 1001 rejected)", async () => {
   const { inst } = await makeDO();
   await registerDID(inst);
   const ts = Date.now();
-  const deltas = Array.from({ length: 65 }, (_, i) => ({ key: "k" + i, value: i, clock: ts }));
+  const deltas = Array.from({ length: 1000 }, (_, i) => ({ key: "k" + i, value: i, clock: ts }));
   const { nonce, hash, diff } = await minePoW(addr, pair.pub, "sync.put", ts);
   const sig = await cryptoSign(signBody(addr, "sync.put", ts, JSON.stringify(deltas)), pair);
   const { status } = await doFetch(inst, "/sync", "POST", {
@@ -356,7 +356,17 @@ test("sync: batch > 64 rejected (400)", async () => {
     hash,
     sig,
   });
-  assert.equal(status, 400);
+  assert.equal(status, 200);
+
+  // boundary: 1001 exceeds platform headroom guard
+  const ts2 = Date.now();
+  const deltas2 = Array.from({ length: 1001 }, (_, i) => ({ key: "b" + i, value: i, clock: ts2 }));
+  const pow2 = await minePoW(addr, pair.pub, "sync.put", ts2);
+  const sig2 = await cryptoSign(signBody(addr, "sync.put", ts2, JSON.stringify(deltas2)), pair);
+  const r2 = await doFetch(inst, "/sync", "POST", {
+    addr, pubkey: pair.pub, pubkeyHex, deltas: deltas2, ts: ts2, nonce: pow2.nonce, diff: pow2.diff, hash: pow2.hash, sig: sig2,
+  });
+  assert.equal(r2.status, 400);
 });
 
 /* ── Presence + stats ────────────────────────────────────────────── */
@@ -389,5 +399,5 @@ test("stats: ledger counts dids + deltas", async () => {
   const { data } = await doFetch(inst, "/stats");
   assert.equal(data.stats.dids, 1);
   assert.equal(data.stats.deltas, 1);
-  assert.equal(data.policy.maxDeltasPerBatch, 64);
+  assert.equal(data.policy.maxDeltasPerBatch, 1000);
 });

@@ -27,7 +27,7 @@ const JSON_HEADERS = {
 };
 
 const PING_INTERVAL_MS = 30_000;
-const MAX_SOCKETS = 256;
+const MAX_SOCKETS = 4096;
 
 /**
  * Create a self-contained WebSocket hub. Each hub owns its own socket set —

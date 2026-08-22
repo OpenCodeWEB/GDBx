@@ -55,7 +55,7 @@ async function getFtp() {
       put: async (data, remotePath) => {
         const buf = data instanceof Uint8Array ? data : new Uint8Array(data);
         // chunk like GDBxFTP: 256KB, AES-GCM, BLAKE3 — for fallback we do simple 28KB chunked GDBx delta (no encrypt for demo)
-        const CHUNK = 28000;
+        const CHUNK = 512000;
         const b64 = btoa(String.fromCharCode(...buf));
         const chunks = [];
         for (let i = 0; i < b64.length; i += CHUNK) chunks.push(b64.slice(i, i + CHUNK));

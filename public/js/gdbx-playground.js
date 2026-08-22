@@ -136,7 +136,7 @@ export function initPlayground() {
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   }
   async function sendChunked(text, dataUrl, fname, fsize) {
-    const CHUNK = 28000; // leave margin for JSON overhead (<32KB)
+    const CHUNK = 512000; // sovereign chunk granularity (server accepts up to 2MB per delta; chunking keeps WS frames small and enables any-size files)
     const msgId = `${Date.now()}-${nanoid(6)}`;
     const chunks = [];
     for (let i = 0; i < dataUrl.length; i += CHUNK) chunks.push(dataUrl.slice(i, i + CHUNK));
@@ -357,7 +357,7 @@ export function initPlayground() {
     if (roomKey) payloadText = await encryptText(text, roomKey);
     const valueObj = { text: payloadText, from: visitorId, ts, room: currentRoom, ...extra };
     let value = JSON.stringify(valueObj);
-    if (value.length > 28000) {
+    if (value.length > 512000) {
       // GunX parity for large payloads: GDBx delta is 32KB max per delta (DoS protection, LWW) — but any size is supported via sovereign chunked pool
       // Chunk the value into 28KB pieces + manifest, like IPFS chunking — no external relay, pool-replicated, reassembled on receive
       // For images/files, extra.img/dataUrl is already large, so chunk the full value
@@ -475,7 +475,7 @@ export function initPlayground() {
       const reader = new FileReader();
       reader.onload = async () => {
         const dataUrl = reader.result;
-        if (dataUrl.length <= 28000) {
+        if (dataUrl.length <= 512000) {
           await sendMessage(file.name, { img: dataUrl, fname: file.name, fsize: file.size });
         } else {
           await sendChunked(file.name, dataUrl, file.name, file.size);

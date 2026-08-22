@@ -37,11 +37,11 @@ const JSON_HEADERS = {
   "access-control-allow-headers": "content-type",
 };
 
-const MAX_PAYLOAD = 32 * 1024; // 32KB per delta value
-const MAX_DELTAS = 64; // max deltas per put batch
-const MAX_DID_SERVICES = 16; // max DID service entries
-const MAX_SERVICE_URL = 2048; // per service URL length
-const MAX_SEEN_NONCES = 2048; // in-memory replay cache size
+const MAX_PAYLOAD = 2 * 1024 * 1024; // platform boundary (DO value ~2MB); larger files auto-chunk client-side -> effective size unlimited
+const MAX_DELTAS = 1000; // batch headroom (was 64)
+const MAX_DID_SERVICES = 256; // was 16
+const MAX_SERVICE_URL = 32 * 1024; // was 2048
+const MAX_SEEN_NONCES = 65536; // replay cache headroom
 const ADDR_RE = /^[a-z2-7]{58}$/;
 const KEY_RE = /^[a-zA-Z0-9._:/@-]{1,256}$/; // strict key charset
 
@@ -149,20 +149,20 @@ export class GDBxStorageObject {
           const existing = await this.state.storage.get(`did:${addr}`);
           if (existing) {
             const key = `${ip}:${addr}`;
-            if (!this.rateLimit(key, 30, 60000)) {
+            if (!this.rateLimit(key, 600, 60000)) {
               return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "2" } });
             }
             return await this.registerDID(body);
           }
         }
-        if (!this.rateLimit(ip, 20, 60000)) {
+        if (!this.rateLimit(ip, 120, 60000)) {
           return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "3" } });
         }
         return await this.registerDID(body);
       }
       /* RBAC: superadmin-signed promotion / demotion */
       if (url.pathname === "/identity/role" && request.method === "POST") {
-        if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 60, 60000)) return json({ error: "rate limited" }, 429);
         return await this.setRole(await request.json());
       }
       if (url.pathname.startsWith("/did/") && request.method === "GET") {
@@ -185,7 +185,7 @@ export class GDBxStorageObject {
           const k = String(d.key || "");
           return k.startsWith("playground/") || k.startsWith("sandbox/") || k.startsWith("test/");
         });
-        const capacity = isDemo ? 120 : 30;
+        const capacity = isDemo ? 1200 : 600;
         const key = body.addr ? `${ip}:${normalizeAddress(String(body.addr))}` : ip;
         if (!this.rateLimit(key, capacity, 60000)) {
           return new Response(JSON.stringify({ error: "rate limited", retryAfterMs: 2000 }), {
@@ -196,7 +196,7 @@ export class GDBxStorageObject {
         return await this.putDeltas(body);
       }
       if (url.pathname.startsWith("/sync/") && request.method === "GET") {
-        if (!this.rateLimit(ip, 120, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 1200, 60000)) return json({ error: "rate limited" }, 429);
         const rest = url.pathname.slice("/sync/".length);
         const [addr, ...keyParts] = rest.split("/");
         if (!ADDR_RE.test(addr)) return json({ error: "invalid address" }, 400);
@@ -211,7 +211,7 @@ export class GDBxStorageObject {
       if (url.pathname === "/peers" && request.method === "POST") {
         const bodyPeek = await request.clone().json().catch(() => ({}));
         const peerKey = bodyPeek.addr ? `${ip}:${normalizeAddress(String(bodyPeek.addr)) || ip}` : ip;
-        if (!this.rateLimit(peerKey, 60, 60000)) {
+        if (!this.rateLimit(peerKey, 600, 60000)) {
           return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { ...JSON_HEADERS, "retry-after": "2" } });
         }
         return await this.heartbeat(await request.json());
@@ -219,13 +219,13 @@ export class GDBxStorageObject {
 
       /* GDPR erasure */
       if (url.pathname === "/identity" && request.method === "DELETE") {
-        if (!this.rateLimit(ip, 5, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 60, 60000)) return json({ error: "rate limited" }, 429);
         return await this.purgeIdentity(await request.json());
       }
 
       /* Encrypted backup export */
       if (url.pathname === "/export" && request.method === "POST") {
-        if (!this.rateLimit(ip, 10, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 60, 60000)) return json({ error: "rate limited" }, 429);
         return await this.exportState(await request.json());
       }
 
@@ -253,7 +253,7 @@ export class GDBxStorageObject {
 
       /* Hybrid mesh relay: Nostr kind-23124 event ingest */
       if (url.pathname === "/relay" && request.method === "POST") {
-        if (!this.rateLimit(ip, 30, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 300, 60000)) return json({ error: "rate limited" }, 429);
         return await this.relayEvent(await request.json());
       }
 
@@ -880,7 +880,8 @@ export class GDBxStorageObject {
         maxPayload: MAX_PAYLOAD,
         maxDeltasPerBatch: MAX_DELTAS,
         pow: { minDiff: 2, maxDiff: 4 },
-        conflict: "LWW + SEA owner signature",
+        conflict: "LWW + GDBx owner signature",
+        quotas: "none — PoW + signature only",
       },
     });
   }
