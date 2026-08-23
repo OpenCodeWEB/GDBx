@@ -82,7 +82,8 @@
     <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-slate-300">
       <a href="#protocol" class="hover:text-violet-300 transition-colors">Protocol</a>
       <a href="#transports" class="hover:text-fuchsia-300 transition-colors">Transports</a>
-      <a href="#live" class="hover:text-emerald-300 transition-colors">Live Mesh</a>
+      <a href="#live" class="hover:text-emerald-300 transition-colors hidden lg:inline">Live Mesh</a>
+      <a href="/GlobalMesh" class="hover:text-cyan-300 transition-colors">Global Mesh</a>
       <a href="#playground" class="hover:text-violet-300 transition-colors">Playground</a>
       <a href="#ftp" class="hover:text-amber-300 transition-colors">FTP</a>
       <a href="#sandbox" class="hover:text-cyan-300 transition-colors">Sandbox</a>
@@ -220,6 +221,20 @@
 <section id="live" class="max-w-7xl mx-auto px-4 py-20">
   <h2 class="text-3xl font-extrabold tracking-tight mb-2"><i class="fa-solid fa-tower-broadcast text-emerald-400 mr-2"></i>Live Mesh <span class="text-sm align-middle px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 mono">live</span></h2>
   <p class="text-slate-400 mb-8 max-w-2xl">Real-time diagnostics straight from the GDBx edge — every number here is fetched from the live API, not mocked.</p>
+
+  <a href="/GlobalMesh" class="block mb-8 group">
+    <div class="rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-cyan-500/5 via-slate-900/40 to-violet-500/5 p-6 hover:border-cyan-400/50 transition-colors" style="box-shadow:0 0 50px rgba(103,232,249,.08)">
+      <div class="flex flex-wrap items-center gap-4">
+        <i class="fa-solid fa-globe text-cyan-300 text-3xl"></i>
+        <div class="flex-1 min-w-[240px]">
+          <div class="font-extrabold text-xl">Global Mesh <span class="bg-gradient-to-r from-cyan-300 to-fuchsia-300 bg-clip-text text-transparent">— Live Status</span></div>
+          <p class="text-sm text-slate-400 mt-1">Worldwide replication network, breathing in real time: rotating node topology, live delta feed, pool health, transport mix and leaderboard.</p>
+        </div>
+        <span class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 text-slate-950 font-bold text-sm group-hover:opacity-90 transition-opacity whitespace-nowrap"><i class="fa-solid fa-satellite-dish mr-1"></i>Watch Live</span>
+      </div>
+    </div>
+  </a>
+
   <div class="grid lg:grid-cols-2 gap-6">
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-300"></i>Top Active Addresses</h3>
