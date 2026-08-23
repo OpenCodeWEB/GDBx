@@ -566,6 +566,16 @@ export class GDBxStorageObject {
       }
       await this.replicateToMirror(addr, snapshot);
     }
+
+    // Live broadcast for HTTP writes too — same event stream as WS-put writes,
+    // so every transport feeds the GlobalMesh / sandbox identically.
+    if (applied > 0) {
+      try {
+        this.wsHub.broadcast(addr, body.deltas.map((d) => ({
+          key: d.key, value: d.value, clock: typeof d.clock === "number" ? d.clock : body.ts,
+        })), body.pubkey || null);
+      } catch { /* hub unavailable */ }
+    }
     return json({ ok: true, applied, addr });
   }
 

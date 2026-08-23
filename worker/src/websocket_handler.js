@@ -150,25 +150,10 @@ export function createWebSocketHub(getStorageStub) {
           return;
         }
         server.send(JSON.stringify({ type: "applied", addr: data.addr, applied: data.applied, ts: Date.now() }));
-        // live broadcast to every subscriber of the same addr — including the
+        // live broadcast to every subscriber of the same addr - including the
         // sender (like Gun's own-write echo): a single client can therefore
         // observe its own writes landing, and cross-client peers get them too.
-        const appliedDeltas = Array.isArray(msg.deltas) ? msg.deltas : [];
-        for (const s of sockets) {
-          const otherState = socketStates.get(s);
-          if (otherState && otherState.addr === data.addr) {
-            for (const d of appliedDeltas) {
-              s.send(JSON.stringify({
-                type: "delta",
-                addr: data.addr,
-                key: d.key,
-                value: d.value,
-                clock: d.clock,
-                ownerPub: msg.pubkey || null,
-              }));
-            }
-          }
-        }
+        api.broadcast(data.addr, Array.isArray(msg.deltas) ? msg.deltas : [], msg.pubkey || null);
         return;
       }
 
@@ -197,7 +182,7 @@ export function createWebSocketHub(getStorageStub) {
     }
   }
 
-  return {
+  const api = {
     accept,
     handleMessage,
     sockets,
@@ -213,7 +198,34 @@ export function createWebSocketHub(getStorageStub) {
     list() {
       return [...sockets];
     },
+    /**
+     * Broadcast applied deltas to every subscriber of the addr — used by the
+     * DO after HTTP /sync writes too, so ALL transports (HTTP, WS put, relay)
+     * produce identical live broadcasts. Zero-transport asymmetry.
+     */
+    broadcast(addr, deltas, ownerPub) {
+      const appliedDeltas = Array.isArray(deltas) ? deltas : [];
+      for (const s of sockets) {
+        const st = socketStates.get(s);
+        if (st && st.addr === addr) {
+          for (const d of appliedDeltas) {
+            try {
+              s.send(JSON.stringify({
+                type: "delta",
+                addr,
+                key: d.key,
+                value: d.value,
+                clock: d.clock,
+                ownerPub: ownerPub || null,
+              }));
+            } catch { /* socket closing */ }
+          }
+        }
+      }
+    },
   };
+
+  return api;
 }
 
 /* ── Backwards-compatible module-level hub (used by tests) ────────── */
