@@ -26,9 +26,9 @@ import { GDBxMirrorObject } from "./GDBxMirrorDO.js";
 // wrangler discovers Durable Object classes via NAMED exports from the
 // entrypoint module — mirror must be exported alongside the primary.
 export { GDBxMirrorObject };
-import { GunPeerObject } from "./GunRelayDO.js";
-// Gun-compat engine (GunX absorbed into GDBx): gun.js clients peer at /gun
-export { GunPeerObject };
+import { GunXPeerObject } from "./GunXRelayDO.js";
+// GunX relay engine (GunX absorbed into GDBx): GunX wire clients peer at /gunx
+export { GunXPeerObject };
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -904,21 +904,21 @@ function json(data, status = 200) {
 export default {
   GDBxStorageObject,
   GDBxMirrorObject,
-  GunPeerObject,
+  GunXPeerObject,
 
   /**
    * Entry Worker fetch: routes to the right engine —
-   *   /gun*            → GunPeerObject  (Gun wire-compat relay, GunX absorbed)
+   *   /gun*            → GunXPeerObject  (GunX wire relay, absorbedd)
    *   everything else  → GDBxStorageObject (CRDT ledger + WS hub + pool)
    */
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
 
-    // Gun-compatible engine: /gun (+ its stats/health live under /gun/*)
-    if (url.pathname === "/gun" || url.pathname.startsWith("/gun/")) {
-      const gunId = env.GUN_PEER.idFromName("default");
-      return env.GUN_PEER.get(gunId).fetch(request);
+    // GunX relay: /gunx (+ its stats/health live under /gunx/*)
+    if (url.pathname === "/gunx" || url.pathname.startsWith("/gunx/")) {
+      const gunId = env.GUNX_PEER.idFromName("default");
+      return env.GUNX_PEER.get(gunId).fetch(request);
     }
 
     const id = env.GDBX_STORAGE.idFromName("default");

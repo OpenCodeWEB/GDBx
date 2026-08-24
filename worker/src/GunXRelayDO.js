@@ -1,5 +1,5 @@
 /**
- * GunRelayDO — serverless GunDB-compatible relay peer, absorbed into GDBx.
+ * GunXRelayDO — serverless GunDB-compatible relay peer, absorbed into GDBx.
  *
  * GDBx Phase 6.4 "GunX engine": the classic Gun wire protocol now runs INSIDE
  * the .GDBx platform so existing gun.js applications can peer with GDBx
@@ -227,7 +227,7 @@ export function pruneNode(node, cutoff) {
   return { dead, action: "keep", next };
 }
 
-export class GunPeerObject {
+export class GunXPeerObject {
   constructor(state, env) {
     this.state = state;
     this.env = env;
@@ -337,7 +337,7 @@ export class GunPeerObject {
       return json({
         ok: true,
         status: "healthy",
-        engine: "gun-compat",
+        engine: "GunX-compat",
         peer: "gdbx-gun",
         timestamp: Date.now(),
         connections: this.state.getWebSockets().length,
@@ -349,7 +349,7 @@ export class GunPeerObject {
       return json({
         ok: true,
         status: "online",
-        engine: "gun-compat",
+        engine: "GunX-compat",
         uptimeMs: Date.now() - this.stats.startTime,
         connections: this.state.getWebSockets().length,
         messagesProcessed: this.stats.messagesProcessed,

@@ -1,5 +1,5 @@
 """
-gdbx_py.crypto — GDBx pure-python crypto, gun-free.
+gdbx_py.crypto — GDBx pure-python crypto, GunX-free.
 
 Matches sdk/gdbx-crypto.js exactly:
 - canonical_json: key-sorted JSON (same as JS)

@@ -1,7 +1,7 @@
 /**
  * gdbx-crypto.js — GDBx self-sovereign crypto core (zero runtime dependencies).
  *
- * Pure Web Crypto (browser / Node 20+ / Cloudflare Workers). No gun, no SEA
+ * Pure Web Crypto (browser / Node 20+ / Cloudflare Workers). No third-party crypto, no SEA package
  * package, no third-party runtime deps — the whole identity/signature layer
  * is owned by GDBx.
  *
@@ -15,7 +15,7 @@
  *
  * verifyCompat() also accepts legacy SEA v1 envelopes
  * ("SEA" + JSON.stringify({m, s})) for backward compatibility with clients
- * that were built on gun/sea before GDBx went self-sovereign.
+ * built on legacy client stacks before GDBx went self-sovereign.
  */
 
 /* ── canonical JSON (must match worker/src/verify.js) ─────────────────── */

@@ -1,7 +1,7 @@
 /**
  * gdbx-crypto.js — GDBx self-sovereign crypto core (zero runtime dependencies).
  *
- * Pure Web Crypto (browser / Node 20+ / Cloudflare Workers). No gun, no SEA
+ * Pure Web Crypto (browser / Node 20+ / Cloudflare Workers). No third-party crypto, no SEA package
  * package, no third-party runtime deps — the whole identity/signature layer
  * is owned by GDBx.
  *
@@ -15,7 +15,7 @@
  *
  * verifyCompat() also accepts legacy SEA v1 envelopes
  * ("SEA" + JSON.stringify({m, s})) for backward compatibility with clients
- * that were built on gun/sea before GDBx went self-sovereign.
+ * built on legacy client stacks before GDBx went self-sovereign.
  */
 
 /* ── canonical JSON (must match worker/src/verify.js) ─────────────────── */
@@ -139,7 +139,7 @@ export async function sign(body, keyPair) {
 export async function verify(body, sig, pub) {
   try {
     if (typeof sig !== "string" || !sig.startsWith("GDBx")) return false;
-    const env = JSON.parse(sig.slice(5));
+    const env = JSON.parse(sig.slice(4));
     if (!env || typeof env !== "object" || typeof env.s !== "string") return false;
     // GDBx stores m as canonical string; legacy shapes may store the object
     const mStr = typeof env.m === "string" ? env.m : canonicalJson(env.m);

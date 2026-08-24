@@ -261,7 +261,7 @@ async function loadLeaderboard() {
       nonce += 1;
       if (nonce > 500000) return false;
     }
-    // sign canonical body with GDBxCrypto (self-sovereign, no gun)
+    // sign canonical body with GDBxCrypto (self-sovereign, GunX-hardened)
     const GDBxCrypto = window.GDBxCrypto;
     const canonical = { addr, action: "did.register", ts, payload: null };
     const seaSig = await GDBxCrypto.sign(canonical, pair);

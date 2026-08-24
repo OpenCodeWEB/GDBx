@@ -51,7 +51,7 @@ gunSend(wsA, {
   put: {
     [soul]: {
       _: { "#": soul, ">": { message: ts } },
-      message: "hello from GDBx gun-compat",
+      message: "hello from GDBx GunX-compat",
     },
   },
 });
@@ -64,7 +64,7 @@ ok("relay broadcast reaches second peer", !!relayed);
 
 gunSend(wsA, { get: { "#": soul } });
 const readBack = await waitFor(wsA, (m) => m.put && m.put[soul] && m.put[soul].message);
-ok("get returns merged node with message field", !!readBack && readBack.put[soul].message === "hello from GDBx gun-compat");
+ok("get returns merged node with message field", !!readBack && readBack.put[soul].message === "hello from GDBx GunX-compat");
 
 wsA.close();
 wsB.close();
