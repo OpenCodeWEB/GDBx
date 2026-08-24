@@ -34,7 +34,7 @@ const manifest = {
   version: "6.3.0",
   releasedAt: new Date().toISOString(),
   notes:
-    "Zero-limit policy; GDBx envelope single brand; GlobalMesh live page; Gun-compat engine absorbed",
+    "Zero-limit policy; GDBx envelope single brand; GlobalMesh live page; GunX relay engine absorbed",
   hubs: ["wss://gdbx.pages.dev/ws", "wss://gdbx.xup.workers.dev/ws"],
   local: "ws://absup:8787/ws",
   versionKey: "sys/gdbx/version",

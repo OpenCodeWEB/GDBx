@@ -55,7 +55,7 @@ export async function minePoW(addr, ownerPub, payload, ts, diff) {
   }
 }
 
-/* ── crypto helpers (self-sovereign — gdbx-crypto, no gun) ──────────── */
+/* ── crypto helpers (self-sovereign — gdbx-crypto, no external crypto) ──────────── */
 
 export async function makePair() {
   return cryptoPair();

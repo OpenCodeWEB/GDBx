@@ -103,7 +103,7 @@ export function b64ToBytes(b64) {
 }
 
 /**
- * Verify a gun SEA v1 signature (ECDSA P-256 / SHA-256) with the bare public
+ * Verify a legacy client v1 signature (ECDSA P-256 / SHA-256) with the bare public
  * key — the same verification SEA.verify performs client-side.
  *
  * @param {object} body   canonical message object (sig excluded)
