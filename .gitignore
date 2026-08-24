@@ -6,3 +6,4 @@ worker/.dev.vars
 *.log
 .worker-configuration.d.ts
 dist/
+_gun_child_test.mjs
