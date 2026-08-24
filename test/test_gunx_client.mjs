@@ -1,6 +1,6 @@
 /**
  * test_gun_client.mjs — REAL stock gun.js clients peering with GDBx /gun.
- * Proves the GunX engine absorbed into GDBx works with unmodified gun apps.
+ * Proves the GunX relay engine absorbed into GDBx works with unmodified legacy apps (compat-only test; the GDBx project itself ships zero gun code).
  *
  * Findings encoded here (all verified empirically):
  * - axe/multicast must be disabled in Node (LAN discovery breaks remote writes).
@@ -13,7 +13,7 @@ import { writeFileSync } from "node:fs";
 import Gun from "gun";
 import "gun/sea.js";
 
-const PEER = process.env.GUN_URL || "https://gdbx.xup.workers.dev/gun";
+const PEER = process.env.GUN_URL || "https://gdbx.xup.workers.dev/gunx";
 const OPTS = { peers: [PEER], radisk: false, localStorage: false, axe: false, multicast: false };
 // Capture BEFORE any Gun() construction — gun mutates its options object
 // (attaches circular mesh refs), which would break later JSON.stringify.

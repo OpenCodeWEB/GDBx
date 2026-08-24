@@ -21,8 +21,8 @@ import {
   signBody,
 } from "../sdk/gdbx-crypto.js";
 
-// Legacy SEA v1 verification logic — inlined here WITHOUT gun, so the test
-// proves compat without depending on the gun package at all.
+// Legacy SEA v1 verification logic — inlined here standalone, so the test
+// proves compat with zero external dependencies.
 async function seaV1Verify(body, sig, pub) {
   const raw = typeof sig === "string" && sig.slice(0, 4) === "SEA{" ? sig.slice(3) : sig;
   const env = JSON.parse(raw);
@@ -121,7 +121,7 @@ test("verifyCompat accepts GDBx envelope", async () => {
   assert.equal(await verifyCompat(body, sig, p.pub), true);
 });
 
-test("verifyCompat accepts legacy SEA v1 envelope (gun-free inlined check)", async () => {
+test("verifyCompat accepts legacy SEA v1 envelope (standalone inlined check)", async () => {
   const p = await pair();
   const body = { addr: "d".repeat(58), action: "did.register", ts: 99, payload: null };
   // Build a SEA v1-style envelope manually: {"m": <body>, "s": <raw sig>}
@@ -169,7 +169,7 @@ test("worker verifySig accepts GDBx AND legacy SEA v1", async () => {
   assert.equal(await verifySig(body, envSig, p.pub), true);
   assert.equal(await verifySig({ ...body, ts: 778 }, envSig, p.pub), false);
 
-  // Legacy SEA v1 path (build envelope without gun)
+  // Legacy SEA v1 path (build envelope standalone)
   const mStr = canonicalJson(body);
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(mStr));
   const [x, y] = p.pub.split(".");

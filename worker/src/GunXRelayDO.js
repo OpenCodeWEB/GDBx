@@ -27,7 +27,7 @@
  * Routes (mounted by the gdbx entry under /gun*):
  *   GET  /gun                  -> 426 websocket-required (gun client probe)
  *   POST /gun                  -> gun wire messages over HTTP (fallback transport)
- *   GET  /gun  (Upgrade: ws)   -> WebSocket gun peer
+ *   GET  /gunx (Upgrade: ws)   -> WebSocket GunX peer
  *   GET  /gun/stats            -> GDBx-style {ok:true,…} relay statistics
  *   GET  /gun/health           -> health check
  *   GET  /api/stats            -> legacy GunX-shaped statistics
@@ -333,7 +333,7 @@ export class GunXPeerObject {
       return new Response(null, { headers: JSON_HEADERS });
     }
 
-    if (url.pathname === "/health" || url.pathname === "/gun/health") {
+    if (url.pathname === "/health" || url.pathname === "/gunx/health") {
       return json({
         ok: true,
         status: "healthy",
@@ -345,7 +345,7 @@ export class GunXPeerObject {
       });
     }
 
-    if ((url.pathname === "/api/stats" || url.pathname === "/gun/stats") && request.method === "GET") {
+    if ((url.pathname === "/api/stats" || url.pathname === "/gunx/stats") && request.method === "GET") {
       return json({
         ok: true,
         status: "online",
@@ -360,7 +360,7 @@ export class GunXPeerObject {
       });
     }
 
-    if (url.pathname === "/gun") {
+    if (url.pathname === "/gunx" || url.pathname === "/gun") {
       if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
         return this.handleWebSocket(request);
       }
@@ -368,7 +368,7 @@ export class GunXPeerObject {
         return this.handleHttpMessage(request);
       }
       return json(
-        { status: "websocket required", peer: "/gun", hint: "wss://" + url.host + "/gun" },
+        { status: "websocket required", peer: "/gunx", hint: "wss://" + url.host + "/gunx" },
         { status: 426, headers: { upgrade: "websocket" } },
       );
     }

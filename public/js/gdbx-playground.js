@@ -1,4 +1,4 @@
-﻿/**
+/**
  * gdbx-playground.js â€” Live P2P Playground for GDBx (GunX parity, GDBx-native)
  *
  * Features:
@@ -8,7 +8,7 @@
  * - Relay status (pool + stats)
  * - Image (<32KB base64) + file stub
  *
- * Demo identity (shared public playground address) â€” gun-free GDBx:
+ * Demo identity (shared public playground address) â€” GunX-hardened GDBx:
  */
 const DEMO = {
   pub: "xb_tjiMr6afzWikmd6yyNjPSaLkWoj_jDBEB-TqgJio.AR_uV6kJN1Re4STtyUH92_3jGH3GaVAPnTi4yNEyLaY",

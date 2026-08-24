@@ -151,7 +151,7 @@ export function createWebSocketHub(getStorageStub) {
         }
         server.send(JSON.stringify({ type: "applied", addr: data.addr, applied: data.applied, ts: Date.now() }));
         // live broadcast to every subscriber of the same addr - including the
-        // sender (like Gun's own-write echo): a single client can therefore
+        // sender (own-write echo): a single client can therefore
         // observe its own writes landing, and cross-client peers get them too.
         api.broadcast(data.addr, Array.isArray(msg.deltas) ? msg.deltas : [], msg.pubkey || null);
         return;
