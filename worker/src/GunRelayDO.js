@@ -24,7 +24,7 @@
  *   - retention sweep: only explicitly tombstoned fields are ever pruned;
  *     live data is retained forever (DO alarm, daily).
  *
- * Routes (mounted by the gdbx-do entry under /gun*):
+ * Routes (mounted by the gdbx entry under /gun*):
  *   GET  /gun                  -> 426 websocket-required (gun client probe)
  *   POST /gun                  -> gun wire messages over HTTP (fallback transport)
  *   GET  /gun  (Upgrade: ws)   -> WebSocket gun peer

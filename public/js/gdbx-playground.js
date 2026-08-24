@@ -1,5 +1,5 @@
-/**
- * gdbx-playground.js — Live P2P Playground for GDBx (GunX parity, GDBx-native)
+﻿/**
+ * gdbx-playground.js â€” Live P2P Playground for GDBx (GunX parity, GDBx-native)
  *
  * Features:
  * - Public/private rooms (E2E AES-GCM for private)
@@ -8,7 +8,7 @@
  * - Relay status (pool + stats)
  * - Image (<32KB base64) + file stub
  *
- * Demo identity (shared public playground address) — gun-free GDBx:
+ * Demo identity (shared public playground address) â€” gun-free GDBx:
  */
 const DEMO = {
   pub: "xb_tjiMr6afzWikmd6yyNjPSaLkWoj_jDBEB-TqgJio.AR_uV6kJN1Re4STtyUH92_3jGH3GaVAPnTi4yNEyLaY",
@@ -17,7 +17,7 @@ const DEMO = {
   addr: "aeaagiao64onmpxlv7bjgk4chnpvl5h77erwqq7gockpvm2kafwzwmzt3u",
 };
 const API = "https://gdbx.pages.dev/api/v1";
-const WS_BASE = "wss://gdbx-do.xup.workers.dev/ws";
+const WS_BASE = "wss://gdbx.xup.workers.dev/ws";
 const $ = (id) => document.getElementById(id);
 
 export function initPlayground() {
@@ -108,9 +108,9 @@ export function initPlayground() {
     for (let i = 0; i < n; i++) s += a[r[i] % a.length];
     return s;
   }
-  // GDBx delta is 32KB max (flat-primitive, DoS protection) — but GunX playground supports any size via imgbb proxy + P2P.
-  // For GDBx we do GunX parity: image → /api/imgbb proxy (10MB, server-side key), fallback → chunked pool (sovereign, any size)
-  // File → chunked pool (sovereign, any size) with manifest, reassembled on receive. P2P WebRTC direct (any size, no relay) deferred but stub.
+  // GDBx delta is 32KB max (flat-primitive, DoS protection) â€” but GunX playground supports any size via imgbb proxy + P2P.
+  // For GDBx we do GunX parity: image â†’ /api/imgbb proxy (10MB, server-side key), fallback â†’ chunked pool (sovereign, any size)
+  // File â†’ chunked pool (sovereign, any size) with manifest, reassembled on receive. P2P WebRTC direct (any size, no relay) deferred but stub.
   async function putSingleDelta(key, value) {
     const ts = Date.now();
     const hashInput = `${DEMO.addr}:${DEMO.pub}:sync.put:${ts}:`;
@@ -145,7 +145,7 @@ export function initPlayground() {
     const manifestKey = `${currentRoom}/msg/${Date.now()}-${nanoid(4)}`;
     await putSingleDelta(manifestKey, JSON.stringify(manifest));
     seenKeys.add(manifestKey);
-    addMsg(text, true, { fname, fsize, img: manifest.isImage ? "(chunked image — reassembling...)" : null });
+    addMsg(text, true, { fname, fsize, img: manifest.isImage ? "(chunked image â€” reassembling...)" : null });
     // then chunks
     for (let i = 0; i < chunks.length; i++) {
       const key = `${currentRoom}/chunk/${msgId}/${String(i).padStart(4, "0")}`;
@@ -177,7 +177,7 @@ export function initPlayground() {
   }
   async function decryptText(maybeEnc, key) {
     if (!maybeEnc.startsWith("__enc__")) return maybeEnc;
-    if (!key) return "[encrypted — join with room key]";
+    if (!key) return "[encrypted â€” join with room key]";
     try {
       const raw = b64ToBytes(maybeEnc.slice(7));
       const iv = raw.slice(0, 12);
@@ -240,7 +240,7 @@ export function initPlayground() {
       ws.onopen = () => {
         retryMs = 5000;
         ws.send(JSON.stringify({ type: "hello", addr: DEMO.addr }));
-        addMsg("connected — live sync ready", false);
+        addMsg("connected â€” live sync ready", false);
       };
       ws.onmessage = async (ev) => {
         let msg;
@@ -274,7 +274,7 @@ export function initPlayground() {
                   addMsg(text, parsed.from === visitorId);
                 }
               } else {
-                addMsg(parsed.text + " (reassembling…)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+                addMsg(parsed.text + " (reassemblingâ€¦)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
               }
               return;
             }
@@ -330,7 +330,7 @@ export function initPlayground() {
                 addMsg(text, parsed.from === visitorId);
               }
             } else {
-              addMsg(parsed.text + " (reassembling…)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
+              addMsg(parsed.text + " (reassemblingâ€¦)", parsed.from === visitorId, { fname: parsed.fname, fsize: parsed.fsize });
             }
             continue;
           }
@@ -358,8 +358,8 @@ export function initPlayground() {
     const valueObj = { text: payloadText, from: visitorId, ts, room: currentRoom, ...extra };
     let value = JSON.stringify(valueObj);
     if (value.length > 512000) {
-      // GunX parity for large payloads: GDBx delta is 32KB max per delta (DoS protection, LWW) — but any size is supported via sovereign chunked pool
-      // Chunk the value into 28KB pieces + manifest, like IPFS chunking — no external relay, pool-replicated, reassembled on receive
+      // GunX parity for large payloads: GDBx delta is 32KB max per delta (DoS protection, LWW) â€” but any size is supported via sovereign chunked pool
+      // Chunk the value into 28KB pieces + manifest, like IPFS chunking â€” no external relay, pool-replicated, reassembled on receive
       // For images/files, extra.img/dataUrl is already large, so chunk the full value
       await sendChunked(text, value, extra.fname, extra.fsize);
       return;
@@ -406,7 +406,7 @@ export function initPlayground() {
   });
 
   if (clearBtn) clearBtn.addEventListener("click", () => {
-    if (!confirm("This only clears your local view on this tab. Nothing is deleted from the GDBx pool — chat data stays forever.")) return;
+    if (!confirm("This only clears your local view on this tab. Nothing is deleted from the GDBx pool â€” chat data stays forever.")) return;
     messages.innerHTML = "";
     seenKeys.clear();
   });
@@ -424,7 +424,7 @@ export function initPlayground() {
     messages.innerHTML = "";
     seenKeys.clear();
     history.replaceState(null, "", `#r=${roomId}&k=${keyB64}`);
-    try { await navigator.clipboard.writeText(invite); addMsg(`private room created — invite copied: ${invite}`, false); } catch { prompt("Copy private invite link:", invite); }
+    try { await navigator.clipboard.writeText(invite); addMsg(`private room created â€” invite copied: ${invite}`, false); } catch { prompt("Copy private invite link:", invite); }
   });
 
   if (joinRoomBtn) joinRoomBtn.addEventListener("click", async () => {
@@ -471,7 +471,7 @@ export function initPlayground() {
           console.warn("imgbb proxy failed, fallback to sovereign chunked:", e.message);
         }
       }
-      // fallback: sovereign chunked GDBx pool (no external dependency, any size) — split dataUrl
+      // fallback: sovereign chunked GDBx pool (no external dependency, any size) â€” split dataUrl
       const reader = new FileReader();
       reader.onload = async () => {
         const dataUrl = reader.result;
@@ -491,8 +491,8 @@ export function initPlayground() {
       const file = fileInput.files[0];
       fileInput.value = "";
       if (!file) return;
-      // GunX parity: file via P2P WebRTC (any size) — for GDBx we use sovereign chunked pool (any size, pool-replicated, no external relay) + future P2P direct
-      // GDBx delta is 32KB max per delta (DoS protection) — but any size file is chunked into 28KB deltas and reassembled (like IPFS chunking)
+      // GunX parity: file via P2P WebRTC (any size) â€” for GDBx we use sovereign chunked pool (any size, pool-replicated, no external relay) + future P2P direct
+      // GDBx delta is 32KB max per delta (DoS protection) â€” but any size file is chunked into 28KB deltas and reassembled (like IPFS chunking)
       const reader = new FileReader();
       reader.onload = async () => {
         const dataUrl = reader.result; // data:*/*;base64,...
@@ -537,7 +537,7 @@ export function initPlayground() {
       }
       if (pRes && poolEl) {
         const nodes = pRes.nodes || [];
-        poolEl.textContent = nodes.map((n) => `${n.role}:${n.healthy ? "✓" : "✗"}`).join(" · ") || "—";
+        poolEl.textContent = nodes.map((n) => `${n.role}:${n.healthy ? "âœ“" : "âœ—"}`).join(" Â· ") || "â€”";
       }
       // online pill via active or leaderboard
       if (onlinePill && sRes && sRes.stats) {

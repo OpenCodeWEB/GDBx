@@ -1,17 +1,17 @@
-# Gemini Consultation 01 — GDBx Next-Generation Architecture
+﻿# Gemini Consultation 01 â€” GDBx Next-Generation Architecture
 
-> এই prompt টি Gemini-তে (gemini.google.com) paste করুন। উত্তর কপি করে পাঠান —
-> Conductor ডিজাইনে integrate করবে।
+> à¦à¦‡ prompt à¦Ÿà¦¿ Gemini-à¦¤à§‡ (gemini.google.com) paste à¦•à¦°à§à¦¨à¥¤ à¦‰à¦¤à§à¦¤à¦° à¦•à¦ªà¦¿ à¦•à¦°à§‡ à¦ªà¦¾à¦ à¦¾à¦¨ â€”
+> Conductor à¦¡à¦¿à¦œà¦¾à¦‡à¦¨à§‡ integrate à¦•à¦°à¦¬à§‡à¥¤
 
 ---
 
 ## Role
 
 You are a principal distributed-systems architect and cryptographer. You will
-review and redesign an open-source project called **GDBx — Global
+review and redesign an open-source project called **GDBx â€” Global
 Decentralized DataBase Sync** (github.com/OpenCodeWEB/GDBX). The founder wants
 the project to become **100% self-owned**: its own identity system, its own
-crypto, its own firewall, and its own pool system — NOT an imitation of
+crypto, its own firewall, and its own pool system â€” NOT an imitation of
 `.onion`/Tor, GunDB, or any other network. Your output will directly drive
 implementation, so be concrete: module-level architecture, data formats,
 algorithms, and test plans.
@@ -21,38 +21,38 @@ algorithms, and test plans.
 - **Address format** (`sdk/gdbx-codec.js`): 36-byte payload = Version(1B) +
   NetworkType(1B) + PubKeyHash(32B = SHA-256 of P-256 public key) +
   Checksum(2B = first 2 bytes of BLAKE3(payload[0..34])). Base32 RFC4648
-  lowercase no-padding → 58 chars + `.gdbx` suffix. DID: `did:gdbx:<addr>`.
-  *This format is inspired by Tor v3 onion addresses — the founder wants an
+  lowercase no-padding â†’ 58 chars + `.gdbx` suffix. DID: `did:gdbx:<addr>`.
+  *This format is inspired by Tor v3 onion addresses â€” the founder wants an
   original design, not an onion imitation.*
 - **Identity**: ECDSA P-256 (via Gun SEA, `gun@0.2020.1241`) keypairs; browser
   uses `window.Gun.SEA`, Node uses `gun` npm. Founder wants NO Gun dependency
-  at all — a native `gdbx@` crypto module (WebCrypto + @noble/hashes).
+  at all â€” a native `gdbx@` crypto module (WebCrypto + @noble/hashes).
 - **Storage**: Cloudflare Workers + Durable Object `GDBxStorageDO` (SQLite
   backend). LWW-CRDT flat-primitives JSON schema (string/number/boolean/null),
   tombstones, per-key LWW merge. Presence heartbeats, pruning.
-- **API v1** (Pages Functions → DO): register DID, resolve, put (batch deltas),
+- **API v1** (Pages Functions â†’ DO): register DID, resolve, put (batch deltas),
   get, keys, stats, leaderboard, export, DELETE /identity (GDPR purge),
-  WebSocket live sync (`wss://gdbx-do.xup.workers.dev/ws?addr=…`), WS hub lives
+  WebSocket live sync (`wss://gdbx.xup.workers.dev/ws?addr=â€¦`), WS hub lives
   INSIDE the DO (singleton isolate) and broadcasts deltas to subscribers.
 - **Security today**: PoW anti-spam (SHA-256 leading zeros, diff adaptive,
   MIN_NONCE=1), TS window 60s + monotonic nonce (replay protection),
   HMAC-SHA256-signed deltas, SEA ECDSA signatures for writes/registration,
   rate limits (did 10/min, writes 30/min, reads 120/min, peers 30/min,
   identity 5/min, export 10/min), validation (flat primitives only, key
-  charset, 32KB payload cap, DID services ≤16), purge/export require
+  charset, 32KB payload cap, DID services â‰¤16), purge/export require
   pubkeyHex + SEA sig. 48/48 unit tests + live E2E pass.
 
 ## Founder's Vision (must be honored)
 
-1. **নিজস্ব সিস্টেম (Own system)**: GDBx runs on its own complete system —
+1. **à¦¨à¦¿à¦œà¦¸à§à¦¬ à¦¸à¦¿à¦¸à§à¦Ÿà§‡à¦® (Own system)**: GDBx runs on its own complete system â€”
    address format, identity, crypto, protocol. It does NOT imitate `.onion`.
    The goal: users can trust GDBx 100% because nothing depends on third-party
    identity/crypto layers (Gun/SEA must be fully removed).
-2. **Firewall**: GDBx ships with its own firewall layer — protocol-level
+2. **Firewall**: GDBx ships with its own firewall layer â€” protocol-level
    defense (spam, sybil, replay, malicious payloads, abusive peers,
    amplification).
 3. **Pool system**: GDBx has a pool system (decentralized relay/storage/bandwidth
-   pool — founder's exact semantics are open; propose the best design).
+   pool â€” founder's exact semantics are open; propose the best design).
 4. **Speed & trust**: must be faster and more secure than `.onion` for the
    same use cases, and 100% verifiable/auditable.
 
@@ -73,7 +73,7 @@ algorithms, and test plans.
    ban/backoff, payload firewalls, egress limits (anti-amplification), and a
    client-side firewall for local nodes. How does it differ from existing
    rate limits? Where does state live (DO SQLite tables)?
-4. **Pool system design**: Define a decentralized pool for GDBx — options:
+4. **Pool system design**: Define a decentralized pool for GDBx â€” options:
    (a) relay pool (nodes serve as relays for each other), (b) storage pool
    (replication groups), (c) bandwidth/CDN pool, (d) hybrid. Recommend one
    with: pool membership rules, reputation, churn handling, incentive-free

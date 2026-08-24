@@ -1,7 +1,7 @@
 /**
- * gdbx-ws-client.js — Real-time WebSocket sync client for GDBx.
+ * gdbx-ws-client.js â€” Real-time WebSocket sync client for GDBx.
  *
- *   const gdbx = new GDBxWS({ pubkeyHex, pair, addr?, api: "wss://gdbx-do.xup.workers.dev/ws" });
+ *   const gdbx = new GDBxWS({ pubkeyHex, pair, addr?, api: "wss://gdbx.xup.workers.dev/ws" });
  *   await gdbx.connect();
  *   gdbx.on("delta", (e) => ...);   // live updates broadcast by the edge
  *   gdbx.on("applied", (e) => ...); // your own write confirmation
@@ -9,7 +9,7 @@
  *   await gdbx.getSnapshot(prefix?);
  *   gdbx.close();
  *
- * Pure ESM — works in browsers and Node 18+ (global WebSocket required in
+ * Pure ESM â€” works in browsers and Node 18+ (global WebSocket required in
  * Node; browsers have it natively).
  */
 import { makeAddress } from "./gdbx-codec.js";
@@ -22,14 +22,14 @@ export class GDBxWS {
    * @param {string} opts.pubkeyHex  130-char uncompressed P-256 hex (owner)
    * @param {object} opts.pair       SEA pair { pub, priv } (owner)
    * @param {string} [opts.addr]     optional explicit .gdbx address
-   * @param {string} [opts.api]      websocket endpoint (default gdbx-do worker — Pages does not proxy WS upgrades)
+   * @param {string} [opts.api]      websocket endpoint (default gdbx worker â€” Pages does not proxy WS upgrades)
    */
   constructor(opts) {
     if (!opts || !opts.pubkeyHex || !opts.pair) throw new Error("pubkeyHex and pair required");
     this.pubkeyHex = opts.pubkeyHex;
     this.pair = opts.pair;
     this.addr = opts.addr || makeAddress(opts.pubkeyHex, 0);
-    this.api = opts.api || "wss://gdbx-do.xup.workers.dev/ws";
+    this.api = opts.api || "wss://gdbx.xup.workers.dev/ws";
     this.ws = null;
     this._listeners = new Map();
     this._seq = 0;

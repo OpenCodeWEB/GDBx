@@ -17,7 +17,7 @@ if "--live" in sys.argv:
     import asyncio
     from gdbx_py.client import GdbxClient
     async def main():
-        client = GdbxClient("https://gdbx-do.xup.workers.dev", p)
+        client = GdbxClient("https://gdbx.xup.workers.dev", p)
         print("Registering DID...")
         print(await client.register_did())
         print(await client.put_deltas([{"key": "hello", "value": "world from Python"}]))

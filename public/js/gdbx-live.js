@@ -1,19 +1,19 @@
 /**
- * gdbx-live.js — live mesh diagnostics + WebSocket sandbox for GDBx.
+ * gdbx-live.js â€” live mesh diagnostics + WebSocket sandbox for GDBx.
  *
  *  - Animated node-topology canvas in the hero (transports pulsing)
- *  - Live stats from GET /api/v1/stats (REAL data — no demo numbers)
+ *  - Live stats from GET /api/v1/stats (REAL data â€” no demo numbers)
  *  - Leaderboard + transport breakdown from GET /api/v1/leaderboard
  *  - Dual-pane sandbox: Node A writes signed deltas over WebSocket,
  *    Node B receives the live delta broadcast.
  */
 const API = "https://gdbx.pages.dev/api/v1";
-// WebSocket live sync is served directly by the gdbx-do Worker (Pages Functions
-// cannot forward the WS upgrade handshake — Cloudflare limitation).
-const WS_BASE = "wss://gdbx-do.xup.workers.dev/ws";
+// WebSocket live sync is served directly by the gdbx Worker (Pages Functions
+// cannot forward the WS upgrade handshake â€” Cloudflare limitation).
+const WS_BASE = "wss://gdbx.xup.workers.dev/ws";
 const $ = (id) => document.getElementById(id);
 
-/* ── Hero: animated mesh topology ─────────────────────────────── */
+/* â”€â”€ Hero: animated mesh topology â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 (function meshTopology() {
   const canvas = $("mesh-canvas");
   if (!canvas) return;
@@ -88,7 +88,7 @@ const $ = (id) => document.getElementById(id);
   tick();
 })();
 
-/* ── Live stats strip (REAL data) ─────────────────────────────── */
+/* â”€â”€ Live stats strip (REAL data) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function loadStats() {
   try {
     const t0 = performance.now();
@@ -102,13 +102,13 @@ async function loadStats() {
   } catch (e) {
     for (const id of ["stat-dids", "stat-deltas", "stat-active"]) {
       const el = $(id);
-      if (el) el.textContent = "—";
+      if (el) el.textContent = "â€”";
     }
-    if ($("stat-latency")) $("stat-latency").textContent = "—";
+    if ($("stat-latency")) $("stat-latency").textContent = "â€”";
   }
 }
 
-/* ── Leaderboard + transports + peers (REAL data) ─────────────── */
+/* â”€â”€ Leaderboard + transports + peers (REAL data) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function loadLeaderboard() {
   try {
     const res = await fetch(`${API}/leaderboard`);
@@ -116,13 +116,13 @@ async function loadLeaderboard() {
     const lb = $("leaderboard");
     if (lb) {
       if (!data.top || data.top.length === 0) {
-        lb.innerHTML = `<div class="text-slate-600 text-xs">no active addresses yet — be the first to sync</div>`;
+        lb.innerHTML = `<div class="text-slate-600 text-xs">no active addresses yet â€” be the first to sync</div>`;
       } else {
         lb.innerHTML = data.top
           .map(
             (t, i) => `<div class="flex items-center gap-3 py-1.5 border-b border-slate-800/60 last:border-0">
             <span class="w-5 text-slate-500">#${i + 1}</span>
-            <span class="text-cyan-300 truncate flex-1">${t.addr.slice(0, 18)}…${t.addr.slice(-6)}</span>
+            <span class="text-cyan-300 truncate flex-1">${t.addr.slice(0, 18)}â€¦${t.addr.slice(-6)}</span>
             <span class="text-emerald-300 font-bold">${t.deltas}</span>
             <span class="text-slate-500 text-xs">deltas</span>
           </div>`,
@@ -160,8 +160,8 @@ async function loadLeaderboard() {
           .map(
             (p) => `<div class="flex items-center gap-2 text-xs">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-slate-300 truncate">${p.addr.slice(0, 14)}…${p.addr.slice(-4)}</span>
-            <span class="text-slate-600 ml-auto">${(p.transports || []).join(" · ") || "—"}</span>
+            <span class="text-slate-300 truncate">${p.addr.slice(0, 14)}â€¦${p.addr.slice(-4)}</span>
+            <span class="text-slate-600 ml-auto">${(p.transports || []).join(" Â· ") || "â€”"}</span>
           </div>`,
           )
           .join("");
@@ -173,7 +173,7 @@ async function loadLeaderboard() {
   }
 }
 
-/* ── Dual-pane WebSocket sandbox ──────────────────────────────── */
+/* â”€â”€ Dual-pane WebSocket sandbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 (async function sandbox() {
   const termA = $("term-a");
   const termB = $("term-b");
@@ -195,7 +195,7 @@ async function loadLeaderboard() {
     el.scrollTop = el.scrollHeight;
   };
 
-  // Sandbox identity — reuse from localStorage to avoid 10/min DID rate limit (like GunX's persistent pair)
+  // Sandbox identity â€” reuse from localStorage to avoid 10/min DID rate limit (like GunX's persistent pair)
   let pair = null;
   let pubkeyHex = null;
   let addr = null;
@@ -232,7 +232,7 @@ async function loadLeaderboard() {
       addr = ad.bare;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ pub: pair.pub, priv: pair.priv, pubkeyHex, addr })); } catch {}
     }
-    if (addrEl) addrEl.textContent = addr.slice(0, 10) + "…";
+    if (addrEl) addrEl.textContent = addr.slice(0, 10) + "â€¦";
     // quick check: if DID already exists, mark registered (avoid 429)
     try {
       const chk = await fetch(`${API}/did/${addr}`);
@@ -243,14 +243,14 @@ async function loadLeaderboard() {
     return;
   }
 
-  let ws = null; // single sandbox socket — Node A writes, delta echoes feed Node B pane
+  let ws = null; // single sandbox socket â€” Node A writes, delta echoes feed Node B pane
   let registered = false;
-  let retryMs = 5000; // backoff: 5s → 10s → 20s (cap)
+  let retryMs = 5000; // backoff: 5s â†’ 10s â†’ 20s (cap)
 
   const ensureRegistered = async () => {
     if (registered) return true;
     const ts = Date.now();
-    // minimal PoW (diff 2 — server accepts ≥2 for long addresses)
+    // minimal PoW (diff 2 â€” server accepts â‰¥2 for long addresses)
     const hashInput = `${addr}:${pair.pub}:did.register:${ts}:`;
     let nonce = 1, found = null;
     for (;;) {
@@ -294,22 +294,22 @@ async function loadLeaderboard() {
       ws.onopen = () => {
         retryMs = 5000;
         ws.send(JSON.stringify({ type: "hello", addr }));
-        if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i>connected — live sync ready</span>`;
-        log(termB, `[Node B] subscribed to ${addr.slice(0, 12)}… via WebSocket`, "log-ok");
+        if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i>connected â€” live sync ready</span>`;
+        log(termB, `[Node B] subscribed to ${addr.slice(0, 12)}â€¦ via WebSocket`, "log-ok");
       };
       ws.onmessage = (ev) => {
         let msg;
         try { msg = JSON.parse(ev.data); } catch { return; }
         if (msg.type === "delta") {
-          log(termB, `[Node B] Δ ${msg.key} = ${JSON.stringify(msg.value)} (clock ${msg.clock})`, "log-ok");
+          log(termB, `[Node B] Î” ${msg.key} = ${JSON.stringify(msg.value)} (clock ${msg.clock})`, "log-ok");
         } else if (msg.type === "applied") {
-          log(termA, `[Node A] ✓ applied ${msg.applied} delta(s) — broadcast live`, "log-ok");
+          log(termA, `[Node A] âœ“ applied ${msg.applied} delta(s) â€” broadcast live`, "log-ok");
         } else if (msg.type === "error") {
-          log(termA, `[Node A] ✗ ${msg.error}`, "log-err");
+          log(termA, `[Node A] âœ— ${msg.error}`, "log-err");
         }
       };
       ws.onclose = () => {
-        if (statusEl) statusEl.innerHTML = `<span class="text-slate-500">disconnected — retrying…</span>`;
+        if (statusEl) statusEl.innerHTML = `<span class="text-slate-500">disconnected â€” retryingâ€¦</span>`;
         setTimeout(connect, retryMs);
         retryMs = Math.min(retryMs * 2, 20000);
       };
@@ -320,23 +320,23 @@ async function loadLeaderboard() {
   };
 
   // 429 auto-retry with backoff (sandbox optimization): if the DO rate limiter
-  // rejects a burst, retry the same put after a short wait instead of failing —
+  // rejects a burst, retry the same put after a short wait instead of failing â€”
   // the bucket refills every minute and demo capacity is now 120/min.
   let sendRetryTimer = null;
   function scheduleRetry(key, value, attempt = 1) {
     if (attempt > 3) {
-      log(termA, "[Node A] ✗ still rate limited after 3 retries — try again in ~30s", "log-warn");
+      log(termA, "[Node A] âœ— still rate limited after 3 retries â€” try again in ~30s", "log-warn");
       return;
     }
     const waitMs = attempt * 3000;
     if (sendRetryTimer) clearTimeout(sendRetryTimer);
-    log(termA, `[Node A] ↻ rate limited — retrying in ${waitMs / 1000}s (attempt ${attempt}/3)…`, "log-warn");
+    log(termA, `[Node A] â†» rate limited â€” retrying in ${waitMs / 1000}s (attempt ${attempt}/3)â€¦`, "log-warn");
     sendRetryTimer = setTimeout(() => doSend(key, value, attempt + 1), waitMs);
   }
 
   async function doSend(key, value, retryAttempt = 0) {
-    if (!key) { log(termA, "[Node A] ✗ key required", "log-warn"); return; }
-    if (!ws || ws.readyState !== WebSocket.OPEN) { log(termA, "[Node A] ✗ not connected", "log-warn"); return; }
+    if (!key) { log(termA, "[Node A] âœ— key required", "log-warn"); return; }
+    if (!ws || ws.readyState !== WebSocket.OPEN) { log(termA, "[Node A] âœ— not connected", "log-warn"); return; }
     try {
       await ensureRegistered();
       const ts = Date.now();
@@ -349,12 +349,12 @@ async function loadLeaderboard() {
         const hex = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
         if (hex.startsWith("00")) { found = { nonce, hash: hex }; break; }
         nonce += 1;
-        if (nonce > 500000) { log(termA, "[Node A] ✗ PoW timeout", "log-err"); return; }
+        if (nonce > 500000) { log(termA, "[Node A] âœ— PoW timeout", "log-err"); return; }
       }
       const SEA = window.GDBxCrypto;
       const deltas = [{ key: `sandbox/${key.replace(/^\/+/, "")}`, value, clock: ts }];
       const sig = await SEA.sign({ addr, action: "sync.put", ts, payload: JSON.stringify(deltas) }, pair);
-      log(termA, `[Node A] → put sandbox/${key} = ${JSON.stringify(value)} (signed, PoW ✓)`, "log-info");
+      log(termA, `[Node A] â†’ put sandbox/${key} = ${JSON.stringify(value)} (signed, PoW âœ“)`, "log-info");
 
       // send and await ack/error so we can auto-retry on 429
       const resp = await new Promise((resolve) => {
@@ -375,18 +375,18 @@ async function loadLeaderboard() {
       });
 
       if (resp.type === "applied") {
-        log(termA, `[Node A] ✓ applied ${resp.applied} delta(s) — broadcast live`, "log-ok");
+        log(termA, `[Node A] âœ“ applied ${resp.applied} delta(s) â€” broadcast live`, "log-ok");
       } else if (resp.type === "error") {
         if (/rate limited/i.test(resp.error || "")) {
           scheduleRetry(key, value, Math.max(retryAttempt, 1));
           return;
         }
-        log(termA, `[Node A] ✗ ${resp.error}`, "log-err");
+        log(termA, `[Node A] âœ— ${resp.error}`, "log-err");
       } else {
-        log(termA, "[Node A] ⚠ no ack from hub (timeout)", "log-warn");
+        log(termA, "[Node A] âš  no ack from hub (timeout)", "log-warn");
       }
     } catch (e) {
-      log(termA, `[Node A] ✗ ${e.message}`, "log-err");
+      log(termA, `[Node A] âœ— ${e.message}`, "log-err");
     }
   }
 
@@ -399,7 +399,7 @@ async function loadLeaderboard() {
   connect();
 })();
 
-/* ── Boot ─────────────────────────────────────────────────────── */
+/* â”€â”€ Boot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 loadStats();
 loadLeaderboard();
 setInterval(() => {

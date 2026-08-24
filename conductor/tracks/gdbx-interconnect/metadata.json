@@ -1,0 +1,10 @@
+{
+  "id": "gdbx-interconnect",
+  "title": "GDBx Unified Interconnect — Global Secure Live Sync",
+  "status": "plan_ready",
+  "created": "2026-08-23",
+  "phases": ["6.4"],
+  "tags": ["interconnect", "mesh", "version-distribution", "local-bridge"],
+  "depends_on": ["org-gdbx-unification", "gdbx-playground"],
+  "priority": "high"
+}

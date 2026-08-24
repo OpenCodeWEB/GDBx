@@ -13,7 +13,7 @@ import { writeFileSync } from "node:fs";
 import Gun from "gun";
 import "gun/sea.js";
 
-const PEER = process.env.GUN_URL || "https://gdbx-do.xup.workers.dev/gun";
+const PEER = process.env.GUN_URL || "https://gdbx.xup.workers.dev/gun";
 const OPTS = { peers: [PEER], radisk: false, localStorage: false, axe: false, multicast: false };
 // Capture BEFORE any Gun() construction — gun mutates its options object
 // (attaches circular mesh refs), which would break later JSON.stringify.

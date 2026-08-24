@@ -6,7 +6,7 @@ import { makeAddress } from "../../sdk/gdbx-codec.js";
 import { minePow, registerDid, putDeltas, getDeltas } from "../../sdk/gdbx-sdk.js";
 
 const LIVE = process.argv.includes("--live");
-const API = LIVE ? "https://gdbx-do.xup.workers.dev" : null;
+const API = LIVE ? "https://gdbx.xup.workers.dev" : null;
 
 async function hexOf(p) {
   const [x, y] = p.pub.split(".");
@@ -40,7 +40,7 @@ async function main() {
   const { sign } = await import("../../sdk/gdbx-crypto.js");
   const pow = await minePoW(addr, p.pub, "did.register", ts);
   const sig = await sign({ addr, action: "did.register", ts, payload: null }, p);
-  const reg = await fetch(`https://gdbx-do.xup.workers.dev/did`, {
+  const reg = await fetch(`https://gdbx.xup.workers.dev/did`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ addr, pubkey: p.pub, pubkeyHex: hex, ts, nonce: pow.nonce, diff: pow.diff, hash: pow.hash, sig }),

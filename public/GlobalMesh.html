@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Global Mesh — GDBx Live Network Status</title>
-<meta name="description" content="Live status of the .GDBx worldwide mesh network — real-time delta flow, replication pool health, transport mix, active peers and global leaderboard, straight from the sovereign edge.">
+<title>Global Mesh â€” GDBx Live Network Status</title>
+<meta name="description" content="Live status of the .GDBx worldwide mesh network â€” real-time delta flow, replication pool health, transport mix, active peers and global leaderboard, straight from the sovereign edge.">
 <meta name="theme-color" content="#020617">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -48,7 +48,7 @@
     </a>
     <nav class="flex items-center gap-5 text-sm font-medium text-slate-300">
       <span id="live-pill" class="hidden sm:inline-flex px-3 py-1.5 rounded-full glass bg-slate-900/60 text-emerald-300 items-center gap-2 text-xs">
-        <span class="pulse-dot w-2 h-2 rounded-full bg-emerald-400 text-emerald-400"></span><span id="live-text">connecting…</span>
+        <span class="pulse-dot w-2 h-2 rounded-full bg-emerald-400 text-emerald-400"></span><span id="live-text">connectingâ€¦</span>
       </span>
       <a href="/Api" class="hover:text-emerald-300 transition-colors hidden md:inline">API</a>
       <a href="/RoadMap" class="hover:text-rose-300 transition-colors hidden md:inline">Roadmap</a>
@@ -60,31 +60,31 @@
 <!-- Hero -->
 <section class="grid-bg border-b border-slate-800 overflow-hidden">
   <div class="max-w-7xl mx-auto px-4 py-14">
-    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Global <span class="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-violet-400 bg-clip-text text-transparent">Mesh</span> — Live</h1>
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Global <span class="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-violet-400 bg-clip-text text-transparent">Mesh</span> â€” Live</h1>
     <p class="mt-3 text-lg text-slate-400 max-w-2xl">The worldwide <strong class="text-slate-200">.GDBx</strong> replication network, breathing in real time.
-      Every number and packet below comes <strong class="text-slate-200">straight from the sovereign edge</strong> — no mocks.</p>
+      Every number and packet below comes <strong class="text-slate-200">straight from the sovereign edge</strong> â€” no mocks.</p>
 
     <!-- Live stat strip -->
     <div class="mt-10 grid grid-cols-2 md:grid-cols-5 gap-3">
       <div class="stat-card rounded-xl glass bg-slate-900/60 p-4 border border-slate-800">
         <div class="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-fingerprint"></i>DIDs</div>
-        <div class="text-2xl font-extrabold mono text-violet-300 mt-1" id="st-dids">…</div>
+        <div class="text-2xl font-extrabold mono text-violet-300 mt-1" id="st-dids">â€¦</div>
       </div>
       <div class="stat-card rounded-xl glass bg-slate-900/60 p-4 border border-slate-800">
         <div class="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-arrows-rotate"></i>Deltas</div>
-        <div class="text-2xl font-extrabold mono text-cyan-300 mt-1" id="st-deltas">…</div>
+        <div class="text-2xl font-extrabold mono text-cyan-300 mt-1" id="st-deltas">â€¦</div>
       </div>
       <div class="stat-card rounded-xl glass bg-slate-900/60 p-4 border border-slate-800">
         <div class="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-tower-broadcast"></i>Active Peers</div>
-        <div class="text-2xl font-extrabold mono text-emerald-300 mt-1" id="st-active">…</div>
+        <div class="text-2xl font-extrabold mono text-emerald-300 mt-1" id="st-active">â€¦</div>
       </div>
       <div class="stat-card rounded-xl glass bg-slate-900/60 p-4 border border-slate-800">
         <div class="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-heart-pulse"></i>Edge Latency</div>
-        <div class="text-2xl font-extrabold mono text-fuchsia-300 mt-1"><span id="st-latency">…</span><span class="text-sm text-slate-500">ms</span></div>
+        <div class="text-2xl font-extrabold mono text-fuchsia-300 mt-1"><span id="st-latency">â€¦</span><span class="text-sm text-slate-500">ms</span></div>
       </div>
       <div class="stat-card rounded-xl glass bg-slate-900/60 p-4 border border-slate-800">
         <div class="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-layer-group"></i>Pool Health</div>
-        <div class="text-2xl font-extrabold mono mt-1" id="st-pool"><span class="text-emerald-300">…</span></div>
+        <div class="text-2xl font-extrabold mono mt-1" id="st-pool"><span class="text-emerald-300">â€¦</span></div>
       </div>
     </div>
   </div>
@@ -96,8 +96,8 @@
   <!-- Globe / topology -->
   <div class="lg:col-span-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-6 glow" style="box-shadow:0 0 60px rgba(167,139,250,.15)">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-      <h2 class="font-bold text-lg"><i class="fa-solid fa-globe text-cyan-300 mr-2"></i>Worldwide Mesh Topology <span class="text-xs font-normal text-slate-500">— rotating node graph · live deltas pulse edges</span></h2>
-      <span class="text-[10px] px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mono" id="ws-state">WS …</span>
+      <h2 class="font-bold text-lg"><i class="fa-solid fa-globe text-cyan-300 mr-2"></i>Worldwide Mesh Topology <span class="text-xs font-normal text-slate-500">â€” rotating node graph Â· live deltas pulse edges</span></h2>
+      <span class="text-[10px] px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mono" id="ws-state">WS â€¦</span>
     </div>
     <div id="globe-wrap">
       <canvas id="globe" width="900" height="620"></canvas>
@@ -112,19 +112,19 @@
     <!-- Replication pool -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h2 class="font-bold mb-4"><i class="fa-solid fa-layer-group text-emerald-300 mr-2"></i>Replication Pool</h2>
-      <div id="pool-nodes" class="space-y-3"><div class="text-slate-600 text-xs">loading…</div></div>
+      <div id="pool-nodes" class="space-y-3"><div class="text-slate-600 text-xs">loadingâ€¦</div></div>
     </div>
 
     <!-- Transport mix -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h2 class="font-bold mb-4"><i class="fa-solid fa-share-nodes text-cyan-300 mr-2"></i>Transport Mix</h2>
-      <div id="transport-mix" class="space-y-3"><div class="text-slate-600 text-xs">loading…</div></div>
+      <div id="transport-mix" class="space-y-3"><div class="text-slate-600 text-xs">loadingâ€¦</div></div>
     </div>
 
     <!-- Leaderboard -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h2 class="font-bold mb-4"><i class="fa-solid fa-ranking-star text-amber-300 mr-2"></i>Top Active Addresses</h2>
-      <div id="leaderboard" class="space-y-2 mono text-sm"><div class="text-slate-600 text-xs">loading…</div></div>
+      <div id="leaderboard" class="space-y-2 mono text-sm"><div class="text-slate-600 text-xs">loadingâ€¦</div></div>
     </div>
   </div>
 </section>
@@ -133,14 +133,14 @@
 <section class="max-w-7xl mx-auto px-4 pb-16">
   <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-      <h2 class="font-bold text-lg"><i class="fa-solid fa-wave-square text-fuchsia-300 mr-2"></i>Live Delta Feed <span class="text-xs font-normal text-slate-500">— every write on the public mesh, as it happens</span></h2>
+      <h2 class="font-bold text-lg"><i class="fa-solid fa-wave-square text-fuchsia-300 mr-2"></i>Live Delta Feed <span class="text-xs font-normal text-slate-500">â€” every write on the public mesh, as it happens</span></h2>
       <button id="clear-feed" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">clear view</button>
     </div>
     <div id="delta-feed" class="mono text-sm h-72 overflow-y-auto space-y-1.5 pr-2">
-      <div class="text-slate-600 text-xs">subscribing to the hub…</div>
+      <div class="text-slate-600 text-xs">subscribing to the hubâ€¦</div>
     </div>
-    <p class="mt-3 text-xs text-slate-500">This feed taps the shared public playground address over the same WebSocket hub the apps use —
-      <span class="mono text-violet-300">wss://gdbx-do.xup.workers.dev/ws?addr=…</span>. Keys are shown with prefix only (no values for private rooms).</p>
+    <p class="mt-3 text-xs text-slate-500">This feed taps the shared public playground address over the same WebSocket hub the apps use â€”
+      <span class="mono text-violet-300">wss://gdbx.xup.workers.dev/ws?addr=â€¦</span>. Keys are shown with prefix only (no values for private rooms).</p>
   </div>
 </section>
 
@@ -149,7 +149,7 @@
   <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database"></i></div>
-      <span class="text-sm text-slate-400">GDBx — MIT License · By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
+      <span class="text-sm text-slate-400">GDBx â€” MIT License Â· By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
     </div>
     <div class="flex items-center gap-4 text-sm text-slate-500">
       <a href="/Api" class="hover:text-emerald-300 transition-colors">API</a>
@@ -161,16 +161,16 @@
 
 <script type="module">
 /* ================================================================
-   Global Mesh — live status page
+   Global Mesh â€” live status page
    Sources (all real):
-     - GET  /stats       → dids/deltas/active counters (5s)
-     - GET  /pool        → primary+mirror health   (5s)
-     - GET  /leaderboard → top addrs + transports  (5s)
-     - WS   /ws?addr=<public-playground-addr> → live delta feed
+     - GET  /stats       â†’ dids/deltas/active counters (5s)
+     - GET  /pool        â†’ primary+mirror health   (5s)
+     - GET  /leaderboard â†’ top addrs + transports  (5s)
+     - WS   /ws?addr=<public-playground-addr> â†’ live delta feed
    Globe: pure-canvas rotating topology; hub nodes = pool nodes,
    ring nodes = visitors; live deltas fire edge pulses.
 ================================================================ */
-const WORKER = "https://gdbx-do.xup.workers.dev";
+const WORKER = "https://gdbx.xup.workers.dev";
 const PAGES_API = "https://gdbx.pages.dev/api/v1";
 const PUBLIC_ADDR = "aeaagiao64onmpxlv7bjgk4chnpvl5h77erwqq7gockpvm2kafwzwmzt3u"; // shared playground addr
 
@@ -204,7 +204,7 @@ async function pollStats() {
     }
     lastDeltas = stats.deltas;
   } catch {
-    ["st-dids","st-deltas","st-active"].forEach(id => $(id).textContent = "—");
+    ["st-dids","st-deltas","st-active"].forEach(id => $(id).textContent = "â€”");
   }
 }
 
@@ -231,12 +231,12 @@ async function pollLeaderboard() {
     const data = await res.json();
     const lb = $("leaderboard");
     if (!data.top || !data.top.length) {
-      lb.innerHTML = `<div class="text-slate-600 text-xs">no activity yet — be first on the board</div>`;
+      lb.innerHTML = `<div class="text-slate-600 text-xs">no activity yet â€” be first on the board</div>`;
     } else {
       lb.innerHTML = data.top.slice(0, 8).map((t, i) => `
         <div class="flex items-center gap-3 py-1.5 border-b border-slate-800/60 last:border-0">
           <span class="w-5 text-slate-500">#${i + 1}</span>
-          <span class="text-cyan-300 truncate flex-1">${t.addr.slice(0, 14)}…${t.addr.slice(-4)}</span>
+          <span class="text-cyan-300 truncate flex-1">${t.addr.slice(0, 14)}â€¦${t.addr.slice(-4)}</span>
           <span class="text-emerald-300 font-bold">${t.deltas}</span>
         </div>`).join("");
     }
@@ -330,7 +330,7 @@ async function pollLeaderboard() {
 
     const ringPts = ring.map(n => ({ ...project(n.a, n.r), hue: n.hue }));
 
-    // edges: each ring node ↔ nearest hub
+    // edges: each ring node â†” nearest hub
     for (const rp of ringPts) {
       for (const hn of nodes) {
         const dx = rp.x - hn.x, dy = rp.y - hn.y;
@@ -345,7 +345,7 @@ async function pollLeaderboard() {
       }
     }
 
-    // travelling pulses along hub↔ring edges
+    // travelling pulses along hubâ†”ring edges
     for (let i = pulses.length - 1; i >= 0; i--) {
       const p = pulses[i]; p.t += .02;
       if (p.t >= 1) { pulses.splice(i, 1); continue; }
@@ -391,7 +391,7 @@ async function pollLeaderboard() {
 let ws = null, retryMs = 5000;
 function connectFeed() {
   try {
-    ws = new WebSocket(`wss://gdbx-do.xup.workers.dev/ws?addr=${PUBLIC_ADDR}`);
+    ws = new WebSocket(`wss://gdbx.xup.workers.dev/ws?addr=${PUBLIC_ADDR}`);
   } catch { return; }
   ws.onopen = () => {
     retryMs = 5000;
@@ -411,7 +411,7 @@ function connectFeed() {
     }
   };
   ws.onclose = () => {
-    $("ws-state").textContent = "WS retrying…";
+    $("ws-state").textContent = "WS retryingâ€¦";
     setTimeout(connectFeed, retryMs);
     retryMs = Math.min(retryMs * 2, 20000);
   };
@@ -427,24 +427,24 @@ function addFeedLine(keyOrSys, value, isSystem = false) {
   div.className = "feed-line flex items-start gap-2";
   const time = new Date().toLocaleTimeString();
   if (isSystem) {
-    div.innerHTML = `<span class="text-slate-600">${time}</span><span class="text-violet-300">⚙ ${esc(keyOrSys)}: ${esc(value)}</span>`;
+    div.innerHTML = `<span class="text-slate-600">${time}</span><span class="text-violet-300">âš™ ${esc(keyOrSys)}: ${esc(value)}</span>`;
   } else {
-    const keyShort = String(keyOrSys).length > 46 ? String(keyOrSys).slice(0, 43) + "…" : keyOrSys;
+    const keyShort = String(keyOrSys).length > 46 ? String(keyOrSys).slice(0, 43) + "â€¦" : keyOrSys;
     let valPreview = "";
     try {
       const v = JSON.parse(value);
-      valPreview = typeof v === "object" ? JSON.stringify(v).slice(0, 80) + "…" : String(v).slice(0, 60);
+      valPreview = typeof v === "object" ? JSON.stringify(v).slice(0, 80) + "â€¦" : String(v).slice(0, 60);
     } catch { valPreview = String(value).slice(0, 60); }
     div.innerHTML = `<span class="text-slate-600">${time}</span>
       <span class="text-cyan-300">${esc(keyShort)}</span>
       <span class="text-slate-500 truncate flex-1">${esc(valPreview)}</span>
-      <span class="text-fuchsia-300 text-xs">Δ</span>`;
+      <span class="text-fuchsia-300 text-xs">Î”</span>`;
   }
   feed.prepend(div);
   while (feed.children.length > 200) feed.lastChild.remove();
 }
 $("clear-feed")?.addEventListener("click", () => {
-  $("delta-feed").innerHTML = `<div class="text-slate-600 text-xs">view cleared — still subscribed</div>`;
+  $("delta-feed").innerHTML = `<div class="text-slate-600 text-xs">view cleared â€” still subscribed</div>`;
 });
 
 /* ---------- boot ---------- */

@@ -1,7 +1,7 @@
 /**
  * websocket_handler.js — Real-time WebSocket sync for GDBx.
  *
- * Endpoint: /ws?addr=:addr (served by the gdbx-do Worker's Durable Object —
+ * Endpoint: /ws?addr=:addr (served by the gdbx Worker's Durable Object —
  * the hub lives INSIDE the DO instance so all sockets for the same address
  * share one isolate and broadcasts are reliable).
  *

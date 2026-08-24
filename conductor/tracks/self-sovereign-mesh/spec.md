@@ -36,7 +36,7 @@
 | SEA signature ফরম্যাট gun-সংযুক্ত | নিজস্ব verify (`worker/src/verify.js`) আছে, কিন্তু browser-side এখনো gun-নির্ভর |
 | WS hub DO-তে সরেছে (Phase 4) | ✓ কিন্তু transport এখনো শুধু WebSocket |
 | PoW + replay + rate limits আছে | ✓ কিন্তু "firewall" হিসেবে সমন্বিত নয়, RBAC/ACL-এর zero-trust মডেল নেই |
-| Data একটাই DO-তে (gdbx-do) | ✗ pool/replication নেই — node পড়ে গেলে data ঝুঁকিতে |
+| Data একটাই DO-তে (gdbx) | ✗ pool/replication নেই — node পড়ে গেলে data ঝুঁকিতে |
 
 ---
 
@@ -64,7 +64,7 @@
 
 ### C. পুল সিস্টেম (Replication Pool)
 
-**C1. Multi-node replication**: প্রতি `.GDBx` address-এর data ≥2 storage node-এ (gdbx-do + mirror DO/namespace) — লেখা primary-তে, async replicate।
+**C1. Multi-node replication**: প্রতি `.GDBx` address-এর data ≥2 storage node-এ (gdbx + mirror DO/namespace) — লেখা primary-তে, async replicate।
 
 **C2. Pool membership crypto-verified**: pool-এ join করার সময় node নিজের key দিয়ে sign করে; nodes একে অপরকে verify করে (zero-trust join — GenosDB-র "verification, not belief" নীতি)।
 

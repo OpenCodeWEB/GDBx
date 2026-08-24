@@ -1,10 +1,10 @@
-/**
- * gdbx-inspector.js — Visual Mesh & Topology Inspector (lite)
+﻿/**
+ * gdbx-inspector.js â€” Visual Mesh & Topology Inspector (lite)
  * Fetches /pool, /stats, and live WS deltas; renders plain table.
  * Future: D3 force graph.
  */
 export async function renderInspector(rootEl, opts = {}) {
-  const api = opts.api || "https://gdbx-do.xup.workers.dev";
+  const api = opts.api || "https://gdbx.xup.workers.dev";
   const addr = opts.addr || new URLSearchParams(location.search).get("addr") || "";
   rootEl.innerHTML = `<h3>GDBx Inspector</h3><div id="gdbx-pool">loading pool...</div><div id="gdbx-stats">loading stats...</div><div id="gdbx-live">live: connecting...</div>`;
   const poolEl = rootEl.querySelector("#gdbx-pool");

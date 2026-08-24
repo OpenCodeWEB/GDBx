@@ -77,7 +77,7 @@
 ## Step 8 — Integration, deploy, docs
 
 1. Full suite: old 48 + new (crypto, firewall, pool, transport) all green; `npm ls --omit=dev` → 0
-2. `npx wrangler deploy --config worker/wrangler.toml` (gdbx-do + mirror namespace + RouterDO)
+2. `npx wrangler deploy --config worker/wrangler.toml` (gdbx + mirror namespace + RouterDO)
 3. `npx wrangler pages deploy public --project-name gdbx --branch Dev --commit-dirty=true`
 4. Live verify: sandbox put (GDBx signed) ✓, stats ✓, live WS delta ✓, live E2E ✓
 5. `conductor/tracks.md` → self-sovereign-mesh completed; commit `feat: ...`

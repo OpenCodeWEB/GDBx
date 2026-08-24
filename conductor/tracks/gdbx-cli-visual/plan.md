@@ -23,7 +23,7 @@
 
 ## Step 5 — Integration & commit
 - `node packages/gdbx-cli/test/test_cli.mjs` + `node --test test/test_*.mjs` (must stay 88+)
-- Live verify: `node packages/gdbx-cli/bin/gdbx.js identity create --net local` → `addr`, then `sync put`→`get` against live `gdbx-do`
+- Live verify: `node packages/gdbx-cli/bin/gdbx.js identity create --net local` → `addr`, then `sync put`→`get` against live `gdbx`
 - `conductor/tracks.md` → `gdbx-cli-visual` completed
 
 ## Test Commands

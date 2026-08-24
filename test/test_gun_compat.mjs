@@ -9,7 +9,7 @@
  */
 import { WebSocket } from "ws";
 
-const BASE = process.env.GUN_URL || "wss://gdbx-do.xup.workers.dev/gun";
+const BASE = process.env.GUN_URL || "wss://gdbx.xup.workers.dev/gun";
 const ok = (name, cond) => {
   console.log(`${cond ? "✔" : "✖"} ${name}`);
   if (!cond) process.exitCode = 1;

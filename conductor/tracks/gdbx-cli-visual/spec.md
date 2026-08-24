@@ -28,13 +28,13 @@ Gemini Top 1: CLI & Visual Inspector — immediate developer adoption. Org-wide 
 - CLI uses `sdk/gdbx-crypto.js` + `sdk/gdbx-sdk.js` (gun-free, same as bridges)
 - Identity stored at `~/.gdbx/key.json` (or `--out`) — `{pub, priv, pubkey_hex, addr}`
 - `sync put/get` must pass through `FirewallGuard` (PoW+sig) — same as SDK
-- `sync watch` uses `sdk/gdbx-ws-client.js` (WS hub `wss://gdbx-do.../ws?addr=`)
+- `sync watch` uses `sdk/gdbx-ws-client.js` (WS hub `wss://gdbx.../ws?addr=`)
 - Tests: `packages/gdbx-cli/test/test_cli.mjs` (mock SDK, no live network) — 5+ tests
 - Supply-chain: `commander` pinned exact, `npm audit 0`
 
 ## Acceptance
 - [ ] `node packages/gdbx-cli/bin/gdbx.js identity create` prints `addr.gdbx` + `did:gdbx:`
-- [ ] `gdbx sync put/get` round-trip against live `gdbx-do` (verified by `curl` read)
+- [ ] `gdbx sync put/get` round-trip against live `gdbx` (verified by `curl` read)
 - [ ] `gdbx vector put/search` stores JSON string vector and cosine search works (via `GdbxClient.search_vector` logic)
 - [ ] `gdbx backup export` dumps `did + kv` snapshot (via `/export`), `import` replays
 - [ ] `npm run build` still passes, `npm ls --omit=dev` still `@noble/hashes` only (cli is dev dep)
