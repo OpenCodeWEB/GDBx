@@ -1,9 +1,10 @@
 """
 gdbx_py.codec — .GDBx address codec, mirrors sdk/gdbx-codec.js
 
-Format:
-  payload = Version(1) + Network(1) + SHA256(uncompressed P-256 pubkey 65B) (32B) + BLAKE3(payload[0:34])[0:2]
-  Address = base32(payload) -> 58 chars + ".gdbx"
+Format (single GDBx network):
+  payload = Version(1) + SHA256(uncompressed P-256 pubkey 65B) (32B) + BLAKE3(payload[0:33])[0:2]
+  Address = base32(payload) -> 56 chars + ".gdbx"
+  Legacy 58-char (Version+Network+Hash+Checksum) still validated for compat.
 """
 
 import base64
@@ -22,9 +23,10 @@ except ImportError:
 
 SUFFIX = "gdbx"
 VERSION = 0x01
-NETWORKS = {"mainnet": 0x00, "testnet": 0x01, "local": 0x02}
-NETWORK_NAMES = {0x00: "mainnet", 0x01: "testnet", 0x02: "local"}
-ADDR_LEN = 58
+NETWORKS = {"gdbx": 0x00}
+NETWORK_NAMES = {0x00: "gdbx"}
+LEGACY_ADDR_LEN = 58
+ADDR_LEN = 56
 
 
 def base32_encode(data: bytes) -> str:
@@ -51,27 +53,34 @@ def pubkey_hash(pubkey_hex: str) -> bytes:
 
 
 def make_address(pubkey_hex: str, network: int = 0) -> str:
+    # Single GDBx network — network param ignored for simplicity
     h = pubkey_hash(pubkey_hex)
-    payload = bytearray(36)
+    payload = bytearray(35)
     payload[0] = VERSION
-    payload[1] = network
-    payload[2:34] = h
-    checksum = _blake3(bytes(payload[:34]))[:2]
-    payload[34:36] = checksum
+    payload[1:33] = h
+    checksum = _blake3(bytes(payload[:33]))[:2]
+    payload[33:35] = checksum
     return base32_encode(bytes(payload))
 
 
 def _validate_payload(payload: bytes):
-    if len(payload) != 36:
-        return {"ok": False, "error": "decoded length must be 36 bytes"}
-    if payload[0] != VERSION:
-        return {"ok": False, "error": f"unsupported version {payload[0]}"}
-    if payload[1] not in NETWORK_NAMES:
-        return {"ok": False, "error": f"unknown network {payload[1]}"}
-    expect = _blake3(bytes(payload[:34]))[:2]
-    if payload[34] != expect[0] or payload[35] != expect[1]:
-        return {"ok": False, "error": "checksum mismatch"}
-    return {"ok": True}
+    # New single-network: 35B
+    if len(payload) == 35:
+        if payload[0] != VERSION:
+            return {"ok": False, "error": f"unsupported version {payload[0]}"}
+        expect = _blake3(bytes(payload[:33]))[:2]
+        if payload[33] != expect[0] or payload[34] != expect[1]:
+            return {"ok": False, "error": "checksum mismatch"}
+        return {"ok": True}
+    # Legacy 36B (Version+Network+Hash+Checksum)
+    if len(payload) == 36:
+        if payload[0] != VERSION:
+            return {"ok": False, "error": f"unsupported version {payload[0]}"}
+        expect = _blake3(bytes(payload[:34]))[:2]
+        if payload[34] != expect[0] or payload[35] != expect[1]:
+            return {"ok": False, "error": "checksum mismatch"}
+        return {"ok": True}
+    return {"ok": False, "error": "decoded length must be 35 or 36 bytes"}
 
 
 def validate_address(addr: str):
@@ -79,9 +88,8 @@ def validate_address(addr: str):
         return {"ok": False, "error": "address must be a string"}
     s = addr.strip().lower()
     bare = s[:-5] if s.endswith(".gdbx") else s
-    # check charset
-    if len(bare) != ADDR_LEN or any(c not in "abcdefghijklmnopqrstuvwxyz234567" for c in bare):
-        return {"ok": False, "error": "invalid .gdbx address — expected 58 base32 chars"}
+    if len(bare) not in (ADDR_LEN, LEGACY_ADDR_LEN) or any(c not in "abcdefghijklmnopqrstuvwxyz234567" for c in bare):
+        return {"ok": False, "error": "invalid .gdbx address — expected 56 base32 chars"}
     try:
         payload = base32_decode(bare)
         return _validate_payload(payload)
@@ -104,7 +112,12 @@ def network_of(addr: str):
     bare = normalize_address(addr)
     if not bare:
         return None
-    return NETWORK_NAMES[base32_decode(bare)[1]]
+    payload = base32_decode(bare)
+    if len(payload) == 35:
+        return "gdbx"
+    if len(payload) == 36:
+        return "gdbx"
+    return None
 
 
 def version_of(addr: str):

@@ -17,7 +17,7 @@
  * the same clock are ordered deterministically by pubkey hash — no forks.
  */
 
-import { verifyPoW, verifySig, checkReplay } from "./verify.js";
+import { verifyPoW, verifySig, checkReplay, sha256Hex } from "./verify.js";
 import { makeAddress, normalizeAddress } from "./gdbx-codec.js";
 import { createWebSocketHub } from "./websocket_handler.js";
 import { FirewallGuard } from "./FirewallGuard.js";
@@ -42,7 +42,7 @@ const MAX_DELTAS = 1000; // batch headroom (was 64)
 const MAX_DID_SERVICES = 256; // was 16
 const MAX_SERVICE_URL = 32 * 1024; // was 2048
 const MAX_SEEN_NONCES = 65536; // replay cache headroom
-const ADDR_RE = /^[a-z2-7]{58}$/;
+const ADDR_RE = /^(?:[a-z2-7]{56}|[a-z2-7]{58})$/; // single-net 56 + legacy 58
 const KEY_RE = /^[a-zA-Z0-9._:/@-]{1,256}$/; // strict key charset
 
 export class GDBxStorageObject {
@@ -202,6 +202,14 @@ export class GDBxStorageObject {
         if (!ADDR_RE.test(addr)) return json({ error: "invalid address" }, 400);
         const key = keyParts.join("/");
         return await this.getDeltas(addr, key, url.searchParams);
+      }
+
+      /* Name registry: resolve a verified .gdbx name (public read) */
+      if (url.pathname.startsWith("/name/") && request.method === "GET") {
+        const name = url.pathname.slice("/name/".length).toLowerCase();
+        if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(name)) return json({ error: "invalid name" }, 400);
+        const regAddr = url.searchParams.get("addr") || "";
+        return await this.resolveName(name, regAddr);
       }
 
       /* Stats */
@@ -880,6 +888,44 @@ export class GDBxStorageObject {
       top: top.slice(0, 10),
       peers: peers.slice(0, 25),
     });
+  }
+
+  /**
+   * Resolve a .gdbx name: read the claim from the pool, re-verify PoW +
+   * GDBx signature server-side, return the verified record. Public read.
+   */
+  async resolveName(name, regAddr) {
+    // Search all addresses for the claim key (global namespace)
+    const suffix = `:tld/gdbx/${name}`;
+    let entry = null;
+    if (regAddr) {
+      entry = await this.state.storage.get(`kv:${regAddr}${suffix}`);
+    } else {
+      const all = await this.state.storage.list({ prefix: "kv:" });
+      for (const [k, v] of all.entries()) {
+        if (k.endsWith(suffix)) { entry = v; break; }
+      }
+    }
+    if (!entry) return json({ ok: false, error: "not found" }, 404);
+    let claim;
+    try { claim = JSON.parse(String(entry.value)); } catch { return json({ ok: false, error: "corrupt claim" }, 400); }
+
+    // Server-side re-verification (mirror of sdk/gdbx-name.js verifyClaim)
+    const { getNameDifficulty } = await import("./gdbx-name-core.js");
+    if (!claim.name || !claim.ownerPub || !claim.sig) return json({ ok: false, error: "incomplete claim" }, 400);
+    const diff = getNameDifficulty(claim.name);
+    if (Number(claim.ts) > 0) {
+      if (Number(claim.diff) !== diff) return json({ ok: false, error: "difficulty mismatch" }, 400);
+      const input = `${claim.name}:${claim.ownerPub}:${String(claim.target)}:${claim.ts}:`;
+      const hash = await sha256Hex(input + claim.nonce);
+      if (!hash.startsWith("0".repeat(diff))) return json({ ok: false, error: "proof-of-work not satisfied" }, 400);
+      if (claim.hash && claim.hash !== hash) return json({ ok: false, error: "hash mismatch" }, 400);
+    }
+    const body = { name: claim.name, target: String(claim.target ?? ""), ownerPub: claim.ownerPub, ts: Number(claim.ts) };
+    const sigOk = await verifySig(body, claim.sig, claim.ownerPub);
+    if (!sigOk) return json({ ok: false, error: "signature invalid" }, 403);
+
+    return json({ ok: true, name: claim.name, target: claim.target, ownerPub: claim.ownerPub, ts: claim.ts });
   }
 
   getStats() {

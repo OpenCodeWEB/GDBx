@@ -1,19 +1,20 @@
 /**
  * gdbx-codec.js — `.GDBx` address codec (pure ESM, browser+worker+node).
  *
- * Format (production-grade, evolved from Tor v3 onion design):
+ * Format (single GDBx network — simple for developers):
  *
- *   payload    = Version(1B) + Network(1B) + PubKeyHash(32B) + Checksum(2B)
- *   Checksum   = BLAKE3(Version + Network + PubKeyHash)[0..2]
+ *   payload    = Version(1B) + PubKeyHash(32B) + Checksum(2B)
+ *   Checksum   = BLAKE3(Version + PubKeyHash)[0..2]
  *   Address    = base32(payload) + ".gdbx"
  *
- *   Version byte: 0x01  (format evolution)
- *   Network byte: 0x00 mainnet · 0x01 testnet · 0x02 local/LAN
+ *   Version byte: 0x01
  *   PubKeyHash  : 32 bytes — SHA-256(uncompressed P-256 public key point)
  *   Checksum    : first 2 bytes of BLAKE3 — typo/forgery detection (like onion v3)
  *
- *   Length: 36B payload → 58 base32 chars (RFC4648, lowercase, no padding) + ".gdbx"
- *   DID    : did:gdbx:<58-char-address>
+ *   Length: 35B payload → 56 base32 chars (RFC4648, lowercase, no padding) + ".gdbx"
+ *   DID    : did:gdbx:<56-char-address>
+ *   Note: Legacy 58-char addresses (Version+Network+Hash+Checksum, 36B) are still
+ *         validated for backward compat, but new addresses are always 56-char single network.
  */
 
 import { blake3 } from "@noble/hashes/blake3.js";
@@ -21,10 +22,13 @@ import { sha256 } from "@noble/hashes/sha2.js";
 
 export const SUFFIX = "gdbx";
 export const VERSION = 0x01;
-export const NETWORKS = { mainnet: 0x00, testnet: 0x01, local: 0x02 };
-export const NETWORK_NAMES = { 0x00: "mainnet", 0x01: "testnet", 0x02: "local" };
-export const ADDR_LEN = 58; // base32 chars, no padding
-export const FULL_LEN = ADDR_LEN + 1 + SUFFIX.length; // 63 with ".gdbx"
+// Single GDBx network — no mainnet/testnet/local split, easy for developers
+export const NETWORKS = { gdbx: 0x00 };
+export const NETWORK_NAMES = { 0x00: "gdbx" };
+// Legacy constants for backward compat validation (old 58-char addresses)
+export const LEGACY_ADDR_LEN = 58;
+export const ADDR_LEN = 56; // base32 chars, no padding — single network
+export const FULL_LEN = ADDR_LEN + 1 + SUFFIX.length; // 61 with ".gdbx"
 
 const B32_ALPHABET = "abcdefghijklmnopqrstuvwxyz234567";
 const B32_REVERSE = (() => {
@@ -32,8 +36,10 @@ const B32_REVERSE = (() => {
   for (let i = 0; i < B32_ALPHABET.length; i++) m[B32_ALPHABET[i]] = i;
   return m;
 })();
-const ADDR_RE = /^[a-z2-7]{58}$/;
-const FULL_RE = /^[a-z2-7]{58}\.gdbx$/;
+const ADDR_RE = /^[a-z2-7]{56}$/;
+const LEGACY_ADDR_RE = /^[a-z2-7]{58}$/;
+const FULL_RE = /^[a-z2-7]{56}\.gdbx$/;
+const LEGACY_FULL_RE = /^[a-z2-7]{58}\.gdbx$/;
 
 /* ── base32 (RFC 4648, lowercase, no padding) ─────────────────────── */
 
@@ -112,39 +118,52 @@ function normalize32(v) {
 
 /* ── address ──────────────────────────────────────────────────────── */
 
-/** Make a `.gdbx` address from a public key + network. Returns WITHOUT suffix. */
-export function makeAddress(pubkey, network = NETWORKS.mainnet) {
+/** Make a `.gdbx` address from a public key. Returns WITHOUT suffix. Single GDBx network. */
+export function makeAddress(pubkey, _network) {
   const hash = pubKeyHash(pubkey);
-  const payload = new Uint8Array(1 + 1 + 32 + 2);
+  const payload = new Uint8Array(1 + 32 + 2);
   payload[0] = VERSION;
-  payload[1] = network;
-  payload.set(hash, 2);
-  const checksum = blake3(payload.subarray(0, 34)).subarray(0, 2);
-  payload.set(checksum, 34);
+  payload.set(hash, 1);
+  const checksum = blake3(payload.subarray(0, 33)).subarray(0, 2);
+  payload.set(checksum, 33);
   return base32Encode(payload);
 }
 
-/** Full validation — returns { ok } or { ok:false, error }. */
+/** Full validation — returns { ok } or { ok:false, error }. Supports new 56-char and legacy 58-char. */
 export function validateAddress(input) {
   if (typeof input !== "string") return { ok: false, error: "address must be a string" };
   const str = input.trim().toLowerCase();
   if (FULL_RE.test(str)) return validatePayload(base32Decode(str.slice(0, ADDR_LEN)));
   if (ADDR_RE.test(str)) return validatePayload(base32Decode(str));
+  // Legacy 58-char backward compat
+  if (LEGACY_FULL_RE.test(str)) return validatePayload(base32Decode(str.slice(0, LEGACY_ADDR_LEN)));
+  if (LEGACY_ADDR_RE.test(str)) return validatePayload(base32Decode(str));
   return {
     ok: false,
-    error: `invalid .gdbx address — expected 58 base32 chars (a-z2-7)${SUFFIX ? " + '.gdbx'" : ""}`,
+    error: `invalid .gdbx address — expected 56 base32 chars (a-z2-7)${SUFFIX ? " + '.gdbx'" : ""}`,
   };
 }
 
 function validatePayload(payload) {
-  if (payload.length !== 36) return { ok: false, error: "decoded length must be 36 bytes" };
-  if (payload[0] !== VERSION) return { ok: false, error: `unsupported version ${payload[0]}` };
-  if (!(payload[1] in NETWORK_NAMES)) return { ok: false, error: `unknown network ${payload[1]}` };
-  const expect = blake3(payload.subarray(0, 34)).subarray(0, 2);
-  if (payload[34] !== expect[0] || payload[35] !== expect[1]) {
-    return { ok: false, error: "checksum mismatch — address is invalid or corrupted" };
+  // New single-network: 35B payload (Version + Hash + Checksum)
+  if (payload.length === 35) {
+    if (payload[0] !== VERSION) return { ok: false, error: `unsupported version ${payload[0]}` };
+    const expect = blake3(payload.subarray(0, 33)).subarray(0, 2);
+    if (payload[33] !== expect[0] || payload[34] !== expect[1]) {
+      return { ok: false, error: "checksum mismatch — address is invalid or corrupted" };
+    }
+    return { ok: true };
   }
-  return { ok: true };
+  // Legacy 36B (Version + Network + Hash + Checksum)
+  if (payload.length === 36) {
+    if (payload[0] !== VERSION) return { ok: false, error: `unsupported version ${payload[0]}` };
+    const expect = blake3(payload.subarray(0, 34)).subarray(0, 2);
+    if (payload[34] !== expect[0] || payload[35] !== expect[1]) {
+      return { ok: false, error: "checksum mismatch — address is invalid or corrupted" };
+    }
+    return { ok: true };
+  }
+  return { ok: false, error: "decoded length must be 35 or 36 bytes" };
 }
 
 /** Normalize user input → canonical lowercase form (with or without suffix input). */
@@ -159,7 +178,14 @@ export function normalizeAddress(input) {
 export function networkOf(input) {
   const bare = normalizeAddress(input);
   if (!bare) return null;
-  return NETWORK_NAMES[base32Decode(bare)[1]];
+  const payload = base32Decode(bare);
+  // Single GDBx network — always "gdbx"
+  if (payload.length === 35) return "gdbx";
+  if (payload.length === 36) {
+    const legacyNames = { 0x00: "gdbx", 0x01: "gdbx", 0x02: "gdbx" };
+    return legacyNames[payload[1]] || "gdbx";
+  }
+  return null;
 }
 
 export function versionOf(input) {

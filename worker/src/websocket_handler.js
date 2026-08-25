@@ -43,7 +43,7 @@ export function createWebSocketHub(getStorageStub) {
   async function accept(request, env) {
     const url = new URL(request.url);
     const addr = (url.searchParams.get("addr") || "").toLowerCase();
-    if (!/^[a-z2-7]{58}$/.test(addr)) {
+    if (!/^(?:[a-z2-7]{56}|[a-z2-7]{58})$/.test(addr)) {
       return new Response(JSON.stringify({ error: "invalid or missing addr param (58-char base32)" }), {
         status: 400,
         headers: JSON_HEADERS,
@@ -117,7 +117,7 @@ export function createWebSocketHub(getStorageStub) {
     switch (msg.type) {
       case "hello": {
         const addr = (msg.addr || "").toLowerCase();
-        if (!/^[a-z2-7]{58}$/.test(addr)) {
+        if (!/^(?:[a-z2-7]{56}|[a-z2-7]{58})$/.test(addr)) {
           server.send(JSON.stringify({ type: "error", error: "invalid addr" }));
           return;
         }

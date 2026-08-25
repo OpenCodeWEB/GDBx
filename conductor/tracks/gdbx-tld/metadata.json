@@ -1,0 +1,10 @@
+{
+  "id": "gdbx-tld",
+  "title": "GDBx TLD Domain System — Short Links",
+  "status": "plan_ready",
+  "created": "2026-08-24",
+  "phases": ["6.5"],
+  "tags": ["tld", "domain", "short-link", "gunx-parity"],
+  "depends_on": ["org-gdbx-unification", "gdbx-playground", "gdbx-ftp"],
+  "priority": "high"
+}

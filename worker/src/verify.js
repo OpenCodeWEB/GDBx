@@ -10,7 +10,7 @@
  * Public key: JWK-style `x.y` (two base64url coordinates, no padding).
  */
 
-const ADDR_RE = /^[a-z2-7]{58}$/;
+const ADDR_RE = /^(?:[a-z2-7]{56}|[a-z2-7]{58})$/;
 
 /** Max clock skew between client and server (ms) — replay window. */
 export const TS_WINDOW_MS = 60_000;

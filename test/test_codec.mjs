@@ -30,13 +30,13 @@ for (let i = 1; i < 65; i++) TEST_PUB[i] = i;
 let KNOWN = null; // locked below on first run
 
 test("codec: known-vector determinism (lock-in)", () => {
-  const addr = makeAddress(TEST_PUB, NETWORKS.mainnet);
-  assert.equal(addr.length, ADDR_LEN, "address must be 58 base32 chars");
+  const addr = makeAddress(TEST_PUB);
+  assert.equal(addr.length, ADDR_LEN, "address must be 56 base32 chars (single GDBx network)");
   if (KNOWN === null) KNOWN = addr;
   assert.equal(addr, KNOWN, "address must be deterministic for same pubkey");
   // print once for the record
   console.log("known-vector address:", addr + ".gdbx");
-  assert.match(addr, /^[a-z2-7]{58}$/);
+  assert.match(addr, /^[a-z2-7]{56}$/);
 });
 
 test("codec: address + suffix validates, canonical", () => {
@@ -50,7 +50,7 @@ test("codec: address + suffix validates, canonical", () => {
 
 test("codec: single-char flip → rejected (checksum/version/length)", () => {
   const addr = makeAddress(TEST_PUB);
-  for (const pos of [0, 20, 40, 57]) {
+  for (const pos of [0, 20, 40, 55]) {
     const bad = addr.slice(0, pos) + (addr[pos] === "a" ? "b" : "a") + addr.slice(pos + 1);
     const v = validateAddress(bad);
     assert.equal(v.ok, false, `flip at ${pos} must fail`);
@@ -59,22 +59,22 @@ test("codec: single-char flip → rejected (checksum/version/length)", () => {
 
 test("codec: length / alphabet rejection", () => {
   const addr = makeAddress(TEST_PUB);
-  assert.equal(validateAddress(addr.slice(0, 57)).ok, false);
+  assert.equal(validateAddress(addr.slice(0, 55)).ok, false);
   assert.equal(validateAddress(addr + "0").ok, false); // '0' not in base32 alphabet
   assert.equal(validateAddress(addr + "1").ok, false); // '1' not in alphabet
   assert.equal(validateAddress("").ok, false);
   assert.equal(validateAddress("not-an-address").ok, false);
 });
 
-test("codec: network + version extraction", () => {
-  const main = makeAddress(TEST_PUB, NETWORKS.mainnet);
-  const test = makeAddress(TEST_PUB, NETWORKS.testnet);
-  const local = makeAddress(TEST_PUB, NETWORKS.local);
-  assert.equal(networkOf(main), "mainnet");
-  assert.equal(networkOf(test), "testnet");
-  assert.equal(networkOf(local), "local");
-  assert.equal(versionOf(main), 1);
-  assert.notEqual(main, test, "different networks must produce different addresses");
+test("codec: network + version extraction — single GDBx network", () => {
+  const addr = makeAddress(TEST_PUB);
+  assert.equal(networkOf(addr), "gdbx");
+  assert.equal(versionOf(addr), 1);
+  // Single network: all makeAddress calls produce same address regardless of legacy network param (ignored)
+  const alsoMain = makeAddress(TEST_PUB, NETWORKS.mainnet);
+  const alsoTest = makeAddress(TEST_PUB, NETWORKS.testnet);
+  assert.equal(addr, alsoMain, "single network: mainnet param ignored");
+  assert.equal(addr, alsoTest, "single network: testnet param ignored");
 });
 
 test("codec: DID derivation", () => {

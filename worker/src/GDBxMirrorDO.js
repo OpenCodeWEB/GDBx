@@ -18,7 +18,7 @@ const JSON_HEADERS = {
   "access-control-allow-headers": "content-type",
 };
 
-const ADDR_RE = /^[a-z2-7]{58}$/;
+const ADDR_RE = /^(?:[a-z2-7]{56}|[a-z2-7]{58})$/;
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
