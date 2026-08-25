@@ -22,7 +22,7 @@ export function defaultKeyPath() {
 export async function createIdentity(net = "mainnet", outPath = null) {
   const p = await pair();
   const pubkeyHex = await hexOf(p.pub);
-  const networkMap = { mainnet: 0, testnet: 1, local: 2 };
+  const networkMap = { gdbx: 0 }; // single GDBx network
   const netCode = networkMap[net] ?? 0;
   const addr = makeAddress(pubkeyHex, netCode);
   const bundle = { pub: p.pub, priv: p.priv, pubkey_hex: pubkeyHex, pubkeyHex, addr, network: net, did: `did:gdbx:${addr}` };

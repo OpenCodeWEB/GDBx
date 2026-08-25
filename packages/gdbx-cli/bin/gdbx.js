@@ -10,7 +10,7 @@ program
   .command("identity")
   .description("identity helpers")
   .argument("<action>", "create|show")
-  .option("--net <net>", "mainnet|testnet|local", "mainnet")
+  .option("--net <net>", "gdbx (single network)", "gdbx")
   .option("--out <path>", "output key.json path")
   .action(async (action, opts) => {
     if (action === "create") {
@@ -154,6 +154,44 @@ ftp
     await ftpSync(prefix);
     // keep process alive
     await new Promise(() => {});
+  });
+
+// names — .GDBx short-name registry (single network, single namespace)
+const names = program.command("name").description(".GDBx short names — <name>.gdbx");
+names
+  .command("claim")
+  .description("claim a name → target (PoW-mined, GDBx-signed)")
+  .argument("<name>")
+  .argument("<target>")
+  .action(async (name, target) => {
+    const { GDBxNames } = await import("../../../sdk/gdbx-name.js");
+    const id = loadIdentity();
+    const reg = new GDBxNames({ pair: { pub: id.pub, priv: id.priv }, pubkeyHex: id.pubkeyHex || id.pubkey_hex, addr: id.addr });
+    const r = await reg.claim(name, target);
+    console.log(`✓ claimed ${r.name}.gdbx → ${r.target}`);
+    console.log(`  short link: https://gdbx.pages.dev/n/${r.name}`);
+  });
+names
+  .command("lookup")
+  .description("resolve a verified .gdbx name")
+  .argument("<name>")
+  .action(async (name) => {
+    const res = await fetch(`https://gdbx.xup.workers.dev/name/${name}`).then(r => r.json());
+    if (!res.ok) { console.error("✗", res.error); process.exit(1); }
+    console.log(`${res.name}.gdbx → ${res.target}`);
+    console.log(`  ownerPub: ${res.ownerPub?.slice(0, 24)}…`);
+  });
+names
+  .command("transfer")
+  .description("gift a name to a new owner")
+  .argument("<name>")
+  .argument("<newOwnerPub>")
+  .action(async (name, newOwnerPub) => {
+    const { GDBxNames } = await import("../../../sdk/gdbx-name.js");
+    const id = loadIdentity();
+    const reg = new GDBxNames({ pair: { pub: id.pub, priv: id.priv }, pubkeyHex: id.pubkeyHex || id.pubkey_hex, addr: id.addr });
+    const gift = await reg.transfer(name, { pub: id.pub, priv: id.priv }, newOwnerPub);
+    console.log("✓ gift signed + stored:", JSON.stringify(gift, null, 2));
   });
 
 program.parseAsync(process.argv);
