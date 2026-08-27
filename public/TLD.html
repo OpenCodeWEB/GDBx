@@ -94,6 +94,16 @@
   <!-- Left: Claim/Lookup/Transfer -->
   <div class="lg:col-span-3 space-y-6">
 
+    <!-- Identity badge -->
+    <div id="identity-section" class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center text-slate-950 font-bold text-sm shrink-0"><i class="fa-solid fa-fingerprint"></i></div>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs text-slate-500 mb-0.5">Your identity</div>
+        <div id="identity-addr" class="mono text-xs text-violet-300 truncate">loading…</div>
+      </div>
+      <button id="copy-identity" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs shrink-0" title="Copy address"><i class="fa-regular fa-copy"></i></button>
+    </div>
+
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-bolt text-amber-400 mr-2" aria-hidden="true"></i>Claim a name</h2>
       <p class="text-xs text-slate-500 mb-4">PoW difficulty scales with length (≤4: diff 4, ≤8: diff 3, else 2). Lowercase a-z0-9-, 1–40 chars.</p>
@@ -118,7 +128,7 @@
         <input id="lookup-name" type="text" placeholder="absup" spellcheck="false" autocomplete="off"
           class="w-40 mono text-sm bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50">
         <span class="text-slate-500 mono text-sm py-2.5" aria-hidden="true">.gdbx</span>
-        <button type="submit" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors">Resolve</button>
+        <button id="lookup-btn" type="submit" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors">Resolve</button>
         <a id="short-link" href="#" target="_blank" rel="noopener" class="hidden px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold items-center gap-1">
           Open /n/… <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
         </a>
@@ -235,6 +245,25 @@ async function getIdentity() {
   try { localStorage.setItem("gdbx-identity", JSON.stringify(identityCache)); } catch {}
   return identityCache;
 }
+
+// Identity badge
+async function showIdentity() {
+  try {
+    const id = await getIdentity();
+    document.getElementById("identity-addr").textContent = id.addr;
+    document.getElementById("identity-addr").title = id.addr;
+  } catch {}
+}
+document.getElementById("copy-identity")?.addEventListener("click", async () => {
+  try {
+    const id = await getIdentity();
+    await navigator.clipboard.writeText(id.addr);
+    const btn = document.getElementById("copy-identity");
+    btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>';
+    setTimeout(() => btn.innerHTML = '<i class="fa-regular fa-copy"></i>', 1200);
+  } catch {}
+});
+showIdentity();
 
 // Web Worker PoW — non-blocking UI, with main-thread fallback
 let powWorker = null;
