@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -38,23 +38,6 @@
       <a href="/" class="hover:text-cyan-300 transition-colors"><i class="fa-solid fa-house mr-1"></i>Home</a>
       <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github"></i></a>
     </nav>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
   </div>
 </header>
 
@@ -65,24 +48,7 @@
       <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-xs font-semibold tracking-wide uppercase">Open API</span>
       <span class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 text-xs mono">CORS enabled</span>
       <span class="px-3 py-1 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25 text-xs mono">no keys required</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">API <span class="bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">Reference</span></h1>
     <p class="mt-4 text-lg text-slate-400 max-w-2xl">Build against the sovereign data mesh from any client. Every write is
       <strong class="text-slate-200">GDBx-signed (ECDSA P-256)</strong>, <strong class="text-slate-200">PoW-gated</strong> and
@@ -93,78 +59,10 @@
       <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 mono text-sm">
         <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">HTTP base (Pages proxy)</div>
         <div class="text-emerald-300 break-all">https://gdbx.pages.dev/api/v1</div>
-        <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
       </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
       <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 mono text-sm">
         <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Direct edge (Worker Â· WS Â· fastest)</div>
         <div class="text-cyan-300 break-all">https://gdbx.xup.workers.dev</div>
-        <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
       </div>
     </div>
   </div>
@@ -181,106 +79,21 @@
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/did</code>
       <span class="text-xs text-slate-500 ml-auto">register a DID document â€” body {addr, pubkey, pubkeyHex, ts, nonce, diff, hash, sig}</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/did/:addr</code>
       <span class="text-xs text-slate-500 ml-auto">resolve a did:gdbx document</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/identity/role</code>
       <span class="text-xs text-slate-500 ml-auto">superadmin-signed promote/demote (RBAC guestâ†’superadmin)</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 text-xs font-bold mono">DELETE</span>
       <code class="mono text-sm text-slate-200">/identity</code>
       <span class="text-xs text-slate-500 ml-auto">GDPR right-to-be-forgotten â€” cryptographic erasure of everything</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
 
@@ -290,84 +103,16 @@
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/sync</code>
       <span class="text-xs text-slate-500 ml-auto">apply a signed LWW delta batch â€” body includes deltas[], ts, nonce, diff, hash, sig</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/sync/:addr?prefix=</code>
       <span class="text-xs text-slate-500 ml-auto">read merged state (primary + mirror pool, newest-clock wins)</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-300 text-xs font-bold mono">WS</span>
       <code class="mono text-sm text-slate-200">ws?addr=:addr</code>
       <span class="text-xs text-slate-500 ml-auto">real-time hub â€” send hello â†’ put â†’ receive applied + delta broadcasts</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
 
@@ -377,62 +122,29 @@
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/relay</code>
       <span class="text-xs text-slate-500 ml-auto">Nostr kind-23124 ingest â€” GDBx envelope in content, same firewall as HTTP/WS</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/peers</code>
       <span class="text-xs text-slate-500 ml-auto">presence heartbeat â€” {addr, transports[], name}</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
+
+  <h3 class="text-sm font-semibold text-amber-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
+  <div class="space-y-3 mb-12">
+    <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
+      <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
+      <code class="mono text-sm text-slate-200">/name/:name</code>
+      <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
+    </div>
+    <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
+      <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
+      <code class="mono text-sm text-slate-200">/n/:name</code>
+      <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
+    </div>
+    <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
+      <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
+      <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
     </div>
   </div>
 
@@ -442,128 +154,26 @@
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/stats</code>
       <span class="text-xs text-slate-500 ml-auto">global counters â€” dids, deltas, active peers, policy block</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/leaderboard</code>
       <span class="text-xs text-slate-500 ml-auto">top active addresses + transport mix + live peers</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/pool</code>
       <span class="text-xs text-slate-500 ml-auto">replication pool status â€” primary + mirror health</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
       <code class="mono text-sm text-slate-200">/health</code>
       <span class="text-xs text-slate-500 ml-auto">liveness probe</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
       <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">POST</span>
       <code class="mono text-sm text-slate-200">/export</code>
       <span class="text-xs text-slate-500 ml-auto">signed backup snapshot of an address (owner-proof required)</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
 </section>
@@ -578,24 +188,7 @@
         <div class="text-slate-200">curl https://gdbx.pages.dev/api/v1/sync/&lt;addr&gt;?prefix=hello</div>
         <div class="text-slate-500 mt-4 mb-2"># 2 Â· liveness + pool health</div>
         <div class="text-slate-200">curl https://gdbx.xup.workers.dev/health<br>curl https://gdbx.xup.workers.dev/pool</div>
-        <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
       </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
       <div class="rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed overflow-x-auto">
         <div class="text-slate-500 mb-2"># 3 Â· write = PoW + GDBx signature (SDK does this for you)</div>
         <div class="text-slate-200">import { makePair, minePoW } from "gdbx";<br>
@@ -604,42 +197,8 @@
         await fetch(WORKER+"/sync", { method:"POST", body });</div>
         <div class="text-slate-500 mt-4 mb-2"># 4 Â· real-time (Worker serves WS upgrades directly)</div>
         <div class="text-slate-200">new WebSocket(<span class="text-cyan-300">"wss://gdbx.xup.workers.dev/ws?addr=&lt;addr&gt;"</span>)</div>
-        <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
       </div>
     </div>
-  </div>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
 
     <!-- SDK pointers -->
     <div class="mt-8 grid md:grid-cols-4 gap-4">
@@ -659,40 +218,6 @@
         <i class="fa-solid fa-book text-fuchsia-400 text-lg"></i>
         <div class="font-semibold mt-2 text-sm">Guides</div><div class="text-xs text-slate-500 mt-1">conductor/tracks â€” specs, plans, examples</div>
       </a>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
 </section>
@@ -703,63 +228,12 @@
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database"></i></div>
       <span class="text-sm text-slate-400">GDBx â€” MIT License Â· By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
-  </div>
     <div class="flex items-center gap-4 text-sm text-slate-500">
       <a href="/RoadMap" class="hover:text-rose-300 transition-colors">Roadmap</a>
       <a href="/TLD" class="hover:text-amber-300 transition-colors">TLD</a>
       <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hover:text-violet-300 transition-colors"><i class="fa-brands fa-github mr-1"></i>GDBX</a>
       <span class="mono text-xs">gdbx.pages.dev/Api</span>
-      <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
-    </div>
-  </div>
-    <h3 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-at mr-2"></i>.GDBx Names — short human links</h3>
-    <div class="space-y-3 mb-12">
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/name/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">resolve a verified .gdbx name (server-side PoW+sig check)</span>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-wrap items-center gap-3">
-        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 text-xs font-bold mono">GET</span>
-        <code class="mono text-sm text-slate-200">/n/:name</code>
-        <span class="text-xs text-slate-500 ml-auto">short-link — 302 redirect to target URL</span>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-5 mono text-sm leading-relaxed">
-        <div class="text-slate-500 mb-2"># claim via SDK then share your short link</div>
-        <div class="text-slate-200">const names = new GDBxNames({ pair, pubkeyHex });<br>await names.claim("myapp", "https://myapp.dev");<br>// → https://gdbx.pages.dev/n/myapp</div>
-      </div>
     </div>
   </div>
 </footer>
