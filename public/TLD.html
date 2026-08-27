@@ -3,11 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TLD — .GDBx Name Registry</title>
-<meta name="description" content=".GDBx Name Registry — claim short human names like myapp.gdbx → https://myapp.dev. Single network, single namespace, PoW-mined, GDBx-signed, pool-replicated.">
+<title>TLD — .GDBx Name Registry | Single Network, One Namespace</title>
+<meta name="description" content=".GDBx Name Registry — claim short human names like myapp.gdbx → https://myapp.dev. Single network (gdbx 0x00), 56-char addresses, PoW-mined, GDBx-signed, pool-replicated.">
 <meta name="theme-color" content="#020617">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://gdbx.pages.dev/TLD">
+<meta property="og:title" content="TLD — .GDBx Name Registry">
+<meta property="og:description" content="Claim myapp.gdbx → https://myapp.dev — single network, PoW-mined, GDBx-signed. Short links via /n/<name>.">
+<meta property="og:url" content="https://gdbx.pages.dev/TLD">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://gdbx.pages.dev/og-gdbx.png">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Preconnect for critical origins -->
+<link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+<link rel="dns-prefetch" href="https://gdbx.xup.workers.dev">
+<!-- Modulepreload for critical SDK (faster first claim) -->
+<link rel="modulepreload" href="/sdk/gdbx-name.js">
+<link rel="modulepreload" href="/sdk/gdbx-crypto.js">
+<link rel="modulepreload" href="/sdk/gdbx-codec.js">
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+<script type="importmap">
+{
+  "imports": {
+    "@noble/hashes/blake3.js": "https://esm.sh/@noble/hashes@1.8.0/blake3.js",
+    "@noble/hashes/sha2.js": "https://esm.sh/@noble/hashes@1.8.0/sha2.js",
+    "@noble/hashes/_assert.js": "https://esm.sh/@noble/hashes@1.8.0/_assert.js",
+    "@noble/hashes/_md.js": "https://esm.sh/@noble/hashes@1.8.0/_md.js",
+    "@noble/hashes/_u64.js": "https://esm.sh/@noble/hashes@1.8.0/_u64.js",
+    "@noble/hashes/utils.js": "https://esm.sh/@noble/hashes@1.8.0/utils.js"
+  }
+}
+</script>
 <style>
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -17,22 +47,26 @@
       linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
     background-size: 42px 42px;
   }
+  .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 37%, #1e293b 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  /* Content-visibility for long lists */
+  #names-list { content-visibility: auto; contain-intrinsic-size: 0 300px; }
 </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
 
 <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
   <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg"><i class="fa-solid fa-globe"></i></div>
+    <a href="/" class="flex items-center gap-3" aria-label="GDBx home">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg"><i class="fa-solid fa-globe" aria-hidden="true"></i></div>
       <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">GDBx</span>
       <span class="text-xs ml-1 px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 mono">/TLD</span>
     </a>
-    <nav class="flex items-center gap-5 text-sm font-medium text-slate-300">
+    <nav class="flex items-center gap-5 text-sm font-medium text-slate-300" aria-label="Primary">
       <span class="hidden md:inline px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 mono text-xs">single network · gdbx</span>
       <a href="/RoadMap" class="hover:text-rose-300 transition-colors hidden md:inline">Roadmap</a>
       <a href="/Api" class="hover:text-emerald-300 transition-colors hidden md:inline">API</a>
-      <a href="/" class="hover:text-cyan-300 transition-colors"><i class="fa-solid fa-house mr-1"></i>Home</a>
+      <a href="/" class="hover:text-cyan-300 transition-colors"><i class="fa-solid fa-house mr-1" aria-hidden="true"></i>Home</a>
     </nav>
   </div>
 </header>
@@ -46,78 +80,77 @@
     </div>
     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight"><span class="bg-gradient-to-r from-amber-300 via-violet-300 to-cyan-300 bg-clip-text text-transparent">.GDBx</span> — short names for long URLs</h1>
     <p class="mt-4 text-lg text-slate-400 max-w-2xl"><strong class="text-slate-200">myapp.gdbx → https://myapp.dev</strong> — short, human, PoW-mined, GDBx-signed, pool-replicated. One network, one namespace. Developer-easy.</p>
-
-    <!-- hero pills -->
-    <div class="mt-6 flex flex-wrap gap-2 text-xs mono">
-      <a href="/n/absup" target="_blank" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-amber-500/50 text-amber-300">absup.gdbx ↗</a>
-      <a href="/n/docs" target="_blank" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-violet-500/50 text-violet-300">docs.gdbx ↗</a>
-      <a href="/n/mesh" target="_blank" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-cyan-300">mesh.gdbx ↗</a>
-      <a href="/n/gunx" target="_blank" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-emerald-500/50 text-emerald-300">gunx.gdbx ↗</a>
+    <div class="mt-6 flex flex-wrap gap-2 text-xs mono" role="list" aria-label="Seeded names">
+      <a href="/n/absup" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-amber-500/50 text-amber-300 transition-colors">absup.gdbx ↗</a>
+      <a href="/n/docs" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-violet-500/50 text-violet-300 transition-colors">docs.gdbx ↗</a>
+      <a href="/n/mesh" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-cyan-300 transition-colors">mesh.gdbx ↗</a>
+      <a href="/n/gunx" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-emerald-500/50 text-emerald-300 transition-colors">gunx.gdbx ↗</a>
     </div>
   </div>
 </section>
 
 <section class="max-w-7xl mx-auto px-4 py-14 grid lg:grid-cols-5 gap-6">
 
-  <!-- Claim + Lookup -->
+  <!-- Left: Claim/Lookup/Transfer -->
   <div class="lg:col-span-3 space-y-6">
 
-    <!-- Claim -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-bolt text-amber-400 mr-2"></i>Claim a name</h2>
-      <p class="text-xs text-slate-500 mb-4">PoW difficulty scales with length (≤4 chars: diff 4, ≤8: diff 3, else 2). Name is lower-case, 1–40 chars.</p>
-      <div class="flex flex-wrap gap-2">
-        <input id="claim-name" type="text" placeholder="myapp" spellcheck="false"
+      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-bolt text-amber-400 mr-2" aria-hidden="true"></i>Claim a name</h2>
+      <p class="text-xs text-slate-500 mb-4">PoW difficulty scales with length (≤4: diff 4, ≤8: diff 3, else 2). Lowercase a-z0-9-, 1–40 chars.</p>
+      <form id="claim-form" class="flex flex-wrap gap-2" novalidate>
+        <input id="claim-name" type="text" placeholder="myapp" spellcheck="false" autocomplete="off" maxlength="40"
           class="w-40 mono text-sm bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50">
-        <span class="text-slate-500 mono text-sm py-2.5">.gdbx →</span>
-        <input id="claim-target" type="text" placeholder="https://myapp.dev" spellcheck="false"
+        <span class="text-slate-500 mono text-sm py-2.5" aria-hidden="true">.gdbx →</span>
+        <input id="claim-target" type="url" placeholder="https://myapp.dev" spellcheck="false" inputmode="url"
           class="flex-1 min-w-[220px] mono text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50">
-        <button id="claim-btn" class="bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm hover:opacity-90">Claim</button>
-      </div>
-      <div id="claim-log" class="mt-3 mono text-xs text-slate-400 min-h-[1.2em]"></div>
+        <button id="claim-btn" type="submit" class="bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
+          <span class="btn-label">Claim</span>
+          <span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Mining…</span>
+        </button>
+      </form>
+      <p id="claim-hint" class="mt-2 text-xs text-slate-500">Tip: short names cost more PoW — try 5+ chars for instant claim.</p>
+      <div id="claim-log" class="mt-3 mono text-xs min-h-[1.2em]" role="status" aria-live="polite"></div>
     </div>
 
-    <!-- Lookup -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-magnifying-glass text-violet-400 mr-2"></i>Lookup</h2>
-      <div class="flex gap-2">
-        <input id="lookup-name" type="text" placeholder="absup" spellcheck="false"
+      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-magnifying-glass text-violet-400 mr-2" aria-hidden="true"></i>Lookup</h2>
+      <form id="lookup-form" class="flex gap-2" novalidate>
+        <input id="lookup-name" type="text" placeholder="absup" spellcheck="false" autocomplete="off"
           class="w-40 mono text-sm bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50">
-        <span class="text-slate-500 mono text-sm py-2.5">.gdbx</span>
-        <button id="lookup-btn" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm">Resolve</button>
-        <a id="short-link" href="#" target="_blank" class="hidden px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold">Open /n/…</a>
-      </div>
-      <div id="lookup-result" class="mt-3 hidden rounded-xl border border-slate-700 bg-slate-950/60 p-4 mono text-xs"></div>
+        <span class="text-slate-500 mono text-sm py-2.5" aria-hidden="true">.gdbx</span>
+        <button type="submit" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors">Resolve</button>
+        <a id="short-link" href="#" target="_blank" rel="noopener" class="hidden px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold items-center gap-1">
+          Open /n/… <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+        </a>
+      </form>
+      <div id="lookup-result" class="mt-3 hidden rounded-xl border border-slate-700 bg-slate-950/60 p-4 mono text-xs overflow-auto max-h-48" role="status" aria-live="polite"></div>
     </div>
 
-    <!-- Transfer -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-gift text-cyan-400 mr-2"></i>Transfer (gift)</h2>
-      <p class="text-xs text-slate-500 mb-3">Current owner signs a gift record to a new owner's pubkey. Stored at <span class="mono">tld/gdbx/&lt;name&gt;/gift</span>.</p>
-      <div class="flex flex-wrap gap-2">
+      <h2 class="font-bold text-lg mb-1"><i class="fa-solid fa-gift text-cyan-400 mr-2" aria-hidden="true"></i>Transfer (gift)</h2>
+      <p class="text-xs text-slate-500 mb-3">Current owner signs a gift record to a new owner's pubkey.</p>
+      <form id="gift-form" class="flex flex-wrap gap-2" novalidate>
         <input id="gift-name" type="text" placeholder="myapp" spellcheck="false" class="w-32 mono text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
         <input id="gift-pub" type="text" placeholder="new owner pubkey (x.y)" spellcheck="false" class="flex-1 min-w-[200px] mono text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-        <button id="gift-btn" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-sm font-bold">Gift</button>
-      </div>
-      <div id="gift-log" class="mt-3 mono text-xs text-slate-400 min-h-[1.2em]"></div>
+        <button id="gift-btn" type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-sm font-bold disabled:opacity-50">Gift</button>
+      </form>
+      <div id="gift-log" class="mt-3 mono text-xs min-h-[1.2em]" role="status" aria-live="polite"></div>
     </div>
 
-    <!-- Live directory -->
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="font-bold text-lg"><i class="fa-solid fa-list text-emerald-400 mr-2"></i>Live directory</h2>
-        <button id="refresh-names" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">refresh</button>
+        <h2 class="font-bold text-lg"><i class="fa-solid fa-list text-emerald-400 mr-2" aria-hidden="true"></i>Live directory</h2>
+        <button id="refresh-names" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"><i class="fa-solid fa-rotate mr-1"></i>refresh</button>
       </div>
-      <div id="names-list" class="space-y-2 max-h-72 overflow-y-auto"><div class="text-xs text-slate-600">loading…</div></div>
+      <div id="names-list" class="space-y-2 max-h-72 overflow-y-auto" role="list" aria-live="polite"><div class="skeleton h-12 rounded-lg"></div><div class="skeleton h-12 rounded-lg mt-2"></div></div>
     </div>
 
   </div>
 
-  <!-- Right: docs -->
   <div class="lg:col-span-2 space-y-6">
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <h2 class="font-bold mb-3">Single network — easy for developers</h2>
-      <p class="text-sm text-slate-400">No mainnet/testnet/local split. One GDBx network, one namespace:</p>
+      <p class="text-sm text-slate-400">No mainnet/testnet/local split. One GDBx network:</p>
       <div class="mt-3 mono text-xs bg-slate-950 border border-slate-800 rounded-lg p-3">
         <span class="text-slate-500">Network</span> <span class="text-violet-300">gdbx (0x00)</span> — 56 base32 chars<br>
         <span class="text-slate-500">Example</span> <span class="text-cyan-300">aegq…54mm.gdbx</span>
@@ -132,11 +165,11 @@
     <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
       <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">How it works</h3>
       <ol class="text-sm text-slate-400 space-y-2 list-decimal list-inside">
-        <li>Mine PoW over <span class="mono text-amber-300">name:pub:target:ts:nonce</span> (diff 4/3/2 by length)</li>
+        <li>Mine PoW over <code class="mono text-amber-300">name:pub:target:ts:nonce</code> (diff 4/3/2)</li>
         <li>Sign claim {name,target,ownerPub,ts} with GDBx envelope</li>
-        <li>Store at <span class="mono text-violet-300">tld/gdbx/&lt;name&gt;</span> via <span class="mono">POST /sync</span> (LWW)</li>
-        <li>Resolve <span class="mono text-cyan-300">GET /name/:name</span> re-verifies PoW + sig server-side</li>
-        <li>Short link <span class="mono text-emerald-300">/n/:name</span> 302-redirects if target is http(s)</li>
+        <li>Store at <code class="mono text-violet-300">tld/gdbx/&lt;name&gt;</code> via <code class="mono">POST /sync</code></li>
+        <li>Resolve <code class="mono text-cyan-300">GET /name/:name</code> re-verifies PoW + sig</li>
+        <li>Short link <code class="mono text-emerald-300">/n/:name</code> 302-redirects if http(s)</li>
       </ol>
     </div>
 
@@ -144,19 +177,19 @@
       <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">CLI</h3>
       <pre class="mono text-xs bg-slate-950 border border-slate-800 rounded-lg p-3 overflow-x-auto">gdbx identity create
 gdbx name claim myapp https://myapp.dev
-# → ✓ claimed myapp.gdbx → https://myapp.dev
-# → https://gdbx.pages.dev/n/myapp
+<span class="text-emerald-300"># → ✓ claimed myapp.gdbx → https://myapp.dev</span>
+<span class="text-emerald-300"># → https://gdbx.pages.dev/n/myapp</span>
 gdbx name lookup myapp</pre>
+      <button id="copy-cli" class="mt-2 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"><i class="fa-regular fa-copy mr-1"></i>Copy commands</button>
     </div>
   </div>
 
 </section>
 
-<!-- Footer -->
 <footer class="border-t border-slate-800 py-10">
   <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database"></i></div>
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-sm"><i class="fa-solid fa-database" aria-hidden="true"></i></div>
       <span class="text-sm text-slate-400">GDBx — MIT License · By <a href="https://github.com/ABsUP" target="_blank" class="text-violet-300 hover:underline">@ABsUP</a> &amp; <a href="https://github.com/OpenCodeWEB" target="_blank" class="text-violet-300 hover:underline">@OpenCodeWEB</a></span>
     </div>
     <div class="flex items-center gap-4 text-sm text-slate-500">
@@ -168,17 +201,27 @@ gdbx name lookup myapp</pre>
 </footer>
 
 <script type="module">
-import { GDBxNames, getNameDifficulty } from "/sdk/gdbx-name.js";
+// Optimized TLD — lazy SDK, cached identity, Web Worker PoW, parallel fetch
+const WORKER = "https://gdbx.xup.workers.dev";
+let GDBxNamesCache = null;
+let identityCache = null;
+// Cache for verified names (5min TTL)
+const nameCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000;
 
-// try to load identity from localStorage (like playground/cli) or generate ephemeral
+async function loadSDK() {
+  if (GDBxNamesCache) return GDBxNamesCache;
+  GDBxNamesCache = await import("/sdk/gdbx-name.js");
+  return GDBxNamesCache;
+}
+
 async function getIdentity() {
+  if (identityCache) return identityCache;
   const cached = localStorage.getItem("gdbx-identity");
   if (cached) {
-    try { const p = JSON.parse(cached); if (p.pub && p.priv && p.pubkeyHex) return p; } catch {}
+    try { const p = JSON.parse(cached); if (p.pub && p.priv && p.pubkeyHex) { identityCache = p; return p; } } catch {}
   }
-  // ephemeral — imported sdk/gdbx-crypto pair is same as cli's create
-  const { pair } = await import("/sdk/gdbx-crypto.js");
-  const { makeAddress } = await import("/sdk/gdbx-codec.js");
+  const [{ pair }, { makeAddress }] = await Promise.all([import("/sdk/gdbx-crypto.js"), import("/sdk/gdbx-codec.js")]);
   const b64uToHex = (s) => {
     const pad = s.replace(/-/g, "+").replace(/_/g, "/");
     const bin = atob(pad + (pad.length % 4 ? "=".repeat(4 - (pad.length % 4)) : ""));
@@ -188,106 +231,236 @@ async function getIdentity() {
   const [x, y] = p.pub.split(".");
   const hex = "04" + b64uToHex(x) + b64uToHex(y);
   const addr = makeAddress(hex);
-  // Auto-register DID on first use
-  try {
-    const { minePoW, sign } = await import("/sdk/gdbx-crypto.js").then(() => import("/sdk/gdbx-sdk.js")).catch(() => ({ minePoW: null }));
-  } catch {}
-  localStorage.setItem("gdbx-identity", JSON.stringify({ pub: p.pub, priv: p.priv, pubkeyHex: hex, addr }));
-  return { pub: p.pub, priv: p.priv, pubkeyHex: hex, addr };
+  identityCache = { pub: p.pub, priv: p.priv, pubkeyHex: hex, addr };
+  try { localStorage.setItem("gdbx-identity", JSON.stringify(identityCache)); } catch {}
+  return identityCache;
 }
 
-const claimBtn = document.getElementById("claim-btn");
+// Web Worker PoW — non-blocking UI, with main-thread fallback
+let powWorker = null;
+let powWorkerId = 0;
+const powPending = new Map();
+
+function getPowWorker() {
+  if (powWorker) return powWorker;
+  try {
+    powWorker = new Worker("/js/pow-worker.js");
+    powWorker.onmessage = (e) => {
+      const { id, nonce, hash, error } = e.data;
+      const pending = powPending.get(id);
+      if (!pending) return;
+      powPending.delete(id);
+      if (error) pending.reject(new Error(error));
+      else pending.resolve({ nonce, hash });
+    };
+    powWorker.onerror = () => { powWorker = null; };
+  } catch { powWorker = null; }
+  return powWorker;
+}
+
+async function mineWithWorker(name, pub, target, ts, diff) {
+  const worker = getPowWorker();
+  if (!worker) return null; // fallback to main thread
+  return new Promise((resolve, reject) => {
+    const id = ++powWorkerId;
+    powPending.set(id, { resolve, reject });
+    worker.postMessage({ name, pub, target, ts, diff, id });
+    // Timeout fallback to main thread after 100ms if worker not responding
+    setTimeout(() => {
+      if (powPending.has(id)) {
+        powPending.delete(id);
+        resolve(null);
+      }
+    }, 100);
+  });
+}
+
+// Debounced validation
+let validateTimer = null;
 const claimNameEl = document.getElementById("claim-name");
+claimNameEl.addEventListener("input", () => {
+  clearTimeout(validateTimer);
+  validateTimer = setTimeout(() => {
+    const v = claimNameEl.value.trim().toLowerCase();
+    if (!v) { claimNameEl.setCustomValidity(""); return; }
+    if (!/^[a-z0-9-]{1,40}$/.test(v) || v.startsWith("-") || v.endsWith("-")) {
+      claimNameEl.setCustomValidity("a-z, 0-9, hyphen, 1-40 chars, no leading/trailing hyphen");
+      claimNameEl.reportValidity();
+    } else claimNameEl.setCustomValidity("");
+  }, 150);
+});
+
+const claimForm = document.getElementById("claim-form");
+const claimBtn = document.getElementById("claim-btn");
 const claimTargetEl = document.getElementById("claim-target");
 const claimLog = document.getElementById("claim-log");
 
-claimBtn.addEventListener("click", async () => {
+claimForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
   const name = claimNameEl.value.trim().toLowerCase();
   const target = claimTargetEl.value.trim();
-  if (!name || !target) { claimLog.textContent = "name + target required"; return; }
-  claimBtn.disabled = true; claimLog.textContent = "mining PoW (diff " + getNameDifficulty(name) + ")…";
+  if (!name || !target) { claimLog.textContent = "name + target required"; claimLog.className = "mt-3 mono text-xs text-rose-400"; return; }
+  if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(name)) { claimLog.textContent = "invalid name format"; claimLog.className = "mt-3 mono text-xs text-rose-400"; return; }
+  try { new URL(target); } catch { claimLog.textContent = "target must be a valid URL (https://…)"; claimLog.className = "mt-3 mono text-xs text-rose-400"; return; }
+  const { getNameDifficulty } = await loadSDK();
+  claimBtn.disabled = true;
+  claimBtn.querySelector(".btn-label").classList.add("hidden");
+  claimBtn.querySelector(".btn-spinner").classList.remove("hidden");
+  claimLog.textContent = `mining PoW (diff ${getNameDifficulty(name)})…`;
+  claimLog.className = "mt-3 mono text-xs text-amber-300";
   try {
     const id = await getIdentity();
+    const { GDBxNames } = await loadSDK();
     const names = new GDBxNames({ pair: { pub: id.pub, priv: id.priv }, pubkeyHex: id.pubkeyHex, addr: id.addr });
     const r = await names.claim(name, target);
-    claimLog.innerHTML = `<span class="text-emerald-300">✓ claimed ${r.name}.gdbx → ${r.target}</span> — <a href="/n/${r.name}" target="_blank" class="text-cyan-300 hover:underline">/n/${r.name} ↗</a>`;
+    claimLog.innerHTML = `<span class="text-emerald-300">✓ claimed ${r.name}.gdbx → ${r.target}</span> — <a href="/n/${r.name}" target="_blank" rel="noopener" class="text-cyan-300 hover:underline">/n/${r.name} ↗</a> <button id="copy-short-${r.name}" class="ml-2 px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">Copy</button>`;
+    document.getElementById(`copy-short-${r.name}`)?.addEventListener("click", () => {
+      navigator.clipboard.writeText(`https://gdbx.pages.dev/n/${r.name}`);
+      claimLog.innerHTML += ` <span class="text-emerald-300">copied!</span>`;
+    });
+    // Invalidate cache and refresh
+    nameCache.delete(name);
     refreshNames();
-  } catch (e) {
-    claimLog.textContent = "✗ " + (e.message || e);
-  } finally { claimBtn.disabled = false; }
+  } catch (err) {
+    claimLog.textContent = "✗ " + (err.message || err);
+    claimLog.className = "mt-3 mono text-xs text-rose-400";
+  } finally {
+    claimBtn.disabled = false;
+    claimBtn.querySelector(".btn-label").classList.remove("hidden");
+    claimBtn.querySelector(".btn-spinner").classList.add("hidden");
+  }
 });
 
-const lookupBtn = document.getElementById("lookup-btn");
+// Lookup with AbortController and caching
+let lookupController = null;
+const lookupForm = document.getElementById("lookup-form");
 const lookupNameEl = document.getElementById("lookup-name");
 const lookupResult = document.getElementById("lookup-result");
 const shortLink = document.getElementById("short-link");
 
-lookupBtn.addEventListener("click", async () => {
+lookupForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
   const name = lookupNameEl.value.trim().toLowerCase();
   if (!name) return;
+  // Check cache first
+  const cached = nameCache.get(name);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    displayLookupResult(cached.data, name);
+    return;
+  }
+  if (lookupController) lookupController.abort();
+  lookupController = new AbortController();
   lookupResult.classList.remove("hidden");
-  lookupResult.textContent = "resolving…";
+  lookupResult.innerHTML = '<div class="skeleton h-16 rounded-lg"></div>';
   shortLink.classList.add("hidden");
   try {
-    const res = await fetch(`https://gdbx.xup.workers.dev/name/${name}`);
+    const res = await fetch(`${WORKER}/name/${name}`, { cache: "no-store", signal: lookupController.signal });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    lookupResult.textContent = JSON.stringify(data, null, 2);
-    shortLink.href = `/n/${name}`;
-    shortLink.classList.remove("hidden");
-  } catch (e) {
-    lookupResult.textContent = "✗ " + (e.message || e);
+    nameCache.set(name, { data, ts: Date.now() });
+    displayLookupResult(data, name);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    lookupResult.innerHTML = `<span class="text-rose-400">✗ ${err.message || err}</span>`;
   }
 });
 
+function displayLookupResult(data, name) {
+  lookupResult.innerHTML = `<div class="flex items-center gap-2 mb-2"><span class="mono text-amber-300 font-bold">${data.name}.gdbx</span><span class="text-slate-500">→</span><a href="${data.target}" target="_blank" rel="noopener" class="text-cyan-300 hover:underline truncate">${data.target}</a></div><div class="text-slate-500">owner: <span class="mono text-violet-300">${data.ownerPub.slice(0,24)}…</span> · <button id="copy-target" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs ml-2">Copy URL</button></div>`;
+  document.getElementById("copy-target")?.addEventListener("click", () => {
+    navigator.clipboard.writeText(data.target);
+    lookupResult.innerHTML += '<div class="text-emerald-300 text-xs mt-1">copied!</div>';
+  });
+  shortLink.href = `/n/${name}`;
+  shortLink.classList.remove("hidden");
+  shortLink.classList.add("inline-flex");
+}
+
 // Transfer
-const giftBtn = document.getElementById("gift-btn");
-giftBtn.addEventListener("click", async () => {
+const giftForm = document.getElementById("gift-form");
+giftForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
   const name = document.getElementById("gift-name").value.trim().toLowerCase();
   const newPub = document.getElementById("gift-pub").value.trim();
   const log = document.getElementById("gift-log");
-  if (!name || !newPub) { log.textContent = "name + newOwnerPub required"; return; }
-  giftBtn.disabled = true; log.textContent = "signing gift…";
+  if (!name || !newPub) { log.textContent = "name + newOwnerPub required"; log.className = "mt-3 mono text-xs text-rose-400"; return; }
+  if (!newPub.includes(".")) { log.textContent = "pubkey must be x.y format"; log.className = "mt-3 mono text-xs text-rose-400"; return; }
+  const btn = document.getElementById("gift-btn");
+  btn.disabled = true; log.textContent = "signing gift…"; log.className = "mt-3 mono text-xs text-amber-300";
   try {
     const id = await getIdentity();
+    const { GDBxNames } = await loadSDK();
     const names = new GDBxNames({ pair: { pub: id.pub, priv: id.priv }, pubkeyHex: id.pubkeyHex, addr: id.addr });
-    const gift = await names.transfer(name, { pub: id.pub, priv: id.priv }, newPub);
-    log.textContent = "✓ gift stored for " + name + ".gdbx → new owner " + newPub.slice(0,24) + "…";
-  } catch (e) { log.textContent = "✗ " + (e.message || e); }
-  finally { giftBtn.disabled = false; }
+    await names.transfer(name, { pub: id.pub, priv: id.priv }, newPub);
+    log.textContent = `✓ gift stored for ${name}.gdbx → new owner ${newPub.slice(0,24)}…`;
+    log.className = "mt-3 mono text-xs text-emerald-300";
+    nameCache.delete(name);
+  } catch (err) { log.textContent = "✗ " + (err.message || err); log.className = "mt-3 mono text-xs text-rose-400"; }
+  finally { btn.disabled = false; }
 });
 
-// Live directory
+// Live directory — parallel fetch with caching
 async function refreshNames() {
   const listEl = document.getElementById("names-list");
-  try {
-    // Direct pool read — list all tld/gdbx/* via the worker
-    // Use the community addr pattern would not see names (they live under per-user addr). Instead, we fetch via known seeded addrs + local.
-    // For now, fetch the 4 seeded names individually
-    const seeded = ["absup","docs","mesh","gunx"];
-    const rows = [];
-    for (const n of seeded) {
-      try {
-        const res = await fetch(`https://gdbx.xup.workers.dev/name/${n}`).then(r => r.json());
-        if (res.ok) rows.push(res);
-      } catch {}
+  listEl.innerHTML = '<div class="skeleton h-12 rounded-lg"></div><div class="skeleton h-12 rounded-lg mt-2"></div>';
+  const seeded = ["absup","docs","mesh","gunx"];
+  // Check cache first
+  const cachedRows = [];
+  const toFetch = [];
+  for (const n of seeded) {
+    const cached = nameCache.get(n);
+    if (cached && Date.now() - cached.ts < CACHE_TTL && cached.data?.ok) {
+      cachedRows.push(cached.data);
+    } else {
+      toFetch.push(n);
     }
+  }
+  try {
+    const results = toFetch.length > 0
+      ? await Promise.allSettled(toFetch.map(n => fetch(`${WORKER}/name/${n}`, { cache: "no-store" }).then(r => r.json().then(d => ({ ...d, _name: n })))))
+      : [];
+    const fetchedRows = results.filter(r => r.status === "fulfilled" && r.value.ok).map(r => r.value);
+    // Cache fetched
+    for (const r of fetchedRows) nameCache.set(r.name, { data: r, ts: Date.now() });
+    const rows = [...cachedRows.map(c => c.data), ...fetchedRows];
     if (rows.length === 0) {
       listEl.innerHTML = '<div class="text-xs text-slate-600">no names yet — claim one above</div>';
       return;
     }
     listEl.innerHTML = rows.map(r => `
-      <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/60 border border-slate-800">
-        <span class="mono text-sm text-amber-300">${r.name}.gdbx</span>
-        <span class="text-xs text-slate-500 truncate flex-1 mono">→ ${r.target}</span>
-        <a href="/n/${r.name}" target="_blank" class="px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white text-xs">open</a>
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/60 border border-slate-800 hover:border-amber-500/30 transition-colors">
+        <span class="mono text-sm text-amber-300 font-semibold">${r.name}.gdbx</span>
+        <span class="text-xs text-slate-500 truncate flex-1 mono" title="${r.target}">→ ${r.target}</span>
+        <a href="/n/${r.name}" target="_blank" rel="noopener" class="px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors">open</a>
+        <button data-copy="${r.target}" class="copy-btn px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Copy URL" aria-label="Copy URL for ${r.name}.gdbx"><i class="fa-regular fa-copy"></i></button>
       </div>`).join("");
+    listEl.querySelectorAll(".copy-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(btn.getAttribute("data-copy"));
+        const orig = btn.innerHTML; btn.innerHTML = "✓"; setTimeout(() => btn.innerHTML = orig, 1200);
+      });
+    });
   } catch {
-    listEl.innerHTML = '<div class="text-xs text-slate-600">failed to load</div>';
+    listEl.innerHTML = '<div class="text-xs text-rose-400">failed to load — retry</div>';
   }
 }
 document.getElementById("refresh-names").addEventListener("click", refreshNames);
 refreshNames();
+
+// Copy CLI commands
+document.getElementById("copy-cli")?.addEventListener("click", () => {
+  const txt = `gdbx identity create\ngdbx name claim myapp https://myapp.dev\ngdbx name lookup myapp`;
+  navigator.clipboard.writeText(txt);
+  const btn = document.getElementById("copy-cli");
+  const orig = btn.innerHTML; btn.textContent = "✓ Copied!"; setTimeout(() => btn.innerHTML = orig, 1500);
+});
+
+// Preload SDK on idle for instant claim (low priority)
+if ("requestIdleCallback" in window) requestIdleCallback(() => loadSDK().catch(()=>{}), { timeout: 3000 });
+else setTimeout(() => loadSDK().catch(()=>{}), 2000);
+
+// Prefetch first lookup on idle
+if ("requestIdleCallback" in window) requestIdleCallback(() => refreshNames(), { timeout: 5000 });
 </script>
 </body>
 </html>
