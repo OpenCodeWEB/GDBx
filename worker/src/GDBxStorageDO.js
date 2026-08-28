@@ -132,8 +132,22 @@ export class GDBxStorageObject {
   async fetch(request) {
     await this.initialized;
     const url = new URL(request.url);
-    if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
+    if (request.method === "OPTIONS") {
+      const origin = request.headers.get("origin") || "*";
+      const headers = {
+        ...JSON_HEADERS,
+        "access-control-allow-origin": origin,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": request.headers.get("access-control-request-headers") || "content-type, authorization",
+        "access-control-expose-headers": "set-cookie",
+      };
+      return new Response(null, { headers });
+    }
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
+    const authJson = (data, status = 200) => {
+      const origin = request.headers.get("origin") || "*";
+      return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true", "access-control-expose-headers": "set-cookie" } });
+    };
 
     try {
       /* Real-time WebSocket sync: /ws?addr=:addr (upgrade handled inside the DO hub) */
@@ -263,7 +277,7 @@ export class GDBxStorageObject {
       /* -------- Auth: Web3 SIWE + GitHub + API Keys + DSGx -------- */
       if (url.pathname === "/auth/nonce" && request.method === "GET") {
         const nonce = await Auth.createNonce(this.state.storage, ip);
-        return json({ ok: true, nonce });
+        return authJson({ ok: true, nonce });
       }
       if (url.pathname === "/auth/siwe" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
@@ -277,7 +291,7 @@ export class GDBxStorageObject {
         }
         if (!rec && !nonceStr) rec = { nonce: "dev", ts: Date.now() };
         const ok = await Auth.verifySiwe({ message: String(body.message || ""), signature: String(body.signature || ""), expectedAddr: String(body.address || "") });
-        if (!ok) return json({ error: "SIWE signature invalid" }, 403);
+        if (!ok) return authJson({ error: "SIWE signature invalid" }, 403);
         // Derive GDBx addr from Web3 address for demo: map 0x... -> GDBx addr via hash
         const web3Addr = String(body.address || "").toLowerCase();
         const gdbxAddr = `a${(await sha256Hex(web3Addr)).slice(0, 55)}`;
@@ -290,7 +304,7 @@ export class GDBxStorageObject {
         const m = cookie.match(/gdbx_session=([^;]+)/);
         const token = m ? m[1] : url.searchParams.get("token") || request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
         const sess = await Auth.verifySession(this.state.storage, token, this.env);
-        if (!sess) return json({ ok: false, error: "not authenticated" }, 401);
+        if (!sess) return authJson({ ok: false, error: "not authenticated" }, 401);
         const user = await this.state.storage.get(`auth:user:${sess.addr}`);
         const origin = request.headers.get("origin") || "*";
         const headers = { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true" };
@@ -309,15 +323,15 @@ export class GDBxStorageObject {
         const cid = this.env.GITHUB_CLIENT_ID || "Ov23liPlaceholder";
         const redirect = url.searchParams.get("redirect") || "https://gdbx.pages.dev";
         const ghUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(cid)}&state=${encodeURIComponent(state)}&scope=read:user%20user:email&redirect_uri=${encodeURIComponent(`https://gdbx.xup.workers.dev/auth/github/callback?redirect=${encodeURIComponent(redirect)}`)}`;
-        return json({ ok: true, url: ghUrl, state });
+        return authJson({ ok: true, url: ghUrl, state });
       }
       if (url.pathname === "/auth/github/callback" && request.method === "GET") {
         const code = url.searchParams.get("code") || "";
         const state = url.searchParams.get("state") || "";
         const redirect = url.searchParams.get("redirect") || "https://gdbx.pages.dev";
-        if (!code || !state) return json({ error: "missing code/state" }, 400);
+        if (!code || !state) return authJson({ error: "missing code/state" }, 400);
         const rec = await this.state.storage.get(`auth:gh:state:${state}`);
-        if (!rec || Date.now() - rec.ts > 10 * 60 * 1000) return json({ error: "invalid state" }, 400);
+        if (!rec || Date.now() - rec.ts > 10 * 60 * 1000) return authJson({ error: "invalid state" }, 400);
         await this.state.storage.delete(`auth:gh:state:${state}`);
         // Exchange code -> token (if secrets configured, else mock)
         let ghUser = { login: `dev_${state.slice(0, 6)}`, id: 0, avatar_url: "" };
@@ -356,26 +370,26 @@ export class GDBxStorageObject {
         const m = cookie.match(/gdbx_session=([^;]+)/);
         const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
         const sess = await Auth.verifySession(this.state.storage, token, this.env);
-        if (!sess) return json({ error: "not authenticated" }, 401);
+        if (!sess) return authJson({ error: "not authenticated" }, 401);
         const quota = await Auth.canCreateApiKey(this.state.storage, sess.addr);
-        if (!quota.ok) return json({ error: quota.error, limit: quota.limit, count: quota.count }, 429);
+        if (!quota.ok) return authJson({ error: quota.error, limit: quota.limit, count: quota.count }, 429);
         const body = await request.json().catch(() => ({}));
         const { raw, prefix, hash } = await Auth.createApiKey(this.state.storage, sess.addr);
         if (body.label) { const rec = await this.state.storage.get(`auth:apikey:${hash}`); rec.label = String(body.label).slice(0, 64); await this.state.storage.put(`auth:apikey:${hash}`, rec); }
-        return json({ ok: true, key: raw, prefix, hash, quota: { limit: quota.unlimited ? "unlimited" : quota.limit, count: quota.count + 1, unlimited: !!quota.unlimited } });
+        return authJson({ ok: true, key: raw, prefix, hash, quota: { limit: quota.unlimited ? "unlimited" : quota.limit, count: quota.count + 1, unlimited: !!quota.unlimited } });
       }
       if (url.pathname === "/apikey" && request.method === "GET") {
         const cookie = request.headers.get("cookie") || "";
         const m = cookie.match(/gdbx_session=([^;]+)/);
         const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
         const sess = await Auth.verifySession(this.state.storage, token, this.env);
-        if (!sess) return json({ error: "not authenticated" }, 401);
+        if (!sess) return authJson({ error: "not authenticated" }, 401);
         const user = await this.state.storage.get(`auth:user:${sess.addr}`);
         const hashes = user?.apikeyHashes || [];
         const keys = [];
         for (const h of hashes) { const rec = await this.state.storage.get(`auth:apikey:${h}`); if (rec) keys.push({ prefix: rec.prefix, hash: rec.hash, label: rec.label || "", createdAt: rec.createdAt }); }
         const quota = await Auth.canCreateApiKey(this.state.storage, sess.addr);
-        return json({ ok: true, keys, quota });
+        return authJson({ ok: true, keys, quota });
       }
       if (url.pathname.startsWith("/apikey/") && request.method === "DELETE") {
         const hash = url.pathname.slice("/apikey/".length);
@@ -383,55 +397,51 @@ export class GDBxStorageObject {
         const m = cookie.match(/gdbx_session=([^;]+)/);
         const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
         const sess = await Auth.verifySession(this.state.storage, token, this.env);
-        if (!sess) return json({ error: "not authenticated" }, 401);
+        if (!sess) return authJson({ error: "not authenticated" }, 401);
         const rec = await this.state.storage.get(`auth:apikey:${hash}`);
-        if (!rec || rec.addr !== sess.addr) return json({ error: "not found" }, 404);
+        if (!rec || rec.addr !== sess.addr) return authJson({ error: "not found" }, 404);
         await this.state.storage.delete(`auth:apikey:${hash}`);
         const user = await this.state.storage.get(`auth:user:${sess.addr}`);
         if (user) { user.apikeyHashes = (user.apikeyHashes || []).filter((h) => h !== hash); await this.state.storage.put(`auth:user:${sess.addr}`, user); }
-        return json({ ok: true });
+        return authJson({ ok: true });
       }
       if (url.pathname === "/apikey/verify" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
         const key = String(body.key || request.headers.get("x-gdbx-key") || "");
-        if (!key.startsWith("GDBx") || !key.endsWith("AB")) return json({ ok: false, error: "invalid format" }, 400);
+        if (!key.startsWith("GDBx") || !key.endsWith("AB")) return authJson({ ok: false, error: "invalid format" }, 400);
         const hash = await sha256Hex(key);
         const rec = await this.state.storage.get(`auth:apikey:${hash}`);
-        if (!rec) return json({ ok: false, error: "unknown key" }, 404);
-        return json({ ok: true, prefix: rec.prefix, addr: rec.addr });
+        if (!rec) return authJson({ ok: false, error: "unknown key" }, 404);
+        return authJson({ ok: true, prefix: rec.prefix, addr: rec.addr });
       }
       if (url.pathname.startsWith("/dsgx/route/") && request.method === "GET") {
         const login = url.pathname.slice("/dsgx/route/".length).toLowerCase();
         const rec = await this.state.storage.get(`dsgx:route:${login}`);
-        if (!rec) return json({ ok: false, error: "not found" }, 404);
-        return json({ ok: true, route: rec });
+        if (!rec) return authJson({ ok: false, error: "not found" }, 404);
+        return authJson({ ok: true, route: rec });
       }
       if (url.pathname === "/gdmx/create-checkout" && (request.method === "GET" || request.method === "POST")) {
-        const to = url.searchParams.get("to") || (await request.json().catch(()=>({}))).to || "";
-        const amount = url.searchParams.get("amount") || "5";
-        // Mock Stripe URL for demo; production uses STRIPE_SECRET_KEY + stripe.checkout.sessions.create
-        if (this.env.STRIPE_SECRET_KEY) {
-          try {
-            const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-              method: "POST",
-              headers: { authorization: `Bearer ${this.env.STRIPE_SECRET_KEY}`, "content-type": "application/x-www-form-urlencoded" },
-              body: `success_url=${encodeURIComponent(`https://dsgx.pages.dev/success?to=${encodeURIComponent(to)}`)}&cancel_url=${encodeURIComponent(`https://dsgx.pages.dev/cancel`)}&mode=payment&line_items[0][price_data][currency]=usd&line_items[0][price_data][product_data][name]=Support+${encodeURIComponent(to)}&line_items[0][price_data][unit_amount]=${Math.round(Number(amount)*100)}&line_items[0][quantity]=1`,
-            });
-            const sj = await stripeRes.json();
-            if (sj.url) return json({ ok: true, url: sj.url, mock: false });
-          } catch {}
-        }
-        return json({ ok: true, url: `https://checkout.stripe.com/c/pay/mock_${to}_${amount}_${Date.now()}`, mock: true, to, amount });
+        const bodyJson = url.searchParams.get("to") ? {} : await request.json().catch(()=>({}));
+        const to = url.searchParams.get("to") || bodyJson.to || "";
+        const amount = url.searchParams.get("amount") || bodyJson.amount || "5";
+        const preferred = url.searchParams.get("provider") || bodyJson.provider || "";
+        const origin = request.headers.get("origin") || "https://dsgx.pages.dev";
+        const { createCheckoutWithFallback, listProviders } = await import("./gdmx-providers.js");
+        const res = await createCheckoutWithFallback({ to, amount: String(amount), env: this.env, origin, preferred });
+        return authJson({ ok: true, url: res.url, provider: res.provider, mock: !!res.mock, to, amount, providers: listProviders(this.env) });
+      }
+      if (url.pathname === "/gdmx/providers" && request.method === "GET") {
+        const { listProviders } = await import("./gdmx-providers.js");
+        return authJson({ ok: true, providers: listProviders(this.env) });
       }
       if (url.pathname === "/gdmx/webhook" && request.method === "POST") {
-        // Stripe webhook: verify signature if STRIPE_WEBHOOK_SECRET set, then record payout
         const body = await request.text();
-        return json({ ok: true, received: true, mock: true });
+        return authJson({ ok: true, received: true, mock: true });
       }
 
       /* Hybrid mesh relay: Nostr kind-23124 event ingest */
       if (url.pathname === "/relay" && request.method === "POST") {
-        if (!this.rateLimit(ip, 300, 60000)) return json({ error: "rate limited" }, 429);
+        if (!this.rateLimit(ip, 300, 60000)) return authJson({ error: "rate limited" }, 429);
         return await this.relayEvent(await request.json());
       }
 
