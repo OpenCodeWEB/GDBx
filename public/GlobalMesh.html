@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -458,5 +458,5 @@ probeLatency().then(l => $("st-latency").textContent = l);
 setInterval(async () => { const l = await probeLatency(); $("st-latency").textContent = l; }, 15000);
 connectFeed();
 </script>
-</body>
+<script type="module" src="/js/gdbx-auth.js"></script></body>
 </html>

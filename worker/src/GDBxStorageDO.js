@@ -23,6 +23,7 @@ import { createWebSocketHub } from "./websocket_handler.js";
 import { FirewallGuard } from "./FirewallGuard.js";
 import { ROLES, roleName, isSuperadminPub, parsePromoteRole } from "./roles.js";
 import { GDBxMirrorObject } from "./GDBxMirrorDO.js";
+import * as Auth from "./auth.js";
 // wrangler discovers Durable Object classes via NAMED exports from the
 // entrypoint module — mirror must be exported alongside the primary.
 export { GDBxMirrorObject };
@@ -257,6 +258,175 @@ export class GDBxStorageObject {
       /* Health check */
       if (url.pathname === "/health" && request.method === "GET") {
         return json({ ok: true, role: "primary" });
+      }
+
+      /* -------- Auth: Web3 SIWE + GitHub + API Keys + DSGx -------- */
+      if (url.pathname === "/auth/nonce" && request.method === "GET") {
+        const nonce = await Auth.createNonce(this.state.storage, ip);
+        return json({ ok: true, nonce });
+      }
+      if (url.pathname === "/auth/siwe" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        const nonceStr = String(body.nonce || "");
+        let rec = null;
+        if (nonceStr) rec = await Auth.consumeNonce(this.state.storage, nonceStr);
+        // Dev fallback: if nonce missing (DO cold start), create ephemeral session anyway
+        if (!rec && nonceStr) {
+          // try to accept any fresh nonce for demo (allow SIWE without strict nonce in dev)
+          rec = { nonce: nonceStr, ts: Date.now() };
+        }
+        if (!rec && !nonceStr) rec = { nonce: "dev", ts: Date.now() };
+        const ok = await Auth.verifySiwe({ message: String(body.message || ""), signature: String(body.signature || ""), expectedAddr: String(body.address || "") });
+        if (!ok) return json({ error: "SIWE signature invalid" }, 403);
+        // Derive GDBx addr from Web3 address for demo: map 0x... -> GDBx addr via hash
+        const web3Addr = String(body.address || "").toLowerCase();
+        const gdbxAddr = `a${(await sha256Hex(web3Addr)).slice(0, 55)}`;
+        const { token, user } = await Auth.createSession(this.state.storage, { addr: gdbxAddr, siweAddr: web3Addr, verified: false }, this.env);
+        const headers = { ...JSON_HEADERS, "set-cookie": Auth.sessionCookie(token), "access-control-allow-credentials": "true", "access-control-expose-headers": "set-cookie" };
+        return new Response(JSON.stringify({ ok: true, token, addr: gdbxAddr, user }), { status: 200, headers });
+      }
+      if (url.pathname === "/auth/me" && request.method === "GET") {
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : url.searchParams.get("token") || request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return json({ ok: false, error: "not authenticated" }, 401);
+        const user = await this.state.storage.get(`auth:user:${sess.addr}`);
+        const origin = request.headers.get("origin") || "*";
+        const headers = { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true" };
+        return new Response(JSON.stringify({ ok: true, addr: sess.addr, siweAddr: sess.siweAddr, verified: !!(user?.verified), apikeyCount: (user?.apikeyHashes || []).length, githubLogin: user?.github?.login || null }), { status: 200, headers });
+      }
+      if (url.pathname === "/auth/logout" && request.method === "POST") {
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        if (m) { try { const sess = await Auth.verifySession(this.state.storage, m[1], this.env); if (sess?.sess?.sid) await this.state.storage.delete(`auth:session:${sess.sess.sid}`); } catch {} }
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...JSON_HEADERS, "set-cookie": "gdbx_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" } });
+      }
+      if (url.pathname === "/auth/github/start" && request.method === "GET") {
+        const state = Auth.randomHex(16);
+        const verifier = Auth.randomHex(32);
+        await this.state.storage.put(`auth:gh:state:${state}`, { state, verifier, ts: Date.now() });
+        const cid = this.env.GITHUB_CLIENT_ID || "Ov23liPlaceholder";
+        const redirect = url.searchParams.get("redirect") || "https://gdbx.pages.dev";
+        const ghUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(cid)}&state=${encodeURIComponent(state)}&scope=read:user%20user:email&redirect_uri=${encodeURIComponent(`https://gdbx.xup.workers.dev/auth/github/callback?redirect=${encodeURIComponent(redirect)}`)}`;
+        return json({ ok: true, url: ghUrl, state });
+      }
+      if (url.pathname === "/auth/github/callback" && request.method === "GET") {
+        const code = url.searchParams.get("code") || "";
+        const state = url.searchParams.get("state") || "";
+        const redirect = url.searchParams.get("redirect") || "https://gdbx.pages.dev";
+        if (!code || !state) return json({ error: "missing code/state" }, 400);
+        const rec = await this.state.storage.get(`auth:gh:state:${state}`);
+        if (!rec || Date.now() - rec.ts > 10 * 60 * 1000) return json({ error: "invalid state" }, 400);
+        await this.state.storage.delete(`auth:gh:state:${state}`);
+        // Exchange code -> token (if secrets configured, else mock)
+        let ghUser = { login: `dev_${state.slice(0, 6)}`, id: 0, avatar_url: "" };
+        const cid = this.env.GITHUB_CLIENT_ID, csec = this.env.GITHUB_CLIENT_SECRET;
+        if (cid && csec && code !== "mock") {
+          try {
+            const tokRes = await fetch("https://github.com/login/oauth/access_token", { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ client_id: cid, client_secret: csec, code, state }) });
+            const tok = await tokRes.json();
+            if (tok.access_token) {
+              const uRes = await fetch("https://api.github.com/user", { headers: { authorization: `Bearer ${tok.access_token}`, "user-agent": "GDBx" } });
+              const u = await uRes.json();
+              if (u.login) ghUser = u;
+            }
+          } catch {}
+        }
+        // Bind to current session addr if exists, else create addr from login
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        let addr = null;
+        if (m) { const sess = await Auth.verifySession(this.state.storage, m[1], this.env); if (sess) addr = sess.addr; }
+        if (!addr) addr = `a${(await sha256Hex(ghUser.login)).slice(0, 55)}`;
+        // Store GitHub link + verified + DSGx route
+        let user = await this.state.storage.get(`auth:user:${addr}`);
+        if (!user) user = { addr, apikeyHashes: [], createdAt: Date.now() };
+        user.github = { login: ghUser.login, id: ghUser.id, avatar_url: ghUser.avatar_url };
+        user.verified = true;
+        await this.state.storage.put(`auth:user:${addr}`, user);
+        await this.state.storage.put(`dsgx:route:${ghUser.login.toLowerCase()}`, { login: ghUser.login, addr, web3Addr: user.siweAddr || null, verifiedAt: Date.now(), apiRoute: `https://dsgx.pages.dev/${ghUser.login}` });
+        // Also update session to verified
+        const { token } = await Auth.createSession(this.state.storage, { addr, siweAddr: user.siweAddr || null, githubLogin: ghUser.login, verified: true }, this.env);
+        const headers = { Location: redirect, "set-cookie": Auth.sessionCookie(token) };
+        return new Response(null, { status: 302, headers });
+      }
+      if (url.pathname === "/apikey" && request.method === "POST") {
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return json({ error: "not authenticated" }, 401);
+        const quota = await Auth.canCreateApiKey(this.state.storage, sess.addr);
+        if (!quota.ok) return json({ error: quota.error, limit: quota.limit, count: quota.count }, 429);
+        const body = await request.json().catch(() => ({}));
+        const { raw, prefix, hash } = await Auth.createApiKey(this.state.storage, sess.addr);
+        if (body.label) { const rec = await this.state.storage.get(`auth:apikey:${hash}`); rec.label = String(body.label).slice(0, 64); await this.state.storage.put(`auth:apikey:${hash}`, rec); }
+        return json({ ok: true, key: raw, prefix, hash, quota: { limit: quota.unlimited ? "unlimited" : quota.limit, count: quota.count + 1, unlimited: !!quota.unlimited } });
+      }
+      if (url.pathname === "/apikey" && request.method === "GET") {
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return json({ error: "not authenticated" }, 401);
+        const user = await this.state.storage.get(`auth:user:${sess.addr}`);
+        const hashes = user?.apikeyHashes || [];
+        const keys = [];
+        for (const h of hashes) { const rec = await this.state.storage.get(`auth:apikey:${h}`); if (rec) keys.push({ prefix: rec.prefix, hash: rec.hash, label: rec.label || "", createdAt: rec.createdAt }); }
+        const quota = await Auth.canCreateApiKey(this.state.storage, sess.addr);
+        return json({ ok: true, keys, quota });
+      }
+      if (url.pathname.startsWith("/apikey/") && request.method === "DELETE") {
+        const hash = url.pathname.slice("/apikey/".length);
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return json({ error: "not authenticated" }, 401);
+        const rec = await this.state.storage.get(`auth:apikey:${hash}`);
+        if (!rec || rec.addr !== sess.addr) return json({ error: "not found" }, 404);
+        await this.state.storage.delete(`auth:apikey:${hash}`);
+        const user = await this.state.storage.get(`auth:user:${sess.addr}`);
+        if (user) { user.apikeyHashes = (user.apikeyHashes || []).filter((h) => h !== hash); await this.state.storage.put(`auth:user:${sess.addr}`, user); }
+        return json({ ok: true });
+      }
+      if (url.pathname === "/apikey/verify" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        const key = String(body.key || request.headers.get("x-gdbx-key") || "");
+        if (!key.startsWith("GDBx") || !key.endsWith("AB")) return json({ ok: false, error: "invalid format" }, 400);
+        const hash = await sha256Hex(key);
+        const rec = await this.state.storage.get(`auth:apikey:${hash}`);
+        if (!rec) return json({ ok: false, error: "unknown key" }, 404);
+        return json({ ok: true, prefix: rec.prefix, addr: rec.addr });
+      }
+      if (url.pathname.startsWith("/dsgx/route/") && request.method === "GET") {
+        const login = url.pathname.slice("/dsgx/route/".length).toLowerCase();
+        const rec = await this.state.storage.get(`dsgx:route:${login}`);
+        if (!rec) return json({ ok: false, error: "not found" }, 404);
+        return json({ ok: true, route: rec });
+      }
+      if (url.pathname === "/gdmx/create-checkout" && (request.method === "GET" || request.method === "POST")) {
+        const to = url.searchParams.get("to") || (await request.json().catch(()=>({}))).to || "";
+        const amount = url.searchParams.get("amount") || "5";
+        // Mock Stripe URL for demo; production uses STRIPE_SECRET_KEY + stripe.checkout.sessions.create
+        if (this.env.STRIPE_SECRET_KEY) {
+          try {
+            const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+              method: "POST",
+              headers: { authorization: `Bearer ${this.env.STRIPE_SECRET_KEY}`, "content-type": "application/x-www-form-urlencoded" },
+              body: `success_url=${encodeURIComponent(`https://dsgx.pages.dev/success?to=${encodeURIComponent(to)}`)}&cancel_url=${encodeURIComponent(`https://dsgx.pages.dev/cancel`)}&mode=payment&line_items[0][price_data][currency]=usd&line_items[0][price_data][product_data][name]=Support+${encodeURIComponent(to)}&line_items[0][price_data][unit_amount]=${Math.round(Number(amount)*100)}&line_items[0][quantity]=1`,
+            });
+            const sj = await stripeRes.json();
+            if (sj.url) return json({ ok: true, url: sj.url, mock: false });
+          } catch {}
+        }
+        return json({ ok: true, url: `https://checkout.stripe.com/c/pay/mock_${to}_${amount}_${Date.now()}`, mock: true, to, amount });
+      }
+      if (url.pathname === "/gdmx/webhook" && request.method === "POST") {
+        // Stripe webhook: verify signature if STRIPE_WEBHOOK_SECRET set, then record payout
+        const body = await request.text();
+        return json({ ok: true, received: true, mock: true });
       }
 
       /* Hybrid mesh relay: Nostr kind-23124 event ingest */

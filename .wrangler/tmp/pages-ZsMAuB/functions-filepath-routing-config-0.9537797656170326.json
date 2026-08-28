@@ -1,0 +1,37 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/v1/:path*",
+      "mountPath": "/api/v1",
+      "method": "",
+      "module": [
+        "api/v1/[[path]].js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/imgbb",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/imgbb.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/n/:name",
+      "mountPath": "/n",
+      "method": "GET",
+      "module": [
+        "n/[name].js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/gunx",
+      "mountPath": "/",
+      "method": "",
+      "module": [
+        "gunx.js:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

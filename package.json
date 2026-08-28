@@ -13,6 +13,7 @@
     "pages:dev": "wrangler pages dev public --port 8788"
   },
   "dependencies": {
+    "@noble/curves": "^1.8.0",
     "@noble/hashes": "1.8.0"
   },
   "devDependencies": {
