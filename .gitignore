@@ -7,3 +7,8 @@ worker/.dev.vars
 .worker-configuration.d.ts
 dist/
 _gun_child_test.mjs
+
+public/vendor
+public/js/bip39-wordlist.txt
+.wrangler
+
