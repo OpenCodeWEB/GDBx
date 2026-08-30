@@ -8,7 +8,7 @@ let _session = null;
 
 function getToken() { return localStorage.getItem("gdbx_token") || ""; }
 function setToken(t) { if (t) localStorage.setItem("gdbx_token", t); }
-async function fetchMe() {
+export async function fetchMe() {
   const tok = getToken();
   const headers = tok ? { authorization: `Bearer ${tok}` } : {};
   const r = await fetch(`${WORKER}/auth/me`, { headers, credentials: "include" });

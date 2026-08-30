@@ -3,7 +3,57 @@
 <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>body{font-family:ui-sans-serif,system-ui,sans-serif}.mono{font-family:ui-monospace,monospace}</style>
 </head><body class="bg-slate-950 text-slate-100 min-h-screen">
-<header class="border-b border-slate-800 bg-slate-950/80 sticky top-0"><div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"><a href="/" class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950"><i class="fa-solid fa-gauge"></i></div><span class="font-extrabold text-xl bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">Dashboard</span></a><nav class="flex items-center gap-3 text-sm"><a href="/" class="hover:text-cyan-300">Home</a><a href="/TLD" class="hover:text-amber-300">TLD</a><button id="logout-btn" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"><i class="fa-solid fa-right-from-bracket mr-1"></i>Logout</button></nav></div></header>
+<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-3 shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950"><i class="fa-solid fa-database text-sm"></i></div>
+      <div class="hidden sm:block">
+        <div class="font-extrabold text-lg leading-none tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">GDBx</div>
+        <div class="flex items-center gap-1.5 -mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-xs mono text-slate-500">v1.4.0 · Online</span></div>
+      </div>
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
+      <a href="/GlobalMesh" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-cyan-300 transition-colors">Mesh</a>
+      <a href="/Api" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-emerald-300 transition-colors">API</a>
+      <a href="/TLD" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-amber-300 transition-colors">TLD</a>
+      <a href="/Dashboard" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-cyan-300 transition-colors">Dashboard</a>
+      <a href="/RoadMap" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-rose-300 transition-colors">Roadmap</a>
+      <div class="relative group">
+        <button class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-violet-300 flex items-center gap-1">More <i class="fa-solid fa-chevron-down text-xs"></i></button>
+        <div class="absolute right-0 top-full mt-2 w-48 rounded-xl border border-slate-700 bg-slate-900 shadow-xl p-1 hidden group-hover:block z-50">
+          <a href="#protocol" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">Protocol</a>
+          <a href="#transports" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">Transports</a>
+          <a href="#playground" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">Playground</a>
+          <a href="#ftp" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">FTP</a>
+          <a href="#sandbox" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">Sandbox</a>
+          <a href="#security" class="block px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 text-sm">Security</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hidden sm:inline-flex w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 items-center justify-center text-slate-400 hover:text-white"><i class="fa-brands fa-github text-sm"></i></a>
+      <span id="auth-bar" class="flex items-center gap-2"></span>
+      <button id="mobile-menu-btn" class="lg:hidden w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400"><i class="fa-solid fa-bars text-sm"></i></button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-800 bg-slate-900">
+    <div class="px-4 py-3 space-y-1">
+      <a href="/GlobalMesh" class="block px-3 py-2 rounded-lg bg-slate-800 text-cyan-300">Global Mesh</a>
+      <a href="/Api" class="block px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300">API</a>
+      <a href="/TLD" class="block px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300">TLD</a>
+      <a href="/Dashboard" class="block px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300">Dashboard</a>
+      <a href="/RoadMap" class="block px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300">Roadmap</a>
+      <div class="pt-2 border-t border-slate-800 grid grid-cols-2 gap-1 text-sm">
+        <a href="#protocol" class="px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">Protocol</a>
+        <a href="#playground" class="px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">Playground</a>
+        <a href="#ftp" class="px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">FTP</a>
+        <a href="#security" class="px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">Security</a>
+      </div>
+    </div>
+  </div>
+</header>
 <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
 <div id="not-logged" class="hidden text-center py-16"><i class="fa-solid fa-lock text-4xl text-slate-600"></i><h2 class="text-2xl font-bold mt-4">Not logged in</h2><p class="text-slate-400 mt-2">Connect wallet via seed or MetaMask to view dashboard.</p><button onclick="location.href='/'" class="mt-6 px-6 py-3 rounded-xl bg-violet-600 text-white font-bold">Go to Home → Connect</button></div>
 <div id="dashboard" class="hidden space-y-6">
@@ -15,9 +65,13 @@
 </div>
 </main>
 <script type="module">
-import { fetchMe } from "/js/gdbx-auth.js";
 const WORKER = "https://gdbx.xup.workers.dev";
 function getToken(){ return localStorage.getItem("gdbx_token")||""; }
+async function fetchMe(){
+  const tok=getToken();
+  const r=await fetch(`${WORKER}/auth/me`,{headers: tok?{authorization:`Bearer ${tok}`}:{}});
+  return r.json().catch(()=>({ok:false}));
+}
 async function load(){
   const me = await fetchMe();
   if (!me.ok) { document.getElementById("not-logged").classList.remove("hidden"); return; }
@@ -68,4 +122,6 @@ document.getElementById("logout-btn")?.addEventListener("click", async()=>{
 });
 load();
 </script>
-</body></html>
+<script>document.getElementById('mobile-menu-btn')?.addEventListener('click',()=>document.getElementById('mobile-menu')?.classList.toggle('hidden'));</script></body></html>
+
+<!-- deploy 2026-08-30T08:02:58 -->
