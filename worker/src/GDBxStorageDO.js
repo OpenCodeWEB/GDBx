@@ -405,6 +405,18 @@ export class GDBxStorageObject {
         if (user) { user.apikeyHashes = (user.apikeyHashes || []).filter((h) => h !== hash); await this.state.storage.put(`auth:user:${sess.addr}`, user); }
         return authJson({ ok: true });
       }
+      if (url.pathname.endsWith("/raw") && url.pathname.startsWith("/apikey/") && request.method === "GET") {
+        const hash = url.pathname.slice("/apikey/".length, -4);
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return authJson({ error: "not authenticated" }, 401);
+        const rec = await this.state.storage.get(`auth:apikey:${hash}`);
+        if (!rec || rec.addr !== sess.addr) return authJson({ error: "not found" }, 404);
+        if (!rec.raw) return authJson({ ok: false, error: "Raw key not available (created before update) — revoke and create new" }, 404);
+        return authJson({ ok: true, key: rec.raw, prefix: rec.prefix, hash: rec.hash });
+      }
       if (url.pathname === "/apikey/verify" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
         const key = String(body.key || request.headers.get("x-gdbx-key") || "");

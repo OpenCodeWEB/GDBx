@@ -128,10 +128,9 @@ export function sessionCookie(token) {
 // ---- API Keys ----
 export async function createApiKey(storage, addr) {
   const raw = `GDBx${randomHex(24)}AB`;
-  // checksum: blake3(raw) first byte as hex suffix already AB, store hash
   const hash = await sha256Hex(raw);
   const prefix = `${raw.slice(0, 8)}****${raw.slice(-2)}`;
-  await storage.put(`auth:apikey:${hash}`, { hash, prefix, rawPrefix: raw.slice(0, 8), addr, label: "", createdAt: Date.now() });
+  await storage.put(`auth:apikey:${hash}`, { hash, prefix, raw, rawPrefix: raw.slice(0, 8), addr, label: "", createdAt: Date.now() });
   const userKey = `auth:user:${addr}`;
   let user = await storage.get(userKey);
   if (!user) user = { addr, apikeyHashes: [], verified: false, createdAt: Date.now() };

@@ -83,7 +83,14 @@ async function load(){
   const r = await fetch(`${WORKER}/apikey`, { headers: getToken()?{authorization:`Bearer ${getToken()}`}:{} });
   const j = await r.json();
   document.getElementById("key-quota").textContent = j.quota ? `(${j.keys.length}/${j.quota.unlimited?"unlimited":j.quota.limit})` : "";
-  document.getElementById("key-list").innerHTML = j.keys?.length ? j.keys.map(k=> `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800"><span class="mono text-xs text-amber-300">${k.prefix}</span><span class="text-xs text-slate-500">${k.label||""}</span><button data-hash="${k.hash}" class="revoke ml-auto px-2 py-1 rounded bg-rose-600 text-white text-xs">Revoke</button></div>`).join("") : "<div class='text-xs text-slate-600'>No keys</div>";
+  document.getElementById("key-list").innerHTML = j.keys?.length ? j.keys.map(k=> `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800"><span class="mono text-xs text-amber-300">${k.prefix}</span><span class="text-xs text-slate-500">${k.label||""}</span><button data-copy="${k.hash}" class="copy-key px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs">Copy</button><button data-hash="${k.hash}" class="revoke px-2 py-1 rounded bg-rose-600 text-white text-xs">Revoke</button></div>`).join("") : "<div class='text-xs text-slate-600'>No keys</div>";
+  document.querySelectorAll(".copy-key").forEach(b=> b.onclick=async()=>{
+    const hash=b.dataset.copy;
+    const rr=await fetch(`${WORKER}/apikey/${hash}/raw`,{headers:getToken()?{authorization:`Bearer ${getToken()}`}:{}});
+    const jj=await rr.json();
+    if(jj.ok && jj.key){ await navigator.clipboard.writeText(jj.key); b.textContent="✓ Copied"; setTimeout(()=>b.textContent="Copy",1200); document.getElementById("key-result").innerHTML=`<span class="text-emerald-300">✓ Copied ${jj.prefix}</span>`; }
+    else { document.getElementById("key-result").innerHTML=`<span class="text-amber-300">⚠ ${jj.error||"Cannot copy"}</span> — <span class="text-slate-400">Revoke and create new key (new keys are copyable after reload)</span>`; }
+  });
   document.querySelectorAll(".revoke").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/apikey/${b.dataset.hash}`,{method:"DELETE",headers:getToken()?{authorization:`Bearer ${getToken()}`}:{}}); load(); });
   // DSGx profile
   if (me.githubLogin) {
@@ -125,3 +132,5 @@ load();
 <script>document.getElementById('mobile-menu-btn')?.addEventListener('click',()=>document.getElementById('mobile-menu')?.classList.toggle('hidden'));</script></body></html>
 
 <!-- deploy 2026-08-30T08:02:58 -->
+
+<!-- copy fix 14:18:22 -->
