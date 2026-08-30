@@ -143,9 +143,8 @@ function renderAuth() {
   const bar = document.getElementById("auth-bar");
   if (!bar) return;
   if (!_session || !_session.ok) {
-    bar.innerHTML = `<button id="btn-connect" class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold">Connect Wallet</button> <button id="btn-github" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Verify GitHub</button>`;
+    bar.innerHTML = `<button id="btn-connect" class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold">Connect Wallet</button>`;
     bar.querySelector("#btn-connect")?.addEventListener("click", connectWallet);
-    bar.querySelector("#btn-github")?.addEventListener("click", connectGithub);
     return;
   }
   const { addr, siweAddr, verified, apikeyCount, githubLogin } = _session;
