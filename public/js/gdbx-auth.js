@@ -26,20 +26,88 @@ function siweMessage({ domain, address, nonce }) {
 }
 
 export async function connectWallet() {
-  if (!window.ethereum) { alert("No wallet found — install MetaMask"); return null; }
+  openWalletModal();
+  return null;
+}
+async function connectWithMetamask() {
+  if (!window.ethereum) { alert("No wallet found — install MetaMask or use Seed"); return null; }
   const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
   const nonce = await fetchNonce();
   const msg = siweMessage({ domain: location.host, address: addr, nonce });
   const sig = await window.ethereum.request({ method: "personal_sign", params: [msg, addr] });
   const r = await fetch(`${WORKER}/auth/siwe`, {
-    method: "POST", headers: { "content-type": "application/json" }, credentials: "include",
+    method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ address: addr, message: msg, signature: sig, nonce }),
   });
   const j = await r.json();
-  if (j.ok) { setToken(j.token); _session = { ok: true, addr: j.addr, siweAddr: addr, verified: false }; renderAuth(); return j; }
+  if (j.ok) { setToken(j.token); _session = { ok: true, addr: j.addr, siweAddr: addr, verified: false }; closeWalletModal(); renderAuth(); return j; }
   alert(j.error || "SIWE failed");
   return null;
 }
+async function connectWithSeed(mnemonic) {
+  const { mnemonicToAddress, signWithMnemonic, validateMnemonic } = await import("/js/seed-wallet.js");
+  if (!validateMnemonic(mnemonic)) { alert("Invalid seed — must be 12 words from BIP39"); return null; }
+  const address = await mnemonicToAddress(mnemonic);
+  const nonce = await fetchNonce();
+  const msg = siweMessage({ domain: location.host, address, nonce });
+  const sig = await signWithMnemonic(mnemonic, msg);
+  const r = await fetch(`${WORKER}/auth/siwe`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ address, message: msg, signature: sig, nonce }),
+  });
+  const j = await r.json();
+  if (j.ok) {
+    localStorage.setItem("gdbx_seed_addr", address);
+    setToken(j.token); _session = { ok: true, addr: j.addr, siweAddr: address, verified: false }; closeWalletModal(); renderAuth(); return j;
+  }
+  alert(j.error || "Seed SIWE failed");
+  return null;
+}
+
+function openWalletModal() {
+  if (document.getElementById("wallet-modal")) return;
+  const html = `<div id="wallet-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur flex items-center justify-center z-50 p-4"><div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden">
+    <div class="p-6 border-b border-slate-800"><h3 class="font-bold text-lg">Connect Wallet</h3><p class="text-xs text-slate-500 mt-1">Use MetaMask or seed phrase (BIP39). Seed is never sent — only signature.</p></div>
+    <div class="p-6 space-y-3">
+      <button id="wm-metamask" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-violet-500/50 text-left"><i class="fa-brands fa-ethereum text-violet-400 text-xl"></i><div><div class="font-semibold text-sm">MetaMask</div><div class="text-xs text-slate-500">Browser extension</div></div><span class="ml-auto text-xs text-slate-500">→</span></button>
+      <div class="flex items-center gap-2 text-xs text-slate-600"><span class="flex-1 h-px bg-slate-700"></span>or seed phrase<span class="flex-1 h-px bg-slate-700"></span></div>
+      <div class="flex gap-2 text-xs">
+        <button id="wm-tab-generate" class="flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold">Generate New Seed</button>
+        <button id="wm-tab-import" class="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300">Use Existing Seed</button>
+      </div>
+      <div id="wm-generate" class="space-y-3">
+        <div id="wm-words" class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 mono text-xs"></div>
+        <div class="flex gap-2"><button id="wm-gen" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Generate 12 words</button><button id="wm-copy" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Copy</button><button id="wm-hide" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Hide</button></div>
+        <button id="wm-login-gen" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold">Login with this seed</button>
+        <p class="text-xs text-amber-300">⚠ Save these 12 words — they ARE your wallet. Never share.</p>
+      </div>
+      <div id="wm-import" class="space-y-3 hidden">
+        <textarea id="wm-seed-input" placeholder="Enter 12-word seed phrase (space separated)" class="w-full h-20 mono text-xs bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200"></textarea>
+        <button id="wm-login-import" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold">Login with seed</button>
+      </div>
+    </div>
+    <div class="p-4 border-t border-slate-800 flex justify-between"><button id="wm-close" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Close</button><span class="text-xs text-slate-600 mono">BIP39 · BIP44 m/44'/60'/0'/0/0</span></div>
+  </div></div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  document.getElementById("wm-close").onclick = closeWalletModal;
+  document.getElementById("wm-metamask").onclick = connectWithMetamask;
+  document.getElementById("wm-tab-generate").onclick = () => { document.getElementById("wm-generate").classList.remove("hidden"); document.getElementById("wm-import").classList.add("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; };
+  document.getElementById("wm-tab-import").onclick = () => { document.getElementById("wm-generate").classList.add("hidden"); document.getElementById("wm-import").classList.remove("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; };
+  document.getElementById("wm-gen").onclick = async () => {
+    const { generateMnemonic } = await import("/js/seed-wallet.js");
+    const m = await generateMnemonic();
+    const words = m.split(" ");
+    document.getElementById("wm-words").innerHTML = words.map((w, i) => `<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700">${i + 1}. ${w}</span>`).join("");
+    document.getElementById("wm-words").dataset.mnemonic = m;
+  };
+  document.getElementById("wm-copy").onclick = () => { const m = document.getElementById("wm-words").dataset.mnemonic || ""; if (m) navigator.clipboard.writeText(m); };
+  document.getElementById("wm-hide").onclick = () => { const el = document.getElementById("wm-words"); el.classList.toggle("blur-sm"); };
+  document.getElementById("wm-login-gen").onclick = async () => { const m = document.getElementById("wm-words").dataset.mnemonic; if (!m) { alert("Generate first"); return; } await connectWithSeed(m); };
+  document.getElementById("wm-login-import").onclick = async () => { const m = document.getElementById("wm-seed-input").value.trim(); if (!m) { alert("Enter seed"); return; } await connectWithSeed(m); };
+  // auto-generate on open
+  document.getElementById("wm-gen").click();
+}
+function closeWalletModal() { document.getElementById("wallet-modal")?.remove(); }
 
 export async function connectGithub() {
   const r = await fetch(`${WORKER}/auth/github/start?redirect=${encodeURIComponent(location.href)}`, { credentials: "include" });
@@ -82,7 +150,7 @@ function renderAuth() {
   }
   const { addr, siweAddr, verified, apikeyCount, githubLogin } = _session;
   const shortAddr = (siweAddr || addr || "").slice(0, 10) + "…";
-  bar.innerHTML = `<span class="mono text-xs text-emerald-300">${shortAddr}</span> ${verified ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs">✓ @${githubLogin || "verified"}</span>` : `<button id="btn-github2" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Verify GitHub</button>`} <button id="btn-apikeys" class="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold">API Keys (${apikeyCount||0})</button> <button id="btn-logout" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs">Logout</button>`;
+  bar.innerHTML = `<span class="mono text-xs text-emerald-300">${shortAddr}</span> ${verified ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs">✓ @${githubLogin || "verified"}</span>` : `<button id="btn-github2" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Verify GitHub</button>`} <a href="/Dashboard" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Dashboard</a> <button id="btn-apikeys" class="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold">API Keys (${apikeyCount||0})</button> <button id="btn-logout" class="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs">Logout</button>`;
   bar.querySelector("#btn-github2")?.addEventListener("click", connectGithub);
   bar.querySelector("#btn-logout")?.addEventListener("click", logout);
   bar.querySelector("#btn-apikeys")?.addEventListener("click", openApiPanel);

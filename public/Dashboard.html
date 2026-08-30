@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — GDBx</title>
+<script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>body{font-family:ui-sans-serif,system-ui,sans-serif}.mono{font-family:ui-monospace,monospace}</style>
+</head><body class="bg-slate-950 text-slate-100 min-h-screen">
+<header class="border-b border-slate-800 bg-slate-950/80 sticky top-0"><div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"><a href="/" class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950"><i class="fa-solid fa-gauge"></i></div><span class="font-extrabold text-xl bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">Dashboard</span></a><nav class="flex items-center gap-3 text-sm"><a href="/" class="hover:text-cyan-300">Home</a><a href="/TLD" class="hover:text-amber-300">TLD</a><button id="logout-btn" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"><i class="fa-solid fa-right-from-bracket mr-1"></i>Logout</button></nav></div></header>
+<main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+<div id="not-logged" class="hidden text-center py-16"><i class="fa-solid fa-lock text-4xl text-slate-600"></i><h2 class="text-2xl font-bold mt-4">Not logged in</h2><p class="text-slate-400 mt-2">Connect wallet via seed or MetaMask to view dashboard.</p><button onclick="location.href='/'" class="mt-6 px-6 py-3 rounded-xl bg-violet-600 text-white font-bold">Go to Home → Connect</button></div>
+<div id="dashboard" class="hidden space-y-6">
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-wallet text-emerald-400"></i> Wallet</h3><div class="mt-3 space-y-2 mono text-xs"><div class="flex justify-between"><span class="text-slate-500">EVM Address</span><span id="evm-addr" class="text-emerald-300"></span></div><div class="flex justify-between"><span class="text-slate-500">GDBx Address</span><span id="gdbx-addr" class="text-violet-300"></span></div><div class="flex gap-2 mt-3"><button id="reveal-seed" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Reveal Seed (12 words)</button><button id="copy-evm" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Copy EVM</button></div><div id="seed-display" class="hidden mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mono text-xs text-amber-300"></div></div></div>
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-brands fa-github text-violet-400"></i> GitHub Verification</h3><div id="github-status" class="mt-3 text-sm"></div></div>
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-key text-amber-400"></i> API Keys <span id="key-quota" class="text-xs text-slate-500"></span></h3><div id="key-list" class="mt-3 space-y-2"></div><div class="flex gap-2 mt-4"><input id="new-key-label" placeholder="label" class="flex-1 mono text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"><button id="create-key-btn" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold">Create GDBx****AB</button></div><div id="key-result" class="mt-2 mono text-xs"></div></div>
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-hand-holding-heart text-emerald-400"></i> DSGx Profile</h3><div id="dsgx-profile" class="mt-3 text-sm text-slate-400">Loading...</div></div>
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-money-bill-transfer text-cyan-400"></i> GDMx — Multi-Network</h3><p class="text-xs text-slate-500 mt-1">Ethereum, Polygon, BSC, Arbitrum, Optimism, Base — all at once, fastest wins.</p><div id="gdmx-networks" class="mt-3 grid grid-cols-3 gap-2 text-xs"></div></div>
+</div>
+</main>
+<script type="module">
+import { fetchMe } from "/js/gdbx-auth.js";
+const WORKER = "https://gdbx.xup.workers.dev";
+function getToken(){ return localStorage.getItem("gdbx_token")||""; }
+async function load(){
+  const me = await fetchMe();
+  if (!me.ok) { document.getElementById("not-logged").classList.remove("hidden"); return; }
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("evm-addr").textContent = me.siweAddr || "—";
+  document.getElementById("gdbx-addr").textContent = me.addr || "—";
+  document.getElementById("github-status").innerHTML = me.verified ? `<span class="text-emerald-300">✓ Verified @${me.githubLogin}</span> <a href="https://dsgx.pages.dev/${me.githubLogin}" class="ml-2 text-cyan-300 hover:underline">dsgx.pages.dev/${me.githubLogin} ↗</a>` : `<span class="text-amber-300">Not verified</span> — <button onclick="location.href='/#auth'" class="px-3 py-1 rounded bg-violet-600 text-white text-xs">Verify GitHub</button> <span class="text-xs text-slate-500">(unlimited API keys after verify)</span>`;
+  // API keys
+  const r = await fetch(`${WORKER}/apikey`, { headers: getToken()?{authorization:`Bearer ${getToken()}`}:{} });
+  const j = await r.json();
+  document.getElementById("key-quota").textContent = j.quota ? `(${j.keys.length}/${j.quota.unlimited?"unlimited":j.quota.limit})` : "";
+  document.getElementById("key-list").innerHTML = j.keys?.length ? j.keys.map(k=> `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800"><span class="mono text-xs text-amber-300">${k.prefix}</span><span class="text-xs text-slate-500">${k.label||""}</span><button data-hash="${k.hash}" class="revoke ml-auto px-2 py-1 rounded bg-rose-600 text-white text-xs">Revoke</button></div>`).join("") : "<div class='text-xs text-slate-600'>No keys</div>";
+  document.querySelectorAll(".revoke").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/apikey/${b.dataset.hash}`,{method:"DELETE",headers:getToken()?{authorization:`Bearer ${getToken()}`}:{}}); load(); });
+  // DSGx profile
+  if (me.githubLogin) {
+    const pr = await fetch(`${WORKER}/dsgx/route/${me.githubLogin.toLowerCase()}`).then(r=>r.json()).catch(()=>({}));
+    document.getElementById("dsgx-profile").innerHTML = pr.ok ? `<a href="https://dsgx.pages.dev/${pr.route.login}" class="text-emerald-300 hover:underline">dsgx.pages.dev/${pr.route.login} ↗</a> — ${pr.route.addr.slice(0,12)}…` : "Not yet created — verify GitHub to auto-create";
+  } else document.getElementById("dsgx-profile").textContent = "Verify GitHub to create dsgx.pages.dev/<login>";
+  // GDMx networks
+  const nets = [
+    { id:"eth", name:"Ethereum", chainId:1, logo:"♦", fee:"~$0.50" },
+    { id:"polygon", name:"Polygon", chainId:137, logo:"⬣", fee:"~$0.01" },
+    { id:"bsc", name:"BSC", chainId:56, logo:"●", fee:"~$0.10" },
+    { id:"arbitrum", name:"Arbitrum", chainId:42161, logo:"▲", fee:"~$0.10" },
+    { id:"optimism", name:"Optimism", chainId:10, logo:"◉", fee:"~$0.10" },
+    { id:"base", name:"Base", chainId:8453, logo:"■", fee:"~$0.05" },
+  ];
+  document.getElementById("gdmx-networks").innerHTML = nets.map(n=> `<div class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-center"><div>${n.logo} ${n.name}</div><div class="text-slate-500">Chain ${n.chainId} · ${n.fee}</div></div>`).join("");
+}
+document.getElementById("create-key-btn")?.addEventListener("click", async()=>{
+  const label=document.getElementById("new-key-label").value;
+  const r=await fetch(`${WORKER}/apikey`,{method:"POST",headers:{ "content-type":"application/json", ...(getToken()?{authorization:`Bearer ${getToken()}`}:{}) },body:JSON.stringify({label})});
+  const j=await r.json();
+  document.getElementById("key-result").innerHTML = j.ok ? `<span class="text-emerald-300">✓ ${j.prefix}</span><br><span class="text-amber-300 break-all">${j.key}</span> <button onclick="navigator.clipboard.writeText('${j.key}')" class="px-2 py-0.5 rounded bg-slate-800 text-xs">Copy</button>` : `<span class="text-rose-400">✗ ${j.error}</span>`;
+  if(j.ok) setTimeout(load,1500);
+});
+document.getElementById("reveal-seed")?.addEventListener("click", ()=>{
+  const s=localStorage.getItem("gdbx_seed")||localStorage.getItem("gdbx_seed_addr")||"Seed not stored (imported via MetaMask)";
+  const el=document.getElementById("seed-display");
+  el.textContent=s; el.classList.toggle("hidden");
+});
+document.getElementById("copy-evm")?.addEventListener("click", ()=>{ const a=document.getElementById("evm-addr").textContent; if(a!=="—") navigator.clipboard.writeText(a); });
+document.getElementById("logout-btn")?.addEventListener("click", async()=>{
+  const tok=getToken();
+  await fetch(`${WORKER}/auth/logout`,{method:"POST",headers:tok?{authorization:`Bearer ${tok}`}:{}});
+  localStorage.removeItem("gdbx_token"); localStorage.removeItem("gdbx_seed"); localStorage.removeItem("gdbx_seed_addr");
+  location.href="/";
+});
+load();
+</script>
+</body></html>

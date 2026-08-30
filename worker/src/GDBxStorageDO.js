@@ -1139,7 +1139,10 @@ export default {
    */
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method === "OPTIONS") return new Response(null, { headers: JSON_HEADERS });
+    if (request.method === "OPTIONS") {
+      const origin = request.headers.get("origin") || "*";
+      return new Response(null, { headers: { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true", "access-control-allow-headers": request.headers.get("access-control-request-headers") || "content-type, authorization", "access-control-expose-headers": "set-cookie" } });
+    }
 
     // GunX relay: /gunx (+ its stats/health live under /gunx/*)
     if (url.pathname === "/gunx" || url.pathname.startsWith("/gunx/")) {
