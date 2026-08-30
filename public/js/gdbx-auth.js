@@ -117,9 +117,9 @@ export async function connectGithub() {
 
 export async function logout() {
   const tok = getToken();
-  await fetch(`${WORKER}/auth/logout`, { method: "POST", headers: tok ? { authorization: `Bearer ${tok}` } : {}, credentials: "include" });
-  localStorage.removeItem("gdbx_token"); _session = null; renderAuth();
-  location.reload();
+  try { await fetch(`${WORKER}/auth/logout`, { method: "POST", headers: tok ? { authorization: `Bearer ${tok}` } : {}, credentials: "include" }); } catch {}
+  localStorage.removeItem("gdbx_token"); localStorage.removeItem("gdbx_seed"); localStorage.removeItem("gdbx_seed_addr"); _session = null; renderAuth();
+  location.href="/";
 }
 
 // API Keys

@@ -123,7 +123,7 @@ document.getElementById("reveal-seed")?.addEventListener("click", ()=>{
 document.getElementById("copy-evm")?.addEventListener("click", ()=>{ const a=document.getElementById("evm-addr").textContent; if(a!=="—") navigator.clipboard.writeText(a); });
 document.getElementById("logout-btn")?.addEventListener("click", async()=>{
   const tok=getToken();
-  await fetch(`${WORKER}/auth/logout`,{method:"POST",headers:tok?{authorization:`Bearer ${tok}`}:{}});
+  try { await fetch(`${WORKER}/auth/logout`,{method:"POST",headers:tok?{authorization:`Bearer ${tok}`}:{}}); } catch {}
   localStorage.removeItem("gdbx_token"); localStorage.removeItem("gdbx_seed"); localStorage.removeItem("gdbx_seed_addr");
   location.href="/";
 });
