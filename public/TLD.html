@@ -443,6 +443,20 @@ claimForm.addEventListener("submit", async (e) => {
   claimLog.className = "mt-3 mono text-xs text-amber-300";
   try {
     const id = await getIdentity();
+    // Ensure DID is registered (for ephemeral fallback, otherwise claim fails with invalid address)
+    try {
+      const chk = await fetch(`${WORKER}/did/${id.addr}`);
+      if (!chk.ok) {
+        const { minePoW, sign } = await import("/sdk/gdbx-sdk.js").then(m=>m).catch(()=>({minePoW:null}));
+        // Fallback: use GDBx SDK's registerDID via direct fetch
+        const ts = Date.now();
+        const { minePoW: mp } = await import("/sdk/gdbx-sdk.js");
+        const { sign: sg } = await import("/sdk/gdbx-crypto.js");
+        const pw = await mp(id.addr, id.pub, "did.register", ts);
+        const sig = await sg({ addr: id.addr, action: "did.register", ts, payload: null }, { pub: id.pub, priv: id.priv });
+        await fetch(`${WORKER}/did`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ addr: id.addr, pubkey: id.pub, pubkeyHex: id.pubkeyHex, ts, nonce: pw.nonce, diff: pw.diff, hash: pw.hash, sig }) });
+      }
+    } catch {}
     const { GDBxNames } = await loadSDK();
     const names = new GDBxNames({ pair: { pub: id.pub, priv: id.priv }, pubkeyHex: id.pubkeyHex, addr: id.addr });
     const r = await names.claim(name, target);
