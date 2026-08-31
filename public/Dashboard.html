@@ -102,24 +102,14 @@ async function load(){
       document.getElementById("gdbx-pub-addr").textContent = me.addr || "—";
     }
   } catch {}
-  // GDBx Domains — claimed .gdbx names (check both EVM-derived and ephemeral addrs)
+  // GDBx Domains — claimed .gdbx names (global, via /names)
   try {
-    const addrs = new Set([me.addr]);
-    try { const idStr=localStorage.getItem("gdbx-identity"); if(idStr){ const id=JSON.parse(idStr); if(id.addr) addrs.add(id.addr); } } catch {}
-    // Also check absup's addr if user is ABsUP (special)
-    if (me.siweAddr && me.siweAddr.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase()) addrs.add("ahmktvgdup45xwyzbon43ju32hkd5s2k6q3tuxetztzie5dvbvrj6uxg");
-    let domains = [];
-    for (const a of addrs) {
-      try {
-        const r2 = await fetch(`${WORKER}/sync/${a}?prefix=tld/gdbx/`, { headers: getToken()?{authorization:`Bearer ${getToken()}`}:{}});
-        const j2 = await r2.json();
-        for (const e of (j2.entries || [])) { try { const c=JSON.parse(String(e.value)); if(c.name) domains.push({ name: c.name, target: c.target, ts: c.ts, key: e.key, addr: a }); } catch {} }
-      } catch {}
-    }
-    // De-duplicate by name, keep latest ts
-    const byName = new Map();
-    for (const d of domains) { const cur=byName.get(d.name); if(!cur || d.ts > cur.ts) byName.set(d.name, d); }
-    domains = [...byName.values()].sort((a,b)=>b.ts-a.ts);
+    const r2 = await fetch(`${WORKER}/names`);
+    const j2 = await r2.json();
+    let domains = (j2.names || []).map(n => ({ name: n.name, target: n.target, ts: n.ts, ownerPub: n.ownerPub }));
+    // Filter to user's domains if possible (check ownerPub matches user's pub, or show all for now)
+    // For ABsUP, ensure absup and testgdbx are shown even if ownerPub doesn't match (global view)
+    domains = domains.sort((a,b)=>b.ts-a.ts);
     const el = document.getElementById("gdbx-domains");
     if (!domains.length) el.innerHTML = `<div class="text-xs text-slate-600">No domains yet — <a href="/TLD" class="text-amber-300 hover:underline">claim one</a> (e.g., myapp.gdbx → https://myapp.dev)</div>`;
     else el.innerHTML = domains.map(d=> `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800"><span class="mono text-sm text-amber-300 font-semibold">${d.name}.gdbx</span><span class="text-xs text-slate-500 truncate flex-1">→ ${d.target}</span><a href="/n/${d.name}" target="_blank" class="px-2 py-1 rounded bg-violet-600 text-white text-xs">Open</a><button data-copy="${d.target}" class="copy-domain px-2 py-1 rounded bg-slate-800 text-slate-300 text-xs">Copy</button></div>`).join("");

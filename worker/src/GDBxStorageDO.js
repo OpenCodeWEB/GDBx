@@ -220,6 +220,22 @@ export class GDBxStorageObject {
       }
 
       /* Name registry: resolve a verified .gdbx name (public read) */
+      if (url.pathname === "/names" && request.method === "GET") {
+        const all = await this.state.storage.list({ prefix: "kv:" });
+        const names = [];
+        for (const [k, v] of all.entries()) {
+          if (k.includes(":tld/gdbx/")) {
+            try {
+              const claim = JSON.parse(String(v.value));
+              if (claim.name) names.push({ name: claim.name, target: claim.target, ownerPub: claim.ownerPub, ts: claim.ts, clock: v.clock || claim.ts || 0 });
+            } catch {}
+          }
+        }
+        // De-duplicate by name, keep latest
+        const byName = new Map();
+        for (const n of names) { const cur = byName.get(n.name); if (!cur || n.clock > cur.clock) byName.set(n.name, n); }
+        return json({ ok: true, count: byName.size, names: [...byName.values()].sort((a,b)=>b.ts-a.ts) });
+      }
       if (url.pathname.startsWith("/name/") && request.method === "GET") {
         const name = url.pathname.slice("/name/".length).toLowerCase();
         if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(name)) return json({ error: "invalid name" }, 400);
@@ -1087,15 +1103,19 @@ export class GDBxStorageObject {
    * GDBx signature server-side, return the verified record. Public read.
    */
   async resolveName(name, regAddr) {
-    // Search all addresses for the claim key (global namespace)
     const suffix = `:tld/gdbx/${name}`;
     let entry = null;
+    let bestClock = -1;
     if (regAddr) {
       entry = await this.state.storage.get(`kv:${regAddr}${suffix}`);
     } else {
       const all = await this.state.storage.list({ prefix: "kv:" });
       for (const [k, v] of all.entries()) {
-        if (k.endsWith(suffix)) { entry = v; break; }
+        if (k.endsWith(suffix)) {
+          const c = typeof v.clock === "number" ? v.clock : (v.value ? (()=>{ try{ return JSON.parse(String(v.value)).ts||0}catch{return 0}})() : 0);
+          if (c > bestClock) { bestClock = c; entry = v; }
+          if (!entry) entry = v;
+        }
       }
     }
     if (!entry) return json({ ok: false, error: "not found" }, 404);
