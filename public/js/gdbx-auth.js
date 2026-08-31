@@ -82,6 +82,15 @@ function openWalletModal() {
         </div>
         <p class="text-xs text-slate-600 text-center">QR for WalletConnect — scan or click extension</p>
       </div>
+      <div class="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
+        <div class="text-xs font-semibold text-violet-300">Social Sign-In (no wallet needed)</div>
+        <div class="grid grid-cols-3 gap-2 mt-2 text-xs">
+          <button data-social="google" class="p-2 rounded-lg bg-white text-slate-900 font-semibold">Google</button>
+          <button data-social="email" class="p-2 rounded-lg bg-white text-slate-900 font-semibold">Email</button>
+          <button data-social="github" class="p-2 rounded-lg bg-white text-slate-900 font-semibold">GitHub</button>
+        </div>
+        <p class="text-xs text-violet-300/70 mt-1 text-center">1-click — instant wallet, gasless</p>
+      </div>
       <div class="flex items-center gap-2 text-xs text-slate-600"><span class="flex-1 h-px bg-slate-700"></span>or seed phrase<span class="flex-1 h-px bg-slate-700"></span></div>
       <div class="flex gap-2 text-xs">
         <button id="wm-tab-generate" class="flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold">Generate New Seed</button>
@@ -112,6 +121,11 @@ function openWalletModal() {
     }
   };
   document.querySelectorAll(".wallet-opt").forEach(b=> b.onclick = () => connectWithMetamask());
+  document.querySelectorAll("[data-social]").forEach(b=> b.onclick = async () => {
+    const prov = b.dataset.social;
+    alert(`Social Sign-In (${prov}) — Web3Auth: instant wallet, gasless, no install. Demo: use Seed or MetaMask for now. Provider: ${prov}`);
+    // In production: Web3Auth modal → social → wallet → SIWE
+  });
   document.getElementById("wm-tab-generate").onclick = () => { document.getElementById("wm-generate").classList.remove("hidden"); document.getElementById("wm-import").classList.add("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; };
   document.getElementById("wm-tab-import").onclick = () => { document.getElementById("wm-generate").classList.add("hidden"); document.getElementById("wm-import").classList.remove("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; };
   document.getElementById("wm-gen").onclick = async () => {
