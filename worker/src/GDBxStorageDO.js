@@ -324,13 +324,38 @@ export class GDBxStorageObject {
         const user = await this.state.storage.get(`auth:user:${sess.addr}`);
         const origin = request.headers.get("origin") || "*";
         const headers = { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true" };
-        return new Response(JSON.stringify({ ok: true, addr: sess.addr, siweAddr: sess.siweAddr, verified: !!(user?.verified), apikeyCount: (user?.apikeyHashes || []).length, githubLogin: user?.github?.login || null }), { status: 200, headers });
+        return new Response(JSON.stringify({ ok: true, addr: sess.addr, siweAddr: sess.siweAddr, verified: !!(user?.verified), apikeyCount: (user?.apikeyHashes || []).length, githubLogin: user?.github?.login || null, githubs: user?.githubs || (user?.github ? [user.github] : []), wallets: user?.wallets || (user?.siweAddr ? [user.siweAddr] : []) }), { status: 200, headers });
       }
       if (url.pathname === "/auth/logout" && request.method === "POST") {
         const cookie = request.headers.get("cookie") || "";
         const m = cookie.match(/gdbx_session=([^;]+)/);
         if (m) { try { const sess = await Auth.verifySession(this.state.storage, m[1], this.env); if (sess?.sess?.sid) await this.state.storage.delete(`auth:session:${sess.sess.sid}`); } catch {} }
+        const token2 = request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        if (token2) { try { const sess2 = await Auth.verifySession(this.state.storage, token2, this.env); if (sess2?.sess?.sid) await this.state.storage.delete(`auth:session:${sess2.sess.sid}`); } catch {} }
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...JSON_HEADERS, "set-cookie": "gdbx_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" } });
+      }
+      if (url.pathname === "/auth/disconnect" && request.method === "POST") {
+        const body = await request.json().catch(()=>({}));
+        const type = String(body.type || "github");
+        const id = String(body.id || body.login || body.address || "").toLowerCase();
+        const cookie = request.headers.get("cookie") || "";
+        const m = cookie.match(/gdbx_session=([^;]+)/);
+        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess = await Auth.verifySession(this.state.storage, token, this.env);
+        if (!sess) return authJson({ error: "not authenticated" }, 401);
+        let user = await this.state.storage.get(`auth:user:${sess.addr}`);
+        if (!user) return authJson({ error: "not found" }, 404);
+        if (type === "github") {
+          user.githubs = (user.githubs || []).filter(g => g.login.toLowerCase() !== id);
+          if (user.github && user.github.login.toLowerCase() === id) user.github = user.githubs[0] || null;
+          if (user.githubs.length === 0) user.verified = false;
+          await this.state.storage.delete(`dsgx:route:${id}`);
+        } else if (type === "wallet") {
+          user.wallets = (user.wallets || []).filter(w => w.toLowerCase() !== id);
+          if (user.siweAddr && user.siweAddr.toLowerCase() === id) user.siweAddr = user.wallets[0] || null;
+        }
+        await this.state.storage.put(`auth:user:${sess.addr}`, user);
+        return authJson({ ok: true, githubs: user.githubs || [], wallets: user.wallets || [] });
       }
       if (url.pathname === "/auth/github/verify" && request.method === "POST") {
         return authJson({ error: "Use GitHub OAuth — direct verify disabled for security. Click Verify GitHub to go to github.com" }, 403);
@@ -372,11 +397,18 @@ export class GDBxStorageObject {
         let addr = null;
         if (m) { const sess = await Auth.verifySession(this.state.storage, m[1], this.env); if (sess) addr = sess.addr; }
         if (!addr) addr = `a${(await sha256Hex(ghUser.login)).slice(0, 55)}`;
-        // Store GitHub link + verified + DSGx route
+        // Store GitHub link + verified + DSGx route — support multiple GitHub accounts
         let user = await this.state.storage.get(`auth:user:${addr}`);
-        if (!user) user = { addr, apikeyHashes: [], createdAt: Date.now() };
-        user.github = { login: ghUser.login, id: ghUser.id, avatar_url: ghUser.avatar_url };
+        if (!user) user = { addr, apikeyHashes: [], githubs: [], wallets: [], createdAt: Date.now() };
+        user.githubs = user.githubs || (user.github ? [user.github] : []);
+        if (!user.githubs.some(g => g.login.toLowerCase() === ghUser.login.toLowerCase())) {
+          user.githubs.push({ login: ghUser.login, id: ghUser.id, avatar_url: ghUser.avatar_url, verifiedAt: Date.now() });
+        }
+        user.github = { login: ghUser.login, id: ghUser.id, avatar_url: ghUser.avatar_url }; // keep single for backward compat
         user.verified = true;
+        // Also track wallet
+        user.wallets = user.wallets || [];
+        if (user.siweAddr && !user.wallets.some(w => w.toLowerCase() === user.siweAddr.toLowerCase())) user.wallets.push(user.siweAddr);
         await this.state.storage.put(`auth:user:${addr}`, user);
         await this.state.storage.put(`dsgx:route:${ghUser.login.toLowerCase()}`, { login: ghUser.login, addr, web3Addr: user.siweAddr || null, verifiedAt: Date.now(), apiRoute: `https://dsgx.pages.dev/${ghUser.login}` });
         // Also update session to verified

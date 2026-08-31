@@ -89,7 +89,20 @@ async function load(){
   document.getElementById("dashboard").classList.remove("hidden");
   document.getElementById("evm-addr").textContent = me.siweAddr || "—";
   document.getElementById("gdbx-addr").textContent = me.addr || "—";
-  document.getElementById("github-status").innerHTML = me.verified ? `<span class="text-emerald-300">✓ Verified @${me.githubLogin}</span> <a href="https://dsgx.pages.dev/${me.githubLogin}" class="ml-2 text-cyan-300 hover:underline">dsgx.pages.dev/${me.githubLogin} ↗</a>` : `<span class="text-amber-300">Not verified</span> — <button onclick="location.href='/#auth'" class="px-3 py-1 rounded bg-violet-600 text-white text-xs">Verify GitHub</button> <span class="text-xs text-slate-500">(unlimited API keys after verify)</span>`;
+  const githubs = me.githubs || (me.githubLogin ? [{login: me.githubLogin}] : []);
+  const wallets = me.wallets || (me.siweAddr ? [me.siweAddr] : []);
+  // Update wallet display to show all wallets
+  document.getElementById("evm-addr").innerHTML = wallets.length ? wallets.map(w=> `<span class="inline-flex items-center gap-1 mr-2">${w.slice(0,10)}…<button data-disconnect="${w}" data-type="wallet" class="disconnect ml-1 px-1 py-0.5 rounded bg-slate-800 hover:bg-rose-600 text-xs">Disconnect</button></span>`).join("") : "—";
+  document.getElementById("evm-addr").querySelectorAll?.(".disconnect")?.forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/auth/disconnect`,{method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${getToken()}`},body:JSON.stringify({type:"wallet",id:b.dataset.disconnect})}); load(); });
+  // Also handle disconnect for wallets inside evm-addr
+  setTimeout(()=>{ document.querySelectorAll("#evm-addr .disconnect").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/auth/disconnect`,{method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${getToken()}`},body:JSON.stringify({type:"wallet",id:b.dataset.disconnect})}); load(); }); },100);
+  if (githubs.length) {
+    document.getElementById("github-status").innerHTML = githubs.map(g=> `<span class="inline-flex items-center gap-1 mr-2 text-emerald-300">✓ @${g.login} <a href="https://dsgx.pages.dev/${g.login}" class="text-cyan-300 hover:underline">↗</a> <button data-disconnect="${g.login}" data-type="github" class="disconnect-github px-1 py-0.5 rounded bg-slate-800 hover:bg-rose-600 text-xs">Disconnect</button></span>`).join("") + ` <button id="add-github" class="ml-2 px-3 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white text-xs">+ Add GitHub</button> <span class="text-xs text-slate-500">(unlimited API keys)</span>`;
+    setTimeout(()=>{ document.querySelectorAll(".disconnect-github").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/auth/disconnect`,{method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${getToken()}`},body:JSON.stringify({type:"github",id:b.dataset.disconnect})}); load(); }); document.getElementById("add-github")?.addEventListener("click", ()=> window.GDBxAuth?.connectGithub?.()); },100);
+  } else {
+    document.getElementById("github-status").innerHTML = `<span class="text-amber-300">Not verified</span> — <button id="verify-github-btn" class="px-3 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white text-xs">Verify GitHub</button> <span class="text-xs text-slate-500">(unlimited API keys after verify)</span>`;
+    setTimeout(()=> document.getElementById("verify-github-btn")?.addEventListener("click", ()=> window.GDBxAuth?.connectGithub?.()),100);
+  }
   // GDBx identity — public/private
   try {
     const idStr = localStorage.getItem("gdbx-identity");

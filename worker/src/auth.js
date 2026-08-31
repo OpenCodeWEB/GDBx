@@ -97,11 +97,21 @@ export async function createSession(storage, { addr, siweAddr, githubLogin, veri
   const sig = await hmacSign(payload, secret);
   const token = `${payload}.${sig}`;
   await storage.put(`auth:session:${sid}`, { sid, addr, siweAddr, githubLogin: githubLogin || null, verified: !!verified, createdAt: Date.now(), exp });
-  // also index user
+  // also index user — support multiple wallets and githubs
   const userKey = `auth:user:${addr}`;
   let user = await storage.get(userKey);
-  if (!user) user = { addr, siweAddr, github: githubLogin ? { login: githubLogin } : null, verified: !!verified, apikeyHashes: [], createdAt: Date.now() };
-  else { if (siweAddr) user.siweAddr = siweAddr; if (githubLogin) { user.github = { ...(user.github || {}), login: githubLogin }; user.verified = true; } }
+  if (!user) user = { addr, siweAddr, github: githubLogin ? { login: githubLogin } : null, githubs: githubLogin ? [{ login: githubLogin }] : [], wallets: siweAddr ? [siweAddr] : [], verified: !!verified, apikeyHashes: [], createdAt: Date.now() };
+  else {
+    user.wallets = user.wallets || (user.siweAddr ? [user.siweAddr] : []);
+    user.githubs = user.githubs || (user.github ? [user.github] : []);
+    if (siweAddr && !user.wallets.some(w => w.toLowerCase() === siweAddr.toLowerCase())) user.wallets.push(siweAddr);
+    if (siweAddr) user.siweAddr = siweAddr;
+    if (githubLogin) {
+      if (!user.githubs.some(g => g.login.toLowerCase() === githubLogin.toLowerCase())) user.githubs.push({ login: githubLogin });
+      user.github = { ...(user.github || {}), login: githubLogin };
+      user.verified = true;
+    }
+  }
   await storage.put(userKey, user);
   return { sid, token, exp, user };
 }
