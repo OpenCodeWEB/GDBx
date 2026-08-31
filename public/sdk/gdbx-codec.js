@@ -17,8 +17,8 @@
  *         validated for backward compat, but new addresses are always 56-char single network.
  */
 
-import { blake3 } from "./noble-shim.mjs";
-import { sha256 } from "./noble-shim.mjs";
+import { blake3 } from "https://esm.sh/@noble/hashes@1.7.0/blake3.js";
+import { sha256 } from "https://esm.sh/@noble/hashes@1.7.0/sha2.js";
 
 export const SUFFIX = "gdbx";
 export const VERSION = 0x01;
