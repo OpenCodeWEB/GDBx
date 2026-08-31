@@ -77,6 +77,44 @@ export const PROVIDERS = [
     },
   },
   {
+    id: "banxa",
+    name: "Banxa",
+    logo: "◧",
+    fee: "~1%",
+    createCheckout: async ({ to, amount, env, origin }) => {
+      const key = env.BANXA_API_KEY;
+      if (!key) return null;
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500);
+      try {
+        const res = await fetch("https://api.banxa.com/api/orders", {
+          method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+          body: JSON.stringify({ account_reference: to, source: "USD", target: "USDC", source_amount: Number(amount), wallet_address: to, return_url_on_success: `${origin}/success` }),
+          signal: ctrl.signal,
+        });
+        const j = await res.json();
+        if (j.data?.checkout_url || j.url) return { url: j.data?.checkout_url || j.url, provider: "banxa" };
+      } catch {} finally { clearTimeout(t); }
+      return null;
+    },
+  },
+  {
+    id: "wert",
+    name: "Wert",
+    logo: "⬔",
+    fee: "~1%",
+    createCheckout: async ({ to, amount, env }) => {
+      const key = env.WERT_API_KEY;
+      if (!key) return null;
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500);
+      try {
+        // Wert uses signed partner API — mock direct widget URL for demo
+        const url = `https://widget.wert.io/default/widget/?commodity=USDC&address=${encodeURIComponent(to)}&fiat_amount=${Number(amount)}&fiat_currency=USD`;
+        return { url, provider: "wert" };
+      } catch {} finally { clearTimeout(t); }
+      return null;
+    },
+  },
+  {
     id: "coinbase",
     name: "Coinbase Pay",
     logo: "◈",
