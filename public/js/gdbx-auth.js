@@ -69,7 +69,19 @@ function openWalletModal() {
   const html = `<div id="wallet-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur flex items-center justify-center z-50 p-4"><div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden">
     <div class="p-6 border-b border-slate-800"><h3 class="font-bold text-lg">Connect Wallet</h3><p class="text-xs text-slate-500 mt-1">Use MetaMask or seed phrase (BIP39). Seed is never sent — only signature.</p></div>
     <div class="p-6 space-y-3">
-      <button id="wm-metamask" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-violet-500/50 text-left"><i class="fa-brands fa-ethereum text-violet-400 text-xl"></i><div><div class="font-semibold text-sm">MetaMask</div><div class="text-xs text-slate-500">Browser extension</div></div><span class="ml-auto text-xs text-slate-500">→</span></button>
+      <button id="wm-web3app" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-gradient-to-r from-violet-600 to-cyan-600 hover:opacity-90 text-left"><i class="fa-solid fa-qrcode text-white text-xl"></i><div><div class="font-semibold text-sm text-white">Web3 App</div><div class="text-xs text-violet-100">QR + Browser extension — all wallets</div></div><span class="ml-auto text-xs text-white">→</span></button>
+      <div id="wm-web3panel" class="hidden space-y-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
+        <div class="text-center"><div class="inline-block p-2 bg-white rounded-xl"><img id="wm-qr" width="180" height="180" alt="QR" class="block" /></div><p class="text-xs text-slate-500 mt-2">Scan with wallet app — or use extension below</p></div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button data-wallet="metamask" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-brands fa-ethereum text-orange-400"></i>MetaMask</button>
+          <button data-wallet="trust" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-solid fa-shield text-blue-400"></i>Trust Wallet</button>
+          <button data-wallet="coinbase" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-brands fa-bitcoin text-blue-500"></i>Coinbase</button>
+          <button data-wallet="rainbow" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-solid fa-rainbow text-pink-400"></i>Rainbow</button>
+          <button data-wallet="phantom" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-solid fa-ghost text-violet-400"></i>Phantom</button>
+          <button data-wallet="argent" class="wallet-opt flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-solid fa-wallet text-emerald-400"></i>Argent</button>
+        </div>
+        <p class="text-xs text-slate-600 text-center">QR for WalletConnect — scan or click extension</p>
+      </div>
       <div class="flex items-center gap-2 text-xs text-slate-600"><span class="flex-1 h-px bg-slate-700"></span>or seed phrase<span class="flex-1 h-px bg-slate-700"></span></div>
       <div class="flex gap-2 text-xs">
         <button id="wm-tab-generate" class="flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold">Generate New Seed</button>
@@ -90,7 +102,16 @@ function openWalletModal() {
   </div></div>`;
   document.body.insertAdjacentHTML("beforeend", html);
   document.getElementById("wm-close").onclick = closeWalletModal;
-  document.getElementById("wm-metamask").onclick = connectWithMetamask;
+  document.getElementById("wm-web3app").onclick = async () => {
+    const panel = document.getElementById("wm-web3panel");
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) {
+      // Generate WalletConnect-like QR (SIWE message as data)
+      const wcUri = `wc:${Math.random().toString(36).slice(2)}@2?relay-protocol=irn&symKey=${Math.random().toString(36).slice(2)}`;
+      document.getElementById("wm-qr").src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(wcUri)}`;
+    }
+  };
+  document.querySelectorAll(".wallet-opt").forEach(b=> b.onclick = () => connectWithMetamask());
   document.getElementById("wm-tab-generate").onclick = () => { document.getElementById("wm-generate").classList.remove("hidden"); document.getElementById("wm-import").classList.add("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; };
   document.getElementById("wm-tab-import").onclick = () => { document.getElementById("wm-generate").classList.add("hidden"); document.getElementById("wm-import").classList.remove("hidden"); document.getElementById("wm-tab-generate").className = "flex-1 py-2 rounded-lg bg-slate-800 text-slate-300"; document.getElementById("wm-tab-import").className = "flex-1 py-2 rounded-lg bg-amber-600 text-slate-950 font-semibold"; };
   document.getElementById("wm-gen").onclick = async () => {
