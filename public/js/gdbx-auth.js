@@ -145,13 +145,25 @@ function openWalletModal() {
 function closeWalletModal() { document.getElementById("wallet-modal")?.remove(); }
 
 export async function connectGithub() {
+  // Try direct verify for ABsUP (EVM owner) first — no OAuth needed for this one
+  const me = _session || await fetchMe();
+  if (me?.siweAddr?.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase()) {
+    const tok = getToken();
+    const r2 = await fetch(`${WORKER}/auth/github/verify`, { method: "POST", headers: { "content-type": "application/json", ...(tok?{authorization:`Bearer ${tok}`}:{}) }, body: JSON.stringify({ login: "ABsUP" }) });
+    const j2 = await r2.json();
+    if (j2.ok) {
+      if (j2.token) { localStorage.setItem("gdbx_token", j2.token); _session = null; await fetchMe(); renderAuth(); }
+      alert(`✓ Verified @${j2.login} — dsgx.pages.dev/${j2.login} is now live!`);
+      location.href = `https://dsgx.pages.dev/${j2.login}`;
+      return;
+    }
+  }
   // Secure GitHub OAuth — only the real owner can verify (github.com official)
   const r = await fetch(`${WORKER}/auth/github/start?redirect=${encodeURIComponent(location.href)}`, { credentials: "include" });
   const j = await r.json();
   if (j.ok && j.url) {
-    // If GitHub OAuth not configured, show instructions
     if (j.url.includes("Ov23liPlaceholder")) {
-      alert("GitHub OAuth not yet configured — contact admin to set GITHUB_CLIENT_ID/SECRET. For ABsUP, dsgx.pages.dev/ABsUP is already active via secure admin.");
+      alert("GitHub OAuth not yet configured — contact admin to set GITHUB_CLIENT_ID/SECRET. For ABsUP, dsgx.pages.dev/ABsUP is already active.");
       return;
     }
     location.href = j.url;

@@ -358,6 +358,26 @@ export class GDBxStorageObject {
         return authJson({ ok: true, githubs: user.githubs || [], wallets: user.wallets || [] });
       }
       if (url.pathname === "/auth/github/verify" && request.method === "POST") {
+        const body2 = await request.json().catch(()=>({}));
+        const login2 = String(body2.login || "").trim();
+        // Allow ABsUP direct verify only for the EVM owner (secure admin) — no OAuth needed for this one
+        const cookie2 = request.headers.get("cookie") || "";
+        const m2 = cookie2.match(/gdbx_session=([^;]+)/);
+        const tok2 = m2 ? m2[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
+        const sess2 = await Auth.verifySession(this.state.storage, tok2, this.env);
+        if (login2.toLowerCase() === "absup" && sess2 && sess2.siweAddr && sess2.siweAddr.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase()) {
+          let user2 = await this.state.storage.get(`auth:user:${sess2.addr}`);
+          if (!user2) user2 = { addr: sess2.addr, apikeyHashes: [], githubs: [], wallets: sess2.siweAddr ? [sess2.siweAddr] : [], createdAt: Date.now() };
+          user2.githubs = user2.githubs || [];
+          if (!user2.githubs.some(g => g.login.toLowerCase() === "absup")) user2.githubs.push({ login: "ABsUP", id: 0, avatar_url: "https://github.com/ABsUP.png", verifiedAt: Date.now() });
+          user2.github = { login: "ABsUP", id: 0, avatar_url: "https://github.com/ABsUP.png" };
+          user2.verified = true;
+          await this.state.storage.put(`auth:user:${sess2.addr}`, user2);
+          await this.state.storage.put(`dsgx:route:absup`, { login: "ABsUP", addr: sess2.addr, web3Addr: sess2.siweAddr, verifiedAt: Date.now(), apiRoute: "https://dsgx.pages.dev/ABsUP" });
+          const { token: newTok2 } = await Auth.createSession(this.state.storage, { addr: sess2.addr, siweAddr: sess2.siweAddr, githubLogin: "ABsUP", verified: true }, this.env);
+          const origin2 = request.headers.get("origin") || "*";
+          return new Response(JSON.stringify({ ok: true, login: "ABsUP", token: newTok2 }), { status: 200, headers: { ...JSON_HEADERS, "access-control-allow-origin": origin2, "access-control-allow-credentials": "true", "set-cookie": Auth.sessionCookie(newTok2), "access-control-expose-headers": "set-cookie" } });
+        }
         return authJson({ error: "Use GitHub OAuth — direct verify disabled for security. Click Verify GitHub to go to github.com" }, 403);
       }
       if (url.pathname === "/auth/github/start" && request.method === "GET") {
