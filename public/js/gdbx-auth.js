@@ -145,26 +145,17 @@ function openWalletModal() {
 function closeWalletModal() { document.getElementById("wallet-modal")?.remove(); }
 
 export async function connectGithub() {
-  // For ABsUP and direct verify (no GitHub OAuth app configured), prompt for GitHub login and verify directly
-  const me = _session || await fetchMe();
-  const defaultLogin = me?.githubLogin || (me?.siweAddr?.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase() ? "ABsUP" : "");
-  const login = prompt("Enter GitHub username to verify (e.g., ABsUP):", defaultLogin);
-  if (!login) return;
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,39}$/.test(login.trim())) { alert("Invalid GitHub username"); return; }
-  const tok = getToken();
-  const r2 = await fetch(`${WORKER}/auth/github/verify`, { method: "POST", headers: { "content-type": "application/json", ...(tok?{authorization:`Bearer ${tok}`}:{}) }, body: JSON.stringify({ login: login.trim() }) });
-  const j2 = await r2.json();
-  if (j2.ok) {
-    if (j2.token) { localStorage.setItem("gdbx_token", j2.token); _session = null; await fetchMe(); renderAuth(); }
-    alert(`✓ Verified @${j2.login} — dsgx.pages.dev/${j2.login} is now live!`);
-    location.href = `https://dsgx.pages.dev/${j2.login}`;
-    return;
-  }
-  // Fallback to OAuth if direct verify fails
+  // Secure GitHub OAuth — only the real owner can verify (github.com official)
   const r = await fetch(`${WORKER}/auth/github/start?redirect=${encodeURIComponent(location.href)}`, { credentials: "include" });
   const j = await r.json();
-  if (j.ok && j.url) location.href = j.url;
-  else alert(j2.error || j.error || "Verify failed");
+  if (j.ok && j.url) {
+    // If GitHub OAuth not configured, show instructions
+    if (j.url.includes("Ov23liPlaceholder")) {
+      alert("GitHub OAuth not yet configured — contact admin to set GITHUB_CLIENT_ID/SECRET. For ABsUP, dsgx.pages.dev/ABsUP is already active via secure admin.");
+      return;
+    }
+    location.href = j.url;
+  } else alert(j.error || "Verify failed — GitHub OAuth not configured");
 }
 
 export async function logout() {

@@ -333,23 +333,7 @@ export class GDBxStorageObject {
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...JSON_HEADERS, "set-cookie": "gdbx_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" } });
       }
       if (url.pathname === "/auth/github/verify" && request.method === "POST") {
-        const body = await request.json().catch(()=>({}));
-        const login = String(body.login || "").trim();
-        if (!login || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,39}$/.test(login)) return authJson({ error: "invalid github login" }, 400);
-        const cookie = request.headers.get("cookie") || "";
-        const m = cookie.match(/gdbx_session=([^;]+)/);
-        const token = m ? m[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
-        const sess = await Auth.verifySession(this.state.storage, token, this.env);
-        if (!sess) return authJson({ error: "not authenticated" }, 401);
-        let user = await this.state.storage.get(`auth:user:${sess.addr}`);
-        if (!user) user = { addr: sess.addr, apikeyHashes: [], createdAt: Date.now() };
-        user.github = { login, id: 0, avatar_url: `https://github.com/${login}.png` };
-        user.verified = true;
-        await this.state.storage.put(`auth:user:${sess.addr}`, user);
-        await this.state.storage.put(`dsgx:route:${login.toLowerCase()}`, { login, addr: sess.addr, web3Addr: sess.siweAddr || user.siweAddr || null, verifiedAt: Date.now(), apiRoute: `https://dsgx.pages.dev/${login}` });
-        const { token: newTok } = await Auth.createSession(this.state.storage, { addr: sess.addr, siweAddr: sess.siweAddr, githubLogin: login, verified: true }, this.env);
-        const origin = request.headers.get("origin") || "*";
-        return new Response(JSON.stringify({ ok: true, login, token: newTok }), { status: 200, headers: { ...JSON_HEADERS, "access-control-allow-origin": origin, "access-control-allow-credentials": "true", "set-cookie": Auth.sessionCookie(newTok), "access-control-expose-headers": "set-cookie" } });
+        return authJson({ error: "Use GitHub OAuth — direct verify disabled for security. Click Verify GitHub to go to github.com" }, 403);
       }
       if (url.pathname === "/auth/github/start" && request.method === "GET") {
         const state = Auth.randomHex(16);
