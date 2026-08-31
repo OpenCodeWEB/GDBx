@@ -58,6 +58,17 @@
 <div id="not-logged" class="hidden text-center py-16"><i class="fa-solid fa-lock text-4xl text-slate-600"></i><h2 class="text-2xl font-bold mt-4">Not logged in</h2><p class="text-slate-400 mt-2">Connect wallet via seed or MetaMask to view dashboard.</p><button onclick="location.href='/'" class="mt-6 px-6 py-3 rounded-xl bg-violet-600 text-white font-bold">Go to Home → Connect</button></div>
 <div id="dashboard" class="hidden space-y-6">
 <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-wallet text-emerald-400"></i> Wallet</h3><div class="mt-3 space-y-2 mono text-xs"><div class="flex justify-between"><span class="text-slate-500">EVM Address</span><span id="evm-addr" class="text-emerald-300"></span></div><div class="flex justify-between"><span class="text-slate-500">GDBx Address</span><span id="gdbx-addr" class="text-violet-300"></span></div><div class="flex gap-2 mt-3"><button id="reveal-seed" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Reveal Seed (12 words)</button><button id="copy-evm" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Copy EVM</button></div><div id="seed-display" class="hidden mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mono text-xs text-amber-300"></div></div></div>
+<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-globe text-violet-400"></i> GDBx Domains <span class="text-xs font-normal text-slate-500">— your .gdbx names</span></h3>
+<div id="gdbx-domains" class="mt-3 space-y-2"></div>
+<div class="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
+<div class="flex justify-between mono text-xs"><span class="text-slate-500">GDBx Public Address</span><span id="gdbx-pub-addr" class="text-violet-300"></span></div>
+<div class="flex justify-between mono text-xs mt-2"><span class="text-slate-500">GDBx Public Key</span><span id="gdbx-pub-key" class="text-slate-400 truncate max-w-[200px]"></span></div>
+<div class="flex justify-between mono text-xs mt-2"><span class="text-slate-500">GDBx Private</span><button id="reveal-gdbx-priv" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs">Reveal</button></div>
+<div id="gdbx-priv-display" class="hidden mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 mono text-xs text-amber-300 break-all"></div>
+<div class="flex gap-2 mt-3"><button id="copy-gdbx-pub" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Copy Public</button><button id="copy-gdbx-priv" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">Copy Private</button></div>
+<p class="text-xs text-slate-500 mt-2">Your GDBx identity — public for verification, private never leaves device. Use <a href="/TLD" class="text-amber-300 hover:underline">TLD</a> to claim more.</p>
+</div>
+</div>
 <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-brands fa-github text-violet-400"></i> GitHub Verification</h3><div id="github-status" class="mt-3 text-sm"></div></div>
 <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-key text-amber-400"></i> API Keys <span id="key-quota" class="text-xs text-slate-500"></span></h3><div id="key-list" class="mt-3 space-y-2"></div><div class="flex gap-2 mt-4"><input id="new-key-label" placeholder="label" class="flex-1 mono text-xs bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"><button id="create-key-btn" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold">Create GDBx****AB</button></div><div id="key-result" class="mt-2 mono text-xs"></div></div>
 <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"><h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-hand-holding-heart text-emerald-400"></i> DSGx Profile</h3><div id="dsgx-profile" class="mt-3 text-sm text-slate-400">Loading...</div></div>
@@ -79,6 +90,28 @@ async function load(){
   document.getElementById("evm-addr").textContent = me.siweAddr || "—";
   document.getElementById("gdbx-addr").textContent = me.addr || "—";
   document.getElementById("github-status").innerHTML = me.verified ? `<span class="text-emerald-300">✓ Verified @${me.githubLogin}</span> <a href="https://dsgx.pages.dev/${me.githubLogin}" class="ml-2 text-cyan-300 hover:underline">dsgx.pages.dev/${me.githubLogin} ↗</a>` : `<span class="text-amber-300">Not verified</span> — <button onclick="location.href='/#auth'" class="px-3 py-1 rounded bg-violet-600 text-white text-xs">Verify GitHub</button> <span class="text-xs text-slate-500">(unlimited API keys after verify)</span>`;
+  // GDBx identity — public/private
+  try {
+    const idStr = localStorage.getItem("gdbx-identity");
+    if (idStr) {
+      const id = JSON.parse(idStr);
+      document.getElementById("gdbx-pub-addr").textContent = id.addr || me.addr || "—";
+      document.getElementById("gdbx-pub-key").textContent = (id.pub || "").slice(0,24) + "…";
+      document.getElementById("gdbx-pub-key").title = id.pub || "";
+    } else {
+      document.getElementById("gdbx-pub-addr").textContent = me.addr || "—";
+    }
+  } catch {}
+  // GDBx Domains — claimed .gdbx names
+  try {
+    const r2 = await fetch(`${WORKER}/sync/${me.addr}?prefix=tld/gdbx/`, { headers: getToken()?{authorization:`Bearer ${getToken()}`}:{}});
+    const j2 = await r2.json();
+    const domains = (j2.entries || []).map(e => { try { const c=JSON.parse(String(e.value)); return { name: c.name, target: c.target, ts: c.ts, key: e.key }; } catch { return null; } }).filter(Boolean);
+    const el = document.getElementById("gdbx-domains");
+    if (!domains.length) el.innerHTML = `<div class="text-xs text-slate-600">No domains yet — <a href="/TLD" class="text-amber-300 hover:underline">claim one</a> (e.g., myapp.gdbx → https://myapp.dev)</div>`;
+    else el.innerHTML = domains.map(d=> `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800"><span class="mono text-sm text-amber-300 font-semibold">${d.name}.gdbx</span><span class="text-xs text-slate-500 truncate flex-1">→ ${d.target}</span><a href="/n/${d.name}" target="_blank" class="px-2 py-1 rounded bg-violet-600 text-white text-xs">Open</a><button data-copy="${d.target}" class="copy-domain px-2 py-1 rounded bg-slate-800 text-slate-300 text-xs">Copy</button></div>`).join("");
+    el.querySelectorAll(".copy-domain").forEach(b=> b.onclick=()=>{ navigator.clipboard.writeText(b.dataset.copy); b.textContent="✓"; setTimeout(()=>b.textContent="Copy",1200); });
+  } catch {}
   // API keys
   const r = await fetch(`${WORKER}/apikey`, { headers: getToken()?{authorization:`Bearer ${getToken()}`}:{} });
   const j = await r.json();
@@ -108,6 +141,29 @@ async function load(){
   ];
   document.getElementById("gdmx-networks").innerHTML = nets.map(n=> `<div class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-center"><div>${n.logo} ${n.name}</div><div class="text-slate-500">Chain ${n.chainId} · ${n.fee}</div></div>`).join("");
 }
+document.getElementById("reveal-gdbx-priv")?.addEventListener("click", ()=>{
+  try {
+    const idStr=localStorage.getItem("gdbx-identity");
+    if(!idStr) { document.getElementById("gdbx-priv-display").textContent="No GDBx identity found (login via seed first)"; document.getElementById("gdbx-priv-display").classList.remove("hidden"); return; }
+    const id=JSON.parse(idStr);
+    const el=document.getElementById("gdbx-priv-display");
+    const isHidden=el.classList.contains("hidden");
+    if(isHidden){ el.textContent=id.priv || "No private"; el.classList.remove("hidden"); document.getElementById("reveal-gdbx-priv").textContent="Hide"; }
+    else { el.classList.add("hidden"); document.getElementById("reveal-gdbx-priv").textContent="Reveal"; }
+  } catch {}
+});
+document.getElementById("copy-gdbx-pub")?.addEventListener("click", ()=>{
+  const t=document.getElementById("gdbx-pub-addr").textContent;
+  if(t && t!=="—") { navigator.clipboard.writeText(t); const b=document.getElementById("copy-gdbx-pub"); const o=b.textContent; b.textContent="✓"; setTimeout(()=>b.textContent=o,1200); }
+});
+document.getElementById("copy-gdbx-priv")?.addEventListener("click", ()=>{
+  try {
+    const idStr=localStorage.getItem("gdbx-identity");
+    if(!idStr) return;
+    const id=JSON.parse(idStr);
+    if(id.priv) { navigator.clipboard.writeText(id.priv); const b=document.getElementById("copy-gdbx-priv"); const o=b.textContent; b.textContent="✓ Copied"; setTimeout(()=>b.textContent=o,1200); }
+  } catch {}
+});
 document.getElementById("create-key-btn")?.addEventListener("click", async()=>{
   const label=document.getElementById("new-key-label").value;
   const r=await fetch(`${WORKER}/apikey`,{method:"POST",headers:{ "content-type":"application/json", ...(getToken()?{authorization:`Bearer ${getToken()}`}:{}) },body:JSON.stringify({label})});
