@@ -141,11 +141,22 @@ async function load(){
     else { document.getElementById("key-result").innerHTML=`<span class="text-amber-300">⚠ ${jj.error||"Cannot copy"}</span> — <span class="text-slate-400">Revoke and create new key (new keys are copyable after reload)</span>`; }
   });
   document.querySelectorAll(".revoke").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/apikey/${b.dataset.hash}`,{method:"DELETE",headers:getToken()?{authorization:`Bearer ${getToken()}`}:{}}); load(); });
-  // DSGx profile
-  if (me.githubLogin) {
-    const pr = await fetch(`${WORKER}/dsgx/route/${me.githubLogin.toLowerCase()}`).then(r=>r.json()).catch(()=>({}));
-    document.getElementById("dsgx-profile").innerHTML = pr.ok ? `<a href="https://dsgx.pages.dev/${pr.route.login}" class="text-emerald-300 hover:underline">dsgx.pages.dev/${pr.route.login} ↗</a> — ${pr.route.addr.slice(0,12)}…` : "Not yet created — verify GitHub to auto-create";
-  } else document.getElementById("dsgx-profile").textContent = "Verify GitHub to create dsgx.pages.dev/<login>";
+  // DSGx profiles — one per verified GitHub (add via + Add GitHub)
+  const allGithubsForDsgx = githubs.length ? githubs : (me.githubLogin ? [{login: me.githubLogin}] : []);
+  if (allGithubsForDsgx.length) {
+    const profiles = await Promise.all(allGithubsForDsgx.map(async g=>{
+      const pr = await fetch(`${WORKER}/dsgx/route/${g.login.toLowerCase()}`).then(r=>r.json()).catch(()=>({}));
+      return pr.ok ? `<div class="flex items-center gap-2 py-1"><a href="https://dsgx.pages.dev/${pr.route.login}" class="text-emerald-300 hover:underline">dsgx.pages.dev/${pr.route.login} ↗</a><span class="text-xs text-slate-500">${pr.route.addr.slice(0,12)}…</span><button data-disconnect="${g.login}" class="disconnect-dsgx ml-auto px-2 py-0.5 rounded bg-slate-800 hover:bg-rose-600 text-xs">Remove</button></div>` : `<div class="flex items-center gap-2 py-1"><span class="text-amber-300">@${g.login}</span><span class="text-xs text-slate-500">— not yet created</span></div>`;
+    }));
+    document.getElementById("dsgx-profile").innerHTML = profiles.join("") + `<button id="add-dsgx-github" class="mt-3 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">+ Add GitHub Account/Org</button> <span class="text-xs text-slate-500">— only owner can add (github.com OAuth)</span>`;
+    setTimeout(()=> {
+      document.querySelectorAll(".disconnect-dsgx").forEach(b=> b.onclick=async()=>{ await fetch(`${WORKER}/auth/disconnect`,{method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${getToken()}`},body:JSON.stringify({type:"github",id:b.dataset.disconnect})}); load(); });
+      document.getElementById("add-dsgx-github")?.addEventListener("click", ()=> window.GDBxAuth?.connectGithub?.());
+    },100);
+  } else {
+    document.getElementById("dsgx-profile").innerHTML = `No DSGx profile yet — <button id="add-dsgx-github2" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs">+ Add GitHub Account/Org</button> <span class="text-xs text-slate-500">Verify to create dsgx.pages.dev/&lt;login&gt;</span>`;
+    setTimeout(()=> document.getElementById("add-dsgx-github2")?.addEventListener("click", ()=> window.GDBxAuth?.connectGithub?.()),100);
+  }
   // GDMx networks
   const nets = [
     { id:"eth", name:"Ethereum", chainId:1, logo:"♦", fee:"~$0.50" },
