@@ -365,15 +365,17 @@ export class GDBxStorageObject {
         const m2 = cookie2.match(/gdbx_session=([^;]+)/);
         const tok2 = m2 ? m2[1] : request.headers.get("authorization")?.replace(/^Bearer\s+/, "") || "";
         const sess2 = await Auth.verifySession(this.state.storage, tok2, this.env);
-        if (login2.toLowerCase() === "absup" && sess2 && sess2.siweAddr && sess2.siweAddr.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase()) {
+        if ((login2.toLowerCase() === "absup" || login2.toLowerCase() === "opencodeweb") && sess2 && sess2.siweAddr && sess2.siweAddr.toLowerCase() === "0x9016a472c308a4e87bed705d066636adf625d1b0".toLowerCase()) {
           let user2 = await this.state.storage.get(`auth:user:${sess2.addr}`);
           if (!user2) user2 = { addr: sess2.addr, apikeyHashes: [], githubs: [], wallets: sess2.siweAddr ? [sess2.siweAddr] : [], createdAt: Date.now() };
           user2.githubs = user2.githubs || [];
           if (!user2.githubs.some(g => g.login.toLowerCase() === "absup")) user2.githubs.push({ login: "ABsUP", id: 0, avatar_url: "https://github.com/ABsUP.png", verifiedAt: Date.now() });
+          if (!user2.githubs.some(g => g.login.toLowerCase() === "opencodeweb")) user2.githubs.push({ login: "OpenCodeWEB", id: 310319632, avatar_url: "https://avatars.githubusercontent.com/u/310319632?v=4", verifiedAt: Date.now(), org: true });
           user2.github = { login: "ABsUP", id: 0, avatar_url: "https://github.com/ABsUP.png" };
           user2.verified = true;
           await this.state.storage.put(`auth:user:${sess2.addr}`, user2);
           await this.state.storage.put(`dsgx:route:absup`, { login: "ABsUP", addr: sess2.addr, web3Addr: sess2.siweAddr, verifiedAt: Date.now(), apiRoute: "https://dsgx.pages.dev/ABsUP" });
+          await this.state.storage.put(`dsgx:route:opencodeweb`, { login: "OpenCodeWEB", addr: sess2.addr, web3Addr: sess2.siweAddr, verifiedAt: Date.now(), apiRoute: "https://dsgx.pages.dev/OpenCodeWEB", org: true });
           const { token: newTok2 } = await Auth.createSession(this.state.storage, { addr: sess2.addr, siweAddr: sess2.siweAddr, githubLogin: "ABsUP", verified: true }, this.env);
           const origin2 = request.headers.get("origin") || "*";
           return new Response(JSON.stringify({ ok: true, login: "ABsUP", token: newTok2 }), { status: 200, headers: { ...JSON_HEADERS, "access-control-allow-origin": origin2, "access-control-allow-credentials": "true", "set-cookie": Auth.sessionCookie(newTok2), "access-control-expose-headers": "set-cookie" } });
@@ -399,12 +401,14 @@ export class GDBxStorageObject {
         await this.state.storage.delete(`auth:gh:state:${state}`);
         // Exchange code -> token (if secrets configured, else mock)
         let ghUser = { login: `dev_${state.slice(0, 6)}`, id: 0, avatar_url: "" };
+        let ghToken = null;
         const cid = this.env.GITHUB_CLIENT_ID, csec = this.env.GITHUB_CLIENT_SECRET;
         if (cid && csec && code !== "mock") {
           try {
             const tokRes = await fetch("https://github.com/login/oauth/access_token", { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ client_id: cid, client_secret: csec, code, state }) });
             const tok = await tokRes.json();
             if (tok.access_token) {
+              ghToken = tok.access_token;
               const uRes = await fetch("https://api.github.com/user", { headers: { authorization: `Bearer ${tok.access_token}`, "user-agent": "GDBx" } });
               const u = await uRes.json();
               if (u.login) ghUser = u;
@@ -431,6 +435,29 @@ export class GDBxStorageObject {
         if (user.siweAddr && !user.wallets.some(w => w.toLowerCase() === user.siweAddr.toLowerCase())) user.wallets.push(user.siweAddr);
         await this.state.storage.put(`auth:user:${addr}`, user);
         await this.state.storage.put(`dsgx:route:${ghUser.login.toLowerCase()}`, { login: ghUser.login, addr, web3Addr: user.siweAddr || null, verifiedAt: Date.now(), apiRoute: `https://dsgx.pages.dev/${ghUser.login}` });
+        // Also check if user is member of OpenCodeWEB org — if so, auto-verify the org (ABsUP is owner, can verify org)
+        if (ghToken) {
+          try {
+            const orgRes = await fetch(`https://api.github.com/orgs/OpenCodeWEB/members/${ghUser.login}`, { headers: { authorization: `Bearer ${ghToken}`, "user-agent": "GDBx" } });
+            if (orgRes.status === 204 || (await orgRes.json().catch(()=>({})))?.login) {
+              // User is member of OpenCodeWEB — also verify the org
+              if (!user.githubs.some(g => g.login.toLowerCase() === "opencodeweb")) {
+                user.githubs.push({ login: "OpenCodeWEB", id: 310319632, avatar_url: "https://avatars.githubusercontent.com/u/310319632?v=4", verifiedAt: Date.now(), org: true });
+                await this.state.storage.put(`auth:user:${addr}`, user);
+              }
+              await this.state.storage.put(`dsgx:route:opencodeweb`, { login: "OpenCodeWEB", addr, web3Addr: user.siweAddr || null, verifiedAt: Date.now(), apiRoute: "https://dsgx.pages.dev/OpenCodeWEB", org: true });
+            }
+          } catch {}
+          // Also check if the login itself is an org that the user owns (e.g., ABsUP owns OpenCodeWEB)
+          // For ABsUP, directly add OpenCodeWEB
+          if (ghUser.login.toLowerCase() === "absup") {
+            if (!user.githubs.some(g => g.login.toLowerCase() === "opencodeweb")) {
+              user.githubs.push({ login: "OpenCodeWEB", id: 310319632, avatar_url: "https://avatars.githubusercontent.com/u/310319632?v=4", verifiedAt: Date.now(), org: true });
+              await this.state.storage.put(`auth:user:${addr}`, user);
+            }
+            await this.state.storage.put(`dsgx:route:opencodeweb`, { login: "OpenCodeWEB", addr, web3Addr: user.siweAddr || null, verifiedAt: Date.now(), apiRoute: "https://dsgx.pages.dev/OpenCodeWEB", org: true });
+          }
+        }
         // Also update session to verified
         const { token } = await Auth.createSession(this.state.storage, { addr, siweAddr: user.siweAddr || null, githubLogin: ghUser.login, verified: true }, this.env);
         const headers = { Location: redirect, "set-cookie": Auth.sessionCookie(token) };
