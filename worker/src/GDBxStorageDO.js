@@ -388,7 +388,7 @@ export class GDBxStorageObject {
         await this.state.storage.put(`auth:gh:state:${state}`, { state, verifier, ts: Date.now() });
         const cid = this.env.GITHUB_CLIENT_ID || "Ov23liPlaceholder";
         const redirect = url.searchParams.get("redirect") || "https://gdbx.pages.dev";
-        const ghUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(cid)}&state=${encodeURIComponent(state)}&scope=read:user%20user:email&redirect_uri=${encodeURIComponent(`https://gdbx.xup.workers.dev/auth/github/callback?redirect=${encodeURIComponent(redirect)}`)}`;
+        const ghUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(cid)}&state=${encodeURIComponent(state)}&scope=read:user%20user:email%20read:org&redirect_uri=${encodeURIComponent(`https://gdbx.xup.workers.dev/auth/github/callback?redirect=${encodeURIComponent(redirect)}`)}`;
         return authJson({ ok: true, url: ghUrl, state });
       }
       if (url.pathname === "/auth/github/callback" && request.method === "GET") {
