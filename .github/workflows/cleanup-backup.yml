@@ -1,0 +1,20 @@
+name: Cleanup backup branches
+on:
+  schedule:
+    - cron: '0 0 * * *'  # daily
+  workflow_dispatch:
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git fetch --prune
+          for branch in $(git branch -r | grep 'origin/backup/' | sed 's|.*origin/||'); do
+            echo "Deleting backup branch: $branch"
+            git push origin --delete "$branch" || true
+          done
