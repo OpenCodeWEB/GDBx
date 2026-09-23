@@ -1,0 +1,82 @@
+# GDBx — Global Decentralized DataBase Sync
+
+> Cryptographically secure, anti-censorship, multi-transport LWW-CRDT database engine.
+> One self-sovereign `.gdbx` address (derived from your P-256 public key) works as identity,
+> database namespace, and `did:gdbx:<addr>`. Serverless: Cloudflare Pages + Workers +
+> Durable Objects. Live at https://gdbx.pages.dev — MIT licensed, by @ABsUP & @OpenCodeWEB.
+
+## Pages
+
+- [Home](https://gdbx.pages.dev/): Connect wallet (MetaMask / seed phrase / social), claim identity
+- [Dashboard](https://gdbx.pages.dev/Dashboard): Wallet, GDBx identity, API keys, DSGx profiles, GDMx networks
+- [API Docs](https://gdbx.pages.dev/Api): Interactive REST + WebSocket reference with live playground
+- [TLD Registry](https://gdbx.pages.dev/TLD): Claim short `.gdbx` names (e.g. `myapp.gdbx` → `https://myapp.dev`)
+- [Global Mesh](https://gdbx.pages.dev/GlobalMesh): Live transport + peer map (WebRTC, WebSocket, Nostr, Tor/I2P)
+- [Roadmap](https://gdbx.pages.dev/RoadMap): Phase 0–6 delivery status
+- [Inspector](https://gdbx.pages.dev/inspector): CLI & visual state inspector
+- [Short link](https://gdbx.pages.dev/n/<name>): Resolve any `.gdbx` name, e.g. https://gdbx.pages.dev/n/absup
+
+## SDK (browser + Node)
+
+- [GDBx SDK](https://gdbx.pages.dev/sdk/gdbx-sdk.js): `makePair, registerDID, putDeltas, getDeltas, stats, purgeIdentity, exportState, leaderboard`
+- [WebSocket client](https://gdbx.pages.dev/sdk/gdbx-ws-client.js): `GDBxWS` real-time full-duplex sync
+- [Codec](https://gdbx.pages.dev/sdk/gdbx-codec.js): BLAKE3-checksummed base32 address encode/decode
+- [Seed wallet](https://gdbx.pages.dev/js/seed-wallet.js): BIP39 mnemonic → EVM address (BIP44 m/44'/60'/0'/0/0)
+- [Auth UI](https://gdbx.pages.dev/js/gdbx-auth.js): SIWE + GitHub verify + API-key panel
+
+Quickstart:
+
+```javascript
+import { makePair, registerDID, putDeltas, getDeltas } from 'https://gdbx.pages.dev/sdk/gdbx-sdk.js';
+const pair = await makePair(); // { pubkeyHex (130-char uncompressed P-256), priv }
+await registerDID({ pubkeyHex, pair }); // PoW + SEA signed, returns { addr: "<58-char>.gdbx" }
+await putDeltas({ pubkeyHex, pair, deltas: [{ key: 'greeting', value: 'Hello GDBx!' }] });
+const state = await getDeltas(addr); // LWW-merged state vector
+```
+
+Real-time:
+
+```javascript
+import { GDBxWS } from 'https://gdbx.pages.dev/sdk/gdbx-ws-client.js';
+const gdbx = new GDBxWS({ pubkeyHex, pair });
+await gdbx.connect();
+gdbx.on('delta', (e) => console.log('live update:', e.key, e.value));
+await gdbx.put([{ key: 'status', value: 'online' }]);
+```
+
+## Public REST + WebSocket API
+
+Base: `https://gdbx.pages.dev/api/v1` (edge mirror: `https://gdbx.xup.workers.dev`)
+
+- `POST /api/v1/address` — pubkey → `.gdbx` address + DID
+- `GET /api/v1/address/:addr` — validate + describe an address
+- `POST /api/v1/did/register` — register identity (PoW + SEA signature required)
+- `GET /api/v1/did/:addr` — resolve DID document
+- `POST /api/v1/sync` — signed CRDT delta batch `{ addr, pubkey, pubkeyHex, deltas, ts, nonce, diff, hash, sig }`
+- `GET /api/v1/sync/:addr?prefix=` — read LWW-merged state vector
+- `WS /api/v1/ws?addr=` — real-time full-duplex sync
+- `POST /api/v1/peers` — presence heartbeat
+- `POST /api/v1/export` — signed backup snapshot
+- `DELETE /api/v1/identity` — GDPR right-to-be-forgotten (SEA proof-of-ownership required)
+- `GET /api/v1/leaderboard` — global mesh analytics
+- `GET /api/v1/stats` — live ledger stats
+- `GET /api/v1/health` — liveness probe
+
+Every write is a signed delta: `{ addr, pubkey, pubkeyHex, deltas: [{ key, value, clock }], ts, nonce, diff, hash, sig }`.
+Conflict resolution: last-write-wins by monotonic clock; ties break by lexicographic pubkey.
+Limits: flat-primitive JSON only, 32 KB delta cap, replay window 60 s + monotonic nonce,
+adaptive PoW difficulty 2–4, rate limits (DID 10/min, writes 30/min, reads 120/min).
+Private keys never leave the client (WebCrypto); the edge only verifies signatures.
+
+## Auth model
+
+- Primary: SIWE (Sign-In with Ethereum) via MetaMask or BIP39 seed — signature only, seed never sent
+- Social: Google / Email / GitHub via Web3Auth-style instant wallet (gasless-ready)
+- GitHub verify links identity → `dsgx.pages.dev/<login>` profile + unlimited API keys (`GDBx****AB`)
+- API keys: create/list/revoke from Dashboard, `Authorization: Bearer <token>`
+
+## Related OpenCodeWEB protocols
+
+- [DSGx](https://dsgx.pages.dev/): decentralized social profiles `dsgx.pages.dev/<github-login>`
+- [GDMx](https://gdmx.pages.dev/): non-custodial crypto + card payment gateway, 0% fee
+- [Repo](https://github.com/OpenCodeWEB/GDBX): MIT — issues & PRs welcome on the `Dev` branch
