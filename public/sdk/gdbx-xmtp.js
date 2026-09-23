@@ -22,7 +22,7 @@
  *   mesh.stream((parsed) => console.log(parsed.deltas));   // live GDBx messages
  */
 
-import { buildXmtpMessage, parseXmtpMessage, xmtpRoomName } from "./transport.js";
+import { buildXmtpMessage, parseXmtpMessage, xmtpRoomName } from "./transport.js?v=1";
 
 /** Pinned XMTP browser SDK (MLS / v3 protocol) loaded at runtime. */
 export const XMTP_SDK_URL = "https://esm.sh/@xmtp/browser-sdk@4.1.0";
