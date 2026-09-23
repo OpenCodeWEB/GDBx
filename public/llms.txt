@@ -11,7 +11,8 @@
 - [Dashboard](https://gdbx.pages.dev/Dashboard): Wallet, GDBx identity, API keys, DSGx profiles, GDMx networks
 - [API Docs](https://gdbx.pages.dev/Api): Interactive REST + WebSocket reference with live playground
 - [TLD Registry](https://gdbx.pages.dev/TLD): Claim short `.gdbx` names (e.g. `myapp.gdbx` → `https://myapp.dev`)
-- [Global Mesh](https://gdbx.pages.dev/GlobalMesh): Live transport + peer map (WebRTC, WebSocket, Nostr, Tor/I2P)
+- [Global Mesh](https://gdbx.pages.dev/GlobalMesh): Live transport + peer map (WebRTC, WebSocket, XMTP, Nostr, Tor/I2P)
+- [XMTP Transport](https://gdbx.pages.dev/xmtp): E2E-encrypted MLS rooms (`gdbx/<addr>`) carrying signed envelopes
 - [Roadmap](https://gdbx.pages.dev/RoadMap): Phase 0–6 delivery status
 - [Inspector](https://gdbx.pages.dev/inspector): CLI & visual state inspector
 - [Short link](https://gdbx.pages.dev/n/<name>): Resolve any `.gdbx` name, e.g. https://gdbx.pages.dev/n/absup
@@ -20,6 +21,8 @@
 
 - [GDBx SDK](https://gdbx.pages.dev/sdk/gdbx-sdk.js): `makePair, registerDID, putDeltas, getDeltas, stats, purgeIdentity, exportState, leaderboard`
 - [WebSocket client](https://gdbx.pages.dev/sdk/gdbx-ws-client.js): `GDBxWS` real-time full-duplex sync
+- [XMTP adapter](https://gdbx.pages.dev/sdk/gdbx-xmtp.js): `GDBxXMTP` — E2E MLS rooms via `@xmtp/browser-sdk`, same signed envelope
+- [Transports](https://gdbx.pages.dev/sdk/transport.js): `pickTransport` order ws → xmtp → nostr → webrtc; Nostr kind 23124; XMTP rooms `gdbx/<addr>`
 - [Codec](https://gdbx.pages.dev/sdk/gdbx-codec.js): BLAKE3-checksummed base32 address encode/decode
 - [Seed wallet](https://gdbx.pages.dev/js/seed-wallet.js): BIP39 mnemonic → EVM address (BIP44 m/44'/60'/0'/0/0)
 - [Auth UI](https://gdbx.pages.dev/js/gdbx-auth.js): SIWE + GitHub verify + API-key panel

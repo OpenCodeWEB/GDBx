@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XMTP Transport — GDBx Mesh Messaging</title>
+<meta name="description" content="GDBx over XMTP v3 (MLS, E2E-encrypted): one group room per .gdbx address carrying signed LWW-CRDT envelopes. Open messaging standard — xmtp.org.">
+<meta name="theme-color" content="#020617">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238b5cf6'/%3E%3Ctext x='32' y='44' font-size='32' font-weight='bold' text-anchor='middle' fill='%23f8fafc'%3EX%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+  .feed-line { animation: fadein .3s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+
+<!-- Header -->
+<header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-3 shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950"><i class="fa-solid fa-database text-sm"></i></div>
+      <div class="hidden sm:block">
+        <div class="font-extrabold text-lg leading-none tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">GDBx</div>
+        <div class="flex items-center gap-1.5 -mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-xs mono text-slate-500">v1.4.0 · Online</span></div>
+      </div>
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
+      <a href="/GlobalMesh" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-cyan-300 transition-colors">Mesh</a>
+      <a href="/Api" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-emerald-300 transition-colors">API</a>
+      <a href="/TLD" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-amber-300 transition-colors">TLD</a>
+      <a href="/xmtp" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-fuchsia-300 transition-colors">XMTP</a>
+      <a href="/Dashboard" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-cyan-300 transition-colors">Dashboard</a>
+      <a href="/RoadMap" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-rose-300 transition-colors">Roadmap</a>
+    </nav>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="https://github.com/OpenCodeWEB/GDBX" target="_blank" class="hidden sm:inline-flex w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 items-center justify-center text-slate-400 hover:text-white"><i class="fa-brands fa-github text-sm"></i></a>
+      <span id="auth-bar" class="flex items-center gap-2"></span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-10 space-y-8">
+
+  <!-- Hero -->
+  <section class="text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/25 text-fuchsia-300 text-xs mono mb-4">
+      <i class="fa-solid fa-comments"></i> transport #2 · E2E-encrypted · <a href="https://xmtp.org" target="_blank" class="underline hover:text-fuchsia-200">xmtp.org</a>
+    </div>
+    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">GDBx over <span class="bg-gradient-to-r from-fuchsia-400 to-violet-300 bg-clip-text text-transparent">XMTP</span></h1>
+    <p class="text-slate-400 mt-3 max-w-2xl mx-auto">One MLS group room per <span class="mono text-violet-300">.gdbx</span> address (<span class="mono">gdbx/&lt;addr&gt;</span>) carrying the <strong class="text-slate-200">same signed LWW-CRDT envelope</strong> as Nostr — verified identically by every receiver and the edge FirewallGuard.</p>
+    <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs mono">
+      <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">1 · WebSocket <span class="text-slate-600">&lt;150ms</span></span>
+      <span class="px-2.5 py-1 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/30 text-fuchsia-300">2 · XMTP <span class="opacity-70">E2E MLS</span></span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">3 · Nostr <span class="text-slate-600">kind-23124</span></span>
+      <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">4 · WebRTC <span class="text-slate-600">P2P</span></span>
+    </div>
+  </section>
+
+  <!-- Connect -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+    <h2 class="font-bold flex items-center gap-2"><i class="fa-solid fa-plug text-fuchsia-400"></i> 1 · Connect XMTP identity</h2>
+    <p class="text-xs text-slate-500 mt-1">Identity = your EVM wallet (MetaMask / any injected provider). XMTP client runs on <span class="mono">production</span> env.</p>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <button id="btn-connect" class="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold">Connect wallet → XMTP</button>
+      <span id="conn-status" class="mono text-xs text-slate-500">not connected</span>
+    </div>
+  </section>
+
+  <!-- Room -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+    <h2 class="font-bold flex items-center gap-2"><i class="fa-solid fa-door-open text-violet-400"></i> 2 · Open address room</h2>
+    <p class="text-xs text-slate-500 mt-1">Room name = <span class="mono">gdbx/&lt;58-char .gdbx address&gt;</span>. Existing room is reused, otherwise a self-only MLS group is created.</p>
+    <div class="mt-4 flex flex-col sm:flex-row gap-2">
+      <input id="room-addr" placeholder="<58-char>.gdbx address" class="flex-1 mono text-xs bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200">
+      <button id="btn-room" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold">Open room</button>
+    </div>
+    <div id="room-status" class="mono text-xs text-slate-500 mt-2">no room open</div>
+  </section>
+
+  <!-- Messages -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+    <h2 class="font-bold flex items-center gap-2"><i class="fa-solid fa-message text-cyan-400"></i> 3 · Live envelopes <span id="stream-badge" class="hidden text-xs font-normal px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 mono">streaming</span></h2>
+    <div id="feed" class="mt-4 space-y-2 max-h-80 overflow-y-auto">
+      <div class="text-xs text-slate-600">Open a room to stream signed GDBx envelopes…</div>
+    </div>
+    <div class="mt-4 grid sm:grid-cols-[1fr_2fr_auto] gap-2">
+      <input id="send-key" placeholder="key (e.g. chat/msg)" class="mono text-xs bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200">
+      <input id="send-value" placeholder='value (e.g. {"text":"hello mesh"})' class="mono text-xs bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200">
+      <button id="btn-send" class="px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white text-sm font-bold">Send delta</button>
+    </div>
+    <p class="text-xs text-slate-600 mt-2">Sending signs with your GDBx identity (seed login via <a href="/Dashboard" class="text-cyan-300 hover:underline">Dashboard</a>) + PoW, posts to XMTP, and offers one-click edge ingest through FirewallGuard.</p>
+  </section>
+
+  <!-- SDK -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+    <h2 class="font-bold flex items-center gap-2"><i class="fa-solid fa-code text-emerald-400"></i> Use it in your app</h2>
+    <pre class="mt-3 mono text-xs bg-slate-950 border border-slate-800 rounded-xl p-4 overflow-x-auto text-slate-300">import { GDBxXMTP, ethereumSigner } from "https://gdbx.pages.dev/sdk/gdbx-xmtp.js";
+
+const mesh = new GDBxXMTP(); // env: production
+await mesh.connect({ signer: await ethereumSigner() });
+await mesh.openRoom(addr);   // gdbx/&lt;addr&gt;
+await mesh.send({ addr, pubkey, pubkeyHex, ts, nonce, diff, hash, deltas, sig });
+mesh.stream(async (parsed) => {
+  console.log(parsed.deltas);
+  await mesh.syncViaHttp(parsed); // merge into edge state
+});</pre>
+    <div class="mt-3 flex flex-wrap gap-2 text-xs">
+      <a href="/sdk/gdbx-xmtp.js" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 mono">gdbx-xmtp.js</a>
+      <a href="/sdk/transport.js" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 mono">transport.js</a>
+      <a href="https://github.com/xmtp" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"><i class="fa-brands fa-github"></i> xmtp</a>
+      <a href="https://xmtp.org" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">xmtp.org ↗</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t border-slate-800 py-8">
+  <div class="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
+    <span class="text-sm text-slate-500">GDBx · XMTP transport · MIT</span>
+    <span class="mono text-xs text-slate-600">gdbx.pages.dev/xmtp</span>
+  </div>
+</footer>
+
+<script type="module">
+import { GDBxXMTP, ethereumSigner } from "/sdk/gdbx-xmtp.js";
+import { xmtpRoomName } from "/sdk/transport.js";
+
+const mesh = new GDBxXMTP();
+const $ = (id) => document.getElementById(id);
+const feed = $("feed");
+
+function log(html) {
+  const div = document.createElement("div");
+  div.className = "feed-line p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs";
+  div.innerHTML = html;
+  feed.prepend(div);
+  while (feed.children.length > 60) feed.lastChild.remove();
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+$("btn-connect").onclick = async () => {
+  $("conn-status").textContent = "connecting…";
+  $("conn-status").className = "mono text-xs text-amber-300";
+  try {
+    const signer = await ethereumSigner();
+    const { address, env } = await mesh.connect({ signer });
+    $("conn-status").textContent = `✓ ${address.slice(0, 10)}… · xmtp:${env}`;
+    $("conn-status").className = "mono text-xs text-emerald-300";
+    log(`<span class="text-emerald-300">✓ XMTP connected</span> <span class="mono text-slate-500">${esc(address)}</span>`);
+  } catch (e) {
+    $("conn-status").textContent = "✗ " + e.message;
+    $("conn-status").className = "mono text-xs text-rose-400";
+    log(`<span class="text-rose-400">✗ connect failed:</span> <span class="mono text-slate-400">${esc(e.message)}</span>`);
+  }
+};
+
+$("btn-room").onclick = async () => {
+  const addr = $("room-addr").value.trim();
+  if (!addr) { $("room-status").textContent = "enter a .gdbx address"; return; }
+  $("room-status").textContent = "opening " + xmtpRoomName(addr) + "…";
+  try {
+    await mesh.openRoom(addr);
+    $("room-status").innerHTML = `✓ room <span class="text-fuchsia-300">${esc(xmtpRoomName(addr))}</span>`;
+    $("stream-badge").classList.remove("hidden");
+    feed.innerHTML = "";
+    log(`<span class="text-violet-300">✓ room open</span> <span class="mono text-slate-500">${esc(xmtpRoomName(addr))}</span> — streaming…`);
+    mesh.stream(
+      async (parsed) => {
+        const rows = parsed.deltas.map((d) => `<div><span class="text-cyan-300">${esc(d.key)}</span> <span class="text-slate-500">=</span> <span class="text-slate-300">${esc(typeof d.value === "string" ? d.value : JSON.stringify(d.value))}</span></div>`).join("");
+        log(`${rows}<div class="mt-1.5 flex items-center gap-2"><span class="mono text-slate-600">sig ${esc((parsed.sig || "").slice(0, 12))}…</span><button data-ingest class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs">Sync to edge</button><span data-ingest-msg class="mono text-slate-500"></span></div>`);
+        feed.querySelector("[data-ingest]").onclick = async (ev) => {
+          const btn = ev.target, msg = feed.querySelector("[data-ingest-msg]");
+          btn.disabled = true; msg.textContent = "syncing…";
+          try {
+            const r = await mesh.syncViaHttp(parsed);
+            msg.textContent = r.ok ? `✓ applied ${r.applied ?? ""}` : `✗ ${r.error || "rejected"}`;
+            msg.className = "mono " + (r.ok ? "text-emerald-300" : "text-rose-400");
+          } catch (e) { msg.textContent = "✗ " + e.message; msg.className = "mono text-rose-400"; }
+        };
+      },
+      (e) => log(`<span class="text-rose-400">✗ stream error:</span> <span class="mono text-slate-400">${esc(e.message)}</span>`),
+    );
+  } catch (e) {
+    $("room-status").textContent = "✗ " + e.message;
+    log(`<span class="text-rose-400">✗ room failed:</span> <span class="mono text-slate-400">${esc(e.message)}</span>`);
+  }
+};
+
+$("btn-send").onclick = async () => {
+  const key = $("send-key").value.trim() || "chat/msg";
+  let value = $("send-value").value.trim() || "hello mesh";
+  try { value = JSON.parse(value); } catch { /* keep as string */ }
+  try {
+    const idStr = localStorage.getItem("gdbx-identity");
+    if (!idStr) throw new Error("No GDBx identity — login via Dashboard first (seed or wallet)");
+    const id = JSON.parse(idStr);
+    const [{ minePoW }, crypto] = await Promise.all([import("/sdk/gdbx-sdk.js"), import("/sdk/gdbx-crypto.js")]);
+    const addr = id.addr, t = Date.now();
+    const deltas = [{ key, value, clock: t }];
+    const { nonce, hash, diff } = await minePoW(addr, id.pub || "", "sync.put", t);
+    const sig = await crypto.sign({ addr, action: "sync.put", ts: t, payload: JSON.stringify(deltas) }, { pub: id.pub, priv: id.priv });
+    const r = await mesh.send({ addr, pubkey: id.pub, pubkeyHex: id.pubHex || id.pubhex, ts: t, nonce, diff, hash, deltas, sig });
+    log(`<span class="text-emerald-300">✓ sent via XMTP</span> <span class="mono text-slate-500">${esc(r.room)}${r.id ? " · " + esc(String(r.id)).slice(0, 12) : ""}</span>`);
+    $("send-value").value = "";
+  } catch (e) {
+    log(`<span class="text-rose-400">✗ send failed:</span> <span class="mono text-slate-400">${esc(e.message)}</span>`);
+  }
+};
+
+// ?addr= deep link
+const q = new URLSearchParams(location.search).get("addr");
+if (q) $("room-addr").value = q;
+</script>
+<script type="module" src="/js/gdbx-auth.js"></script>
+</body>
+</html>

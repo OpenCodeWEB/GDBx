@@ -181,7 +181,7 @@
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-cyan-500/40 transition-colors fade-in">
       <div class="w-11 h-11 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-satellite"></i></div>
       <h3 class="font-bold text-lg">Multi-Transport</h3>
-      <p class="text-sm text-slate-400 mt-2 leading-relaxed">One address â†’ WebRTC (&lt;30ms), Nostr (&lt;200ms), WebSocket (&lt;150ms), Tor v3, I2P, IPFS. Automatic selection + fallback.</p>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">One address → WebRTC (&lt;30ms), XMTP (E2E MLS), Nostr (&lt;200ms), WebSocket (&lt;150ms), Tor v3, I2P, IPFS. Automatic selection + fallback.</p>
     </div>
     <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-fuchsia-500/40 transition-colors fade-in">
       <div class="w-11 h-11 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-dna"></i></div>
@@ -207,9 +207,13 @@
         <div><div class="font-bold">Tor v3 <span class="text-xs text-slate-500 mono">.onion</span></div><div class="text-xs text-slate-500 mt-1">anonymous, encrypted circuits</div></div>
       </div>
       <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-fuchsia-500/40 transition-colors">
-        <div class="w-12 h-12 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-mask"></i></div>
-        <div><div class="font-bold">I2P <span class="text-xs text-slate-500 mono">.i2p</span></div><div class="text-xs text-slate-500 mt-1">garlic-routed anonymity</div></div>
+        <div class="w-12 h-12 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-comments"></i></div>
+        <div><div class="font-bold">Nostr <span class="text-xs text-slate-500 mono">&lt;200ms</span></div><div class="text-xs text-slate-500 mt-1">relay-based event mesh</div></div>
       </div>
+      <a href="/xmtp" class="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 flex items-center gap-4 hover:border-fuchsia-400/60 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-message"></i></div>
+        <div><div class="font-bold">XMTP <span class="text-xs text-fuchsia-400 mono">E2E MLS ↗</span></div><div class="text-xs text-slate-500 mt-1">encrypted rooms per .gdbx address</div></div>
+      </a>
       <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 flex items-center gap-4 hover:border-cyan-500/40 transition-colors">
         <div class="w-12 h-12 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-xl shrink-0"><i class="fa-brands fa-nfc-directional"></i></div>
         <div><div class="font-bold">Nostr <span class="text-xs text-slate-500 mono">&lt;200ms</span></div><div class="text-xs text-slate-500 mt-1">relay-based event mesh</div></div>
